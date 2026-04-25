@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.middle.ding.mapper.DingPackageChangeLogMapper">
+
+	<resultMap type="com.ruoyi.middle.ding.domain.DingPackageChangeLog" id="DingPackageChangeLogResult">
+		<id     property="id"    column="id"    />
+		<result property="dingCorpId"    column="ding_corp_id"    />
+		<result property="oldPackageId"    column="old_package_id"    />
+		<result property="newPackageId"    column="new_package_id"    />
+		<result property="changeType"    column="change_type"    />
+		<result property="orderNo"    column="order_no"    />
+		<result property="operator"    column="operator"    />
+		<result property="ext1"    column="ext1"    />
+		<result property="ext2"    column="ext2"    />
+		<result property="ext3"    column="ext3"    />
+	</resultMap>
+	
+	<sql id="selectDingPackageChangeLogVo">
+        select id, ding_corp_id, old_package_id, new_package_id, change_type, order_no, operator, 
+               ext1, ext2, ext3 
+		from ding_package_change_log
+    </sql>
+
+	<select id="selectDingPackageChangeLogList" parameterType="com.ruoyi.middle.ding.domain.DingPackageChangeLog" resultMap="DingPackageChangeLogResult">
+	    <include refid="selectDingPackageChangeLogVo"/>
+		<where>
+		    <if test="dingCorpId != null and dingCorpId != ''">
+				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+			</if>
+			<if test="changeType != null">
+				AND change_type = #{changeType}
+			</if>
+			<if test="orderNo != null and orderNo != ''">
+				AND order_no like concat('%', #{orderNo}, '%')
+			</if>
+	    </where>
+	    order by id desc
+	</select>
+	
+	<select id="selectDingPackageChangeLogById" parameterType="Long" resultMap="DingPackageChangeLogResult">
+		<include refid="selectDingPackageChangeLogVo"/>
+		where id = #{id}
+	</select>
+	
+	<select id="selectDingPackageChangeLogByCorpId" parameterType="String" resultMap="DingPackageChangeLogResult">
+		<include refid="selectDingPackageChangeLogVo"/>
+		where ding_corp_id = #{dingCorpId}
+		order by id desc
+	</select>
+	
+	<delete id="deleteDingPackageChangeLogById" parameterType="Long">
+  		delete from ding_package_change_log where id = #{id}
+  	</delete>
+  	
+  	<delete id="deleteDingPackageChangeLogByIds" parameterType="Long">
+  		delete from ding_package_change_log where id in
+  		<foreach collection="array" item="id" open="(" separator="," close=")">
+  			#{id}
+        </foreach> 
+  	</delete>
+
+  	<insert id="insertDingPackageChangeLog" parameterType="com.ruoyi.middle.ding.domain.DingPackageChangeLog" useGeneratedKeys="true" keyProperty="id">
+  		insert into ding_package_change_log(
+  			ding_corp_id,
+  			old_package_id,
+  			new_package_id,
+  			change_type,
+  			order_no,
+  			operator
+  			<if test="ext1 != null">,ext1</if>
+  			<if test="ext2 != null">,ext2</if>
+  			<if test="ext3 != null">,ext3</if>
+  		)values(
+  			#{dingCorpId},
+  			#{oldPackageId},
+  			#{newPackageId},
+  			#{changeType},
+  			#{orderNo},
+  			#{operator}
+  			<if test="ext1 != null">,#{ext1}</if>
+  			<if test="ext2 != null">,#{ext2}</if>
+  			<if test="ext3 != null">,#{ext3}</if>
+  		)
+  	</insert>
+  	
+</mapper>

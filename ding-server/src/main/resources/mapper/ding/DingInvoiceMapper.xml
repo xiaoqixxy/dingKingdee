@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.middle.ding.mapper.DingInvoiceMapper">
+
+	<resultMap type="com.ruoyi.middle.ding.domain.DingInvoice" id="DingInvoiceResult">
+		<id     property="id"    column="id"    />
+		<result property="dingCorpId"    column="ding_corp_id"    />
+		<result property="orderNo"    column="order_no"    />
+		<result property="invoiceType"    column="invoice_type"    />
+		<result property="invoiceTitle"    column="invoice_title"    />
+		<result property="taxNo"    column="tax_no"    />
+		<result property="amount"    column="amount"    />
+		<result property="status"    column="status"    />
+		<result property="ext1"    column="ext1"    />
+		<result property="ext2"    column="ext2"    />
+		<result property="ext3"    column="ext3"    />
+	</resultMap>
+	
+	<sql id="selectDingInvoiceVo">
+        select id, ding_corp_id, order_no, invoice_type, invoice_title, tax_no, amount, status, 
+               ext1, ext2, ext3 
+		from ding_invoice
+    </sql>
+
+	<select id="selectDingInvoiceList" parameterType="com.ruoyi.middle.ding.domain.DingInvoice" resultMap="DingInvoiceResult">
+	    <include refid="selectDingInvoiceVo"/>
+		<where>
+		    <if test="dingCorpId != null and dingCorpId != ''">
+				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+			</if>
+			<if test="orderNo != null and orderNo != ''">
+				AND order_no like concat('%', #{orderNo}, '%')
+			</if>
+			<if test="invoiceType != null">
+				AND invoice_type = #{invoiceType}
+			</if>
+			<if test="invoiceTitle != null and invoiceTitle != ''">
+				AND invoice_title like concat('%', #{invoiceTitle}, '%')
+			</if>
+			<if test="status != null">
+				AND status = #{status}
+			</if>
+	    </where>
+	    order by id desc
+	</select>
+	
+	<select id="selectDingInvoiceById" parameterType="Long" resultMap="DingInvoiceResult">
+		<include refid="selectDingInvoiceVo"/>
+		where id = #{id}
+	</select>
+	
+	<select id="selectDingInvoiceByCorpId" parameterType="String" resultMap="DingInvoiceResult">
+		<include refid="selectDingInvoiceVo"/>
+		where ding_corp_id = #{dingCorpId}
+		order by id desc
+	</select>
+	
+	<delete id="deleteDingInvoiceById" parameterType="Long">
+  		delete from ding_invoice where id = #{id}
+  	</delete>
+  	
+  	<delete id="deleteDingInvoiceByIds" parameterType="Long">
+  		delete from ding_invoice where id in
+  		<foreach collection="array" item="id" open="(" separator="," close=")">
+  			#{id}
+        </foreach> 
+  	</delete>
+
+  	<update id="updateDingInvoice" parameterType="com.ruoyi.middle.ding.domain.DingInvoice">
+  		update ding_invoice
+  		<set>
+  			<if test="dingCorpId != null and dingCorpId != ''">ding_corp_id = #{dingCorpId},</if>
+  			<if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
+  			<if test="invoiceType != null">invoice_type = #{invoiceType},</if>
+  			<if test="invoiceTitle != null">invoice_title = #{invoiceTitle},</if>
+  			<if test="taxNo != null">tax_no = #{taxNo},</if>
+  			<if test="amount != null">amount = #{amount},</if>
+  			<if test="status != null">status = #{status},</if>
+  			<if test="ext1 != null">ext1 = #{ext1},</if>
+  			<if test="ext2 != null">ext2 = #{ext2},</if>
+  			<if test="ext3 != null">ext3 = #{ext3},</if>
+  		</set>
+  		where id = #{id}
+  	</update>
+  	
+  	<insert id="insertDingInvoice" parameterType="com.ruoyi.middle.ding.domain.DingInvoice" useGeneratedKeys="true" keyProperty="id">
+  		insert into ding_invoice(
+  			ding_corp_id,
+  			order_no,
+  			invoice_type,
+  			invoice_title,
+  			tax_no,
+  			amount,
+  			status
+  			<if test="ext1 != null">,ext1</if>
+  			<if test="ext2 != null">,ext2</if>
+  			<if test="ext3 != null">,ext3</if>
+  		)values(
+  			#{dingCorpId},
+  			#{orderNo},
+  			#{invoiceType},
+  			#{invoiceTitle},
+  			#{taxNo},
+  			#{amount},
+  			#{status}
+  			<if test="ext1 != null">,#{ext1}</if>
+  			<if test="ext2 != null">,#{ext2}</if>
+  			<if test="ext3 != null">,#{ext3}</if>
+  		)
+  	</insert>
+  	
+</mapper>

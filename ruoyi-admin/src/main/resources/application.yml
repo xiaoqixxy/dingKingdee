@@ -1,0 +1,187 @@
+# 项目相关配置
+ruoyi:
+  # 名称
+  name: RuoYi
+  # 版本
+  version: 3.9.1
+  # 版权年份
+  copyrightYear: 2026
+  # 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
+  profile: D:/ruoyi/uploadPath
+  # 获取ip地址开关
+  addressEnabled: false
+  # 验证码类型 math 数字计算 char 字符验证
+  captchaType: math
+
+# 开发环境配置
+server:
+  # 服务器的HTTP端口，默认为8080
+  port: 1007
+  servlet:
+    # 应用的访问路径
+    context-path: /
+  tomcat:
+    # tomcat的URI编码
+    uri-encoding: UTF-8
+    # 连接数满后的排队数，默认为100
+    accept-count: 1000
+    threads:
+      # tomcat最大线程数，默认为200
+      max: 800
+      # Tomcat启动初始化的线程数，默认值10
+      min-spare: 100
+
+# 日志配置
+logging:
+  level:
+    com.ruoyi: debug
+    org.springframework: warn
+
+# 用户配置
+user:
+  password:
+    # 密码最大错误次数
+    maxRetryCount: 5
+    # 密码锁定时间（默认10分钟）
+    lockTime: 10
+
+# Spring配置
+spring:
+  # 资源信息
+  messages:
+    # 国际化资源文件路径
+    basename: i18n/messages
+  profiles:
+    active: druid
+  # 文件上传
+  servlet:
+    multipart:
+      # 单个文件大小
+      max-file-size: 10MB
+      # 设置总上传的文件大小
+      max-request-size: 20MB
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+  # 服务模块
+  devtools:
+    restart:
+      # 热部署开关
+      enabled: true
+  data:
+    # redis 配置
+    redis:
+      # 地址
+      host: localhost
+      # 端口，默认为6379
+      port: 6379
+      # 数据库索引
+      database: 0
+      # 密码
+      password:
+      # 连接超时时间
+      timeout: 10s
+      lettuce:
+        pool:
+          # 连接池中的最小空闲连接
+          min-idle: 0
+          # 连接池中的最大空闲连接
+          max-idle: 8
+          # 连接池的最大数据库连接数
+          max-active: 8
+          # #连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-wait: -1ms
+
+# token配置
+token:
+  # 令牌自定义标识
+  header: Authorization
+  # 令牌密钥
+  secret: abcdefghijklmnopqrstuvwxyz
+  # 令牌有效期（默认30分钟）
+  expireTime: 30
+
+# MyBatis配置
+mybatis:
+  # 搜索指定包别名
+  typeAliasesPackage: com.ruoyi.**.domain
+  # 配置mapper的扫描，找到所有的mapper.xml映射文件
+  mapperLocations: classpath*:mapper/**/*Mapper.xml
+  # 加载全局的配置文件
+  configLocation: classpath:mybatis/mybatis-config.xml
+
+# PageHelper分页插件
+pagehelper:
+  helperDialect: mysql
+  supportMethodsArguments: true
+  params: count=countSql
+
+# Springdoc配置
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+  group-configs:
+    - group: 'default'
+      display-name: '测试模块'
+      paths-to-match: '/**'
+      packages-to-scan: com.ruoyi.web.controller.tool
+    - group: 'kingdee'
+      display-name: '金蝶集成模块'
+      paths-to-match: '/kingdee/**'
+      packages-to-scan: com.ruoyi.middle.kingdee.controller
+    - group: 'payment'
+      display-name: '支付模块'
+      paths-to-match: '/payment/**'
+      packages-to-scan: com.ruoyi.middle.payment.controller
+
+# 支付配置
+payment:
+  # 支付宝配置
+  alipay:
+    app-id: 2021006146617394
+    private-key: MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC7sfBlQ7ZwzlZf8rHBs5yV3D2P/us0scSbMErt98RsSR0PjvU/sMhrL4wOKuHHxWKhtjvx1LANlN0Bf83NYMQJub7b72cEx2NLNnJn9ecuIwwkVqIkAADH8lhmhBxzbVb/QcDfDquxPgM6ho3nH3Wq8vZ5nxlFLpD08jTavflKy7/hQHzVTzmFkCoWseMxCGOwSTrWfZ5fPWXlohbe/Fhs8Jhe4TLsHe6XuGm3fQTUkD99kIkU9bq6owskGt/2IdW0Q8fH7myhoMKGeySX29D000tdvSHnMurLMOUCKUAc7ixMviVEFgnIrZ6Nsf0kLLZB9BDRecqNvyNWn3cK+ZOfAgMBAAECggEBAKjzUuDUQrToBvf3Deq+MoTy6rdjT3TvT3ohzlDGZhjS90W5+SiLiNxywC9Ailu4YUAPOYZFXPPcu9NNp4LnR485k4OFy8WRdN+O8wyBXMc65QMQuIKPPiS9ELW21aVRFq5OEb63BfVVTLKxy6nvt4tZiGORwr1zXSgfnVQJDQ01K50uHzH2f+0WyFwYSQ+ZG6NdsBbKk5HDysNkGrFso/xPazahm+0JaiSelQyS3D4wjkovRlKara5J1Ctglb48jD0/derivIq5ekQJAF+kToFWProfRSdt5zRw8udOI7WeCfcNKqSxA5umEMqIIO4vLCj/gbiWETxAFdw1JSOerQECgYEA/RO5zQsgWw6O3J1qSmJn6R0uuHzEsezsYXr/hKTLekxj0wb1xGYtzWaizvJBEKiIhA3A4o/17Uu1f+IFyhI8smRx6ZsNX7tj02CIfWKq0WWOdh4ux/N5CqpBxAPk5gaTWS9FIk0gyv1sYIKUrQpdu5gLCG0YRhbFWvlB6Da7DacCgYEAvdzl5S75rM35x7unq4UWd2VgRkV4lWSs9jiUIy4CHZ6gLfPzILHL7IAhgU87o0cfflvBahrDHd4OyrKLHfMXSuplidasze88+2EXOayYmb8ErS8KJ2Aq2WIqdlw0nLoSD3/3pni/VENm0jYODqramVo4R2b8T4vwVKLAN3GzuUkCgYARw2ivM7C5s3PjmEj1n6KbgijdWiSUOIT+8pssvERr+SColzx45JMib6nNzMM0YB/05OI9BM3GMiIzL7IoVM9d1h8IvpFZvtVq6MOryVkkCXTOZZ/y+OvuC7VCBOP0IVIGWIMJvVAn71HEFGZLHwclO67KkJ27ja2cjRJLMkw+0QKBgBEiD/TgilNXuwSVIIpP1jksAsYUms8QaLNHY8bQ7gvyNo4vB2+Z28cZwOxEVCNl1ae3a/rBM35MfZU5C2jGeQGfqU4I+0sSHbSpjEj+FD87h5aBOi9XdEZtn1tS8sR53gtcBuMU3l8iPfMWQap9LIDOLWn0Fyyueh+JGENolUlRAoGBALvdR7BIlrC8rxbVVZsW9OA+UaOsMc60lLgogrOT47q3SZQ7K+YXktT+76R35RYzk0us3FhKnEL2hzv5SMNe8odsXexrptg5zSAyFbdvX2ClV0IXQIu1tbIPvylqIIZ8tIgV58r9PDBqRjr0SUzVDC0XP0UVVyHzrNdeY3ZV80CO
+    alipay-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApwhseJd/so8pSJuY/43d7ogSRc1ee+c83vUHwmNaXmdERNqYZGTA4+TLXSSPEBjY5mVJBaUa6h6bLc5CUNAcW1Dsloee2ejk27ES9Pi+X9T3R7sEjB5b27+3Ck7dqmsISrmogSujxFiFsm8nYTuKbpI6s3AX1rLmHJeJCq6vhpOqZkDix9NE9fqRnVFzcDY0tJvOAYoevlZ49qbv/uwn+1WbRdNVs9WMaS4nE/2U8odY3xk22rqYFlxocbGIqMZZYc5nQdfj9gJ8zrfi7Ypw/HI/fyrJxHRHb2GZXevs28yqNKLUtHhGgGzQetimzOQPzgHS+Tii7eqxluBaBpUYZQIDAQAB
+    gateway-url: openapi.alipay.com
+    notify-url: https://web.xiexinyang.com/prod-api/payment/callback/alipay
+    return-url: https://your-domain.com/payment/return
+  # 微信支付配置
+  wechat:
+    app-id: wx41a25ad21993b901
+    mch-id: 1743590309
+    api-v3-key: jiangxidingjiangkejiyouxiangongs
+    private-key-path: C:/Users/16424/Desktop/ding-kingdee/ruoyi-admin/src/main/resources/cert/wxpay/apiclient_key.pem
+    cert-path: C:/Users/16424/Desktop/ding-kingdee/ruoyi-admin/src/main/resources/cert/wxpay/apiclient_cert.pem
+    cert-serial-no: 13A513E7EB08A3F98BB7B6A345218C45817D9589
+    notify-url: https://web.xiexinyang.com/prod-api/payment/callback/wechat_pay
+  # 钉钉支付配置
+  dingpay:
+    app-id: your_ding_app_id
+    app-secret: your_ding_app_secret
+    notify-url: https://your-domain.com/payment/callback/ding_pay
+# 钉钉应用配置
+dingtalk:
+  app-id: dingff4cjsnwam0r8pxn
+  app-secret: WTctTQ82CdJRH56B4op5fO8aw3J2FQyv5BbRBVOnxLXJ7Vzu01BVQK4ZoRFfJxxd
+  language: zh_CN
+  suiteTicket: jxdj
+  suiteKey: jxdj
+
+# 防盗链配置
+referer:
+  # 防盗链开关
+  enabled: false
+  # 允许的域名列表
+  allowed-domains: localhost,127.0.0.1,ruoyi.vip,www.ruoyi.vip
+
+# 防止XSS攻击
+xss:
+  # 过滤开关
+  enabled: true
+  # 排除链接（多个用逗号分隔）
+  excludes: /system/notice
+  # 匹配链接
+  urlPatterns: /system/*,/monitor/*,/tool/*

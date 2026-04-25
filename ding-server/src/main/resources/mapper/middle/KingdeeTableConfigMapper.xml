@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.middle.kingdee.mapper.KingdeeTableConfigMapper">
+
+	<resultMap type="com.ruoyi.middle.kingdee.domain.KingdeeTableConfig" id="KingdeeTableConfigResult">
+		<id     property="configId"    column="config_id"    />
+		<result property="formName"    column="form_name"    />
+		<result property="formKey"     column="form_key"     />
+		<result property="formConfig"  column="form_config"  />
+		<result property="sortOrder"   column="sort_order"   />
+		<result property="extend1"     column="extend1"      />
+		<result property="extend2"     column="extend2"      />
+		<result property="extend3"     column="extend3"      />
+		<result property="createBy"    column="create_by"    />
+		<result property="createTime"  column="create_time"  />
+		<result property="updateBy"    column="update_by"    />
+		<result property="updateTime"  column="update_time"  />
+		<result property="remark"      column="remark"       />
+	</resultMap>
+	
+	<sql id="selectKingdeeTableConfigVo">
+        select config_id, form_name, form_key, form_config, sort_order, extend1, extend2, extend3, 
+               create_by, create_time, update_by, update_time, remark 
+		from kingdee_table_config
+    </sql>
+
+	<select id="selectKingdeeTableConfigList" parameterType="com.ruoyi.middle.kingdee.domain.KingdeeTableConfig" resultMap="KingdeeTableConfigResult">
+	    <include refid="selectKingdeeTableConfigVo"/>
+		<where>
+		    <if test="formName != null and formName != ''">
+				AND form_name like concat('%', #{formName}, '%')
+			</if>
+			<if test="formKey != null and formKey != ''">
+				AND form_key like concat('%', #{formKey}, '%')
+			</if>
+			<if test="params.beginTime != null and params.beginTime != ''">
+				and date_format(create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+			</if>
+			<if test="params.endTime != null and params.endTime != ''">
+				and date_format(create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+			</if>
+	    </where>
+	    order by sort_order asc, config_id asc
+	</select>
+	
+	<select id="selectKingdeeTableConfigById" parameterType="Long" resultMap="KingdeeTableConfigResult">
+		<include refid="selectKingdeeTableConfigVo"/>
+		where config_id = #{configId}
+	</select>
+	
+	<select id="checkFormKeyUnique" parameterType="String" resultMap="KingdeeTableConfigResult">
+		<include refid="selectKingdeeTableConfigVo"/>
+		where form_key = #{formKey} limit 1
+	</select>
+	
+	<delete id="deleteKingdeeTableConfigById" parameterType="Long">
+ 		delete from kingdee_table_config where config_id = #{configId}
+ 	</delete>
+ 	
+ 	<delete id="deleteKingdeeTableConfigByIds" parameterType="Long">
+ 		delete from kingdee_table_config where config_id in
+ 		<foreach collection="array" item="configId" open="(" separator="," close=")">
+ 			#{configId}
+        </foreach> 
+ 	</delete>
+
+ 	<update id="updateKingdeeTableConfig" parameterType="com.ruoyi.middle.kingdee.domain.KingdeeTableConfig">
+ 		update kingdee_table_config
+ 		<set>
+ 			<if test="formName != null and formName != ''">form_name = #{formName},</if>
+ 			<if test="formKey != null and formKey != ''">form_key = #{formKey},</if>
+ 			<if test="formConfig != null">form_config = #{formConfig},</if>
+ 			<if test="sortOrder != null">sort_order = #{sortOrder},</if>
+ 			<if test="extend1 != null">extend1 = #{extend1},</if>
+ 			<if test="extend2 != null">extend2 = #{extend2},</if>
+ 			<if test="extend3 != null">extend3 = #{extend3},</if>
+ 			<if test="remark != null">remark = #{remark},</if>
+ 			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+ 			update_time = sysdate()
+ 		</set>
+ 		where config_id = #{configId}
+ 	</update>
+ 	
+ 	<insert id="insertKingdeeTableConfig" parameterType="com.ruoyi.middle.kingdee.domain.KingdeeTableConfig">
+ 		insert into kingdee_table_config(
+ 			<if test="formName != null and formName != ''">form_name,</if>
+ 			<if test="formKey != null and formKey != ''">form_key,</if>
+ 			<if test="formConfig != null">form_config,</if>
+ 			<if test="sortOrder != null">sort_order,</if>
+ 			<if test="extend1 != null">extend1,</if>
+ 			<if test="extend2 != null">extend2,</if>
+ 			<if test="extend3 != null">extend3,</if>
+ 			<if test="remark != null">remark,</if>
+ 			<if test="createBy != null and createBy != ''">create_by,</if>
+ 			create_time
+ 		)values(
+ 			<if test="formName != null and formName != ''">#{formName},</if>
+ 			<if test="formKey != null and formKey != ''">#{formKey},</if>
+ 			<if test="formConfig != null">#{formConfig},</if>
+ 			<if test="sortOrder != null">#{sortOrder},</if>
+ 			<if test="extend1 != null">#{extend1},</if>
+ 			<if test="extend2 != null">#{extend2},</if>
+ 			<if test="extend3 != null">#{extend3},</if>
+ 			<if test="remark != null">#{remark},</if>
+ 			<if test="createBy != null and createBy != ''">#{createBy},</if>
+ 			sysdate()
+ 		)
+ 	</insert>
+	
+</mapper>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.middle.ding.mapper.DingPaymentLogMapper">
+
+	<resultMap type="com.ruoyi.middle.ding.domain.DingPaymentLog" id="DingPaymentLogResult">
+		<id     property="id"    column="id"    />
+		<result property="orderNo"    column="order_no"    />
+		<result property="dingCorpId"    column="ding_corp_id"    />
+		<result property="payChannel"    column="pay_channel"    />
+		<result property="transactionId"    column="transaction_id"    />
+		<result property="payAmount"    column="pay_amount"    />
+		<result property="status"    column="status"    />
+		<result property="rawData"    column="raw_data"    />
+		<result property="ext1"    column="ext1"    />
+		<result property="ext2"    column="ext2"    />
+		<result property="ext3"    column="ext3"    />
+	</resultMap>
+	
+	<sql id="selectDingPaymentLogVo">
+        select id, order_no, ding_corp_id, pay_channel, transaction_id, pay_amount, status, raw_data, 
+               ext1, ext2, ext3 
+		from ding_payment_log
+    </sql>
+
+	<select id="selectDingPaymentLogList" parameterType="com.ruoyi.middle.ding.domain.DingPaymentLog" resultMap="DingPaymentLogResult">
+	    <include refid="selectDingPaymentLogVo"/>
+		<where>
+		    <if test="orderNo != null and orderNo != ''">
+				AND order_no like concat('%', #{orderNo}, '%')
+			</if>
+			<if test="dingCorpId != null and dingCorpId != ''">
+				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+			</if>
+			<if test="payChannel != null and payChannel != ''">
+				AND pay_channel = #{payChannel}
+			</if>
+			<if test="status != null">
+				AND status = #{status}
+			</if>
+	    </where>
+	    order by id desc
+	</select>
+	
+	<select id="selectDingPaymentLogById" parameterType="Long" resultMap="DingPaymentLogResult">
+		<include refid="selectDingPaymentLogVo"/>
+		where id = #{id}
+	</select>
+	
+	<select id="selectDingPaymentLogByOrderNo" parameterType="String" resultMap="DingPaymentLogResult">
+		<include refid="selectDingPaymentLogVo"/>
+		where order_no = #{orderNo}
+		order by id desc
+	</select>
+	
+	<delete id="deleteDingPaymentLogById" parameterType="Long">
+  		delete from ding_payment_log where id = #{id}
+  	</delete>
+  	
+  	<delete id="deleteDingPaymentLogByIds" parameterType="Long">
+  		delete from ding_payment_log where id in
+  		<foreach collection="array" item="id" open="(" separator="," close=")">
+  			#{id}
+        </foreach> 
+  	</delete>
+
+  	<update id="updateDingPaymentLog" parameterType="com.ruoyi.middle.ding.domain.DingPaymentLog">
+  		update ding_payment_log
+  		<set>
+  			<if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
+  			<if test="dingCorpId != null and dingCorpId != ''">ding_corp_id = #{dingCorpId},</if>
+  			<if test="payChannel != null">pay_channel = #{payChannel},</if>
+  			<if test="transactionId != null">transaction_id = #{transactionId},</if>
+  			<if test="payAmount != null">pay_amount = #{payAmount},</if>
+  			<if test="status != null">status = #{status},</if>
+  			<if test="rawData != null">raw_data = #{rawData},</if>
+  			<if test="ext1 != null">ext1 = #{ext1},</if>
+  			<if test="ext2 != null">ext2 = #{ext2},</if>
+  			<if test="ext3 != null">ext3 = #{ext3},</if>
+  		</set>
+  		where id = #{id}
+  	</update>
+  	
+  	<insert id="insertDingPaymentLog" parameterType="com.ruoyi.middle.ding.domain.DingPaymentLog" useGeneratedKeys="true" keyProperty="id">
+  		insert into ding_payment_log(
+  			order_no,
+  			ding_corp_id,
+  			pay_channel,
+  			transaction_id,
+  			pay_amount,
+  			status,
+  			raw_data
+  			<if test="ext1 != null">,ext1</if>
+  			<if test="ext2 != null">,ext2</if>
+  			<if test="ext3 != null">,ext3</if>
+  		)values(
+  			#{orderNo},
+  			#{dingCorpId},
+  			#{payChannel},
+  			#{transactionId},
+  			#{payAmount},
+  			#{status},
+  			#{rawData}
+  			<if test="ext1 != null">,#{ext1}</if>
+  			<if test="ext2 != null">,#{ext2}</if>
+  			<if test="ext3 != null">,#{ext3}</if>
+  		)
+  	</insert>
+  	
+</mapper>

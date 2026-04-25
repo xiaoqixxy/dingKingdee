@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.middle.ding.mapper.DingOrderMapper">
+
+	<resultMap type="com.ruoyi.middle.ding.domain.DingOrder" id="DingOrderResult">
+		<id     property="id"    column="id"    />
+		<result property="orderNo"    column="order_no"    />
+		<result property="dingCorpId"    column="ding_corp_id"    />
+		<result property="productId"    column="product_id"    />
+		<result property="orderType"    column="order_type"    />
+		<result property="totalAmount"    column="total_amount"    />
+		<result property="payAmount"    column="pay_amount"    />
+		<result property="payStatus"    column="pay_status"    />
+		<result property="payTime"    column="pay_time"    />
+		<result property="expireTime"    column="expire_time"    />
+		<result property="payChannel"    column="pay_channel"    />
+		<result property="transactionId"    column="transaction_id"    />
+		<result property="remark"    column="remark"    />
+		<result property="ext1"    column="ext1"    />
+		<result property="ext2"    column="ext2"    />
+		<result property="ext3"    column="ext3"    />
+	</resultMap>
+	
+	<sql id="selectDingOrderVo">
+        select id, order_no, ding_corp_id, product_id, order_type, total_amount, pay_amount, 
+               pay_status, pay_time, expire_time, pay_channel, transaction_id, remark, ext1, ext2, ext3 
+		from ding_order
+    </sql>
+
+	<select id="selectDingOrderList" parameterType="com.ruoyi.middle.ding.domain.DingOrder" resultMap="DingOrderResult">
+	    <include refid="selectDingOrderVo"/>
+		<where>
+		    <if test="orderNo != null and orderNo != ''">
+				AND order_no like concat('%', #{orderNo}, '%')
+			</if>
+			<if test="dingCorpId != null and dingCorpId != ''">
+				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+			</if>
+			<if test="productId != null">
+				AND product_id = #{productId}
+			</if>
+			<if test="orderType != null">
+				AND order_type = #{orderType}
+			</if>
+			<if test="payStatus != null">
+				AND pay_status = #{payStatus}
+			</if>
+			<if test="params.beginTime != null and params.beginTime != ''">
+				and date_format(pay_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+			</if>
+			<if test="params.endTime != null and params.endTime != ''">
+				and date_format(pay_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+			</if>
+	    </where>
+	    order by id desc
+	</select>
+	
+	<select id="selectDingOrderById" parameterType="Long" resultMap="DingOrderResult">
+		<include refid="selectDingOrderVo"/>
+		where id = #{id}
+	</select>
+	
+	<select id="selectDingOrderByOrderNo" parameterType="String" resultMap="DingOrderResult">
+		<include refid="selectDingOrderVo"/>
+		where order_no = #{orderNo}
+	</select>
+	
+	<select id="checkOrderNoUnique" parameterType="String" resultMap="DingOrderResult">
+		<include refid="selectDingOrderVo"/>
+		where order_no = #{orderNo} limit 1
+	</select>
+	
+	<delete id="deleteDingOrderById" parameterType="Long">
+  		delete from ding_order where id = #{id}
+  	</delete>
+  	
+  	<delete id="deleteDingOrderByIds" parameterType="Long">
+  		delete from ding_order where id in
+  		<foreach collection="array" item="id" open="(" separator="," close=")">
+  			#{id}
+        </foreach> 
+  	</delete>
+
+  	<update id="updateDingOrder" parameterType="com.ruoyi.middle.ding.domain.DingOrder">
+  		update ding_order
+  		<set>
+  			<if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
+  			<if test="dingCorpId != null and dingCorpId != ''">ding_corp_id = #{dingCorpId},</if>
+  			<if test="productId != null">product_id = #{productId},</if>
+  			<if test="orderType != null">order_type = #{orderType},</if>
+  			<if test="totalAmount != null">total_amount = #{totalAmount},</if>
+  			<if test="payAmount != null">pay_amount = #{payAmount},</if>
+  			<if test="payStatus != null">pay_status = #{payStatus},</if>
+   			<if test="payTime != null">pay_time = #{payTime},</if>
+   			<if test="expireTime != null">expire_time = #{expireTime},</if>
+   			<if test="payChannel != null">pay_channel = #{payChannel},</if>
+  			<if test="transactionId != null">transaction_id = #{transactionId},</if>
+  			<if test="remark != null">remark = #{remark},</if>
+  			<if test="ext1 != null">ext1 = #{ext1},</if>
+  			<if test="ext2 != null">ext2 = #{ext2},</if>
+  			<if test="ext3 != null">ext3 = #{ext3},</if>
+  		</set>
+  		where id = #{id}
+  	</update>
+  	
+  	<insert id="insertDingOrder" parameterType="com.ruoyi.middle.ding.domain.DingOrder" useGeneratedKeys="true" keyProperty="id">
+  		insert into ding_order(
+  			order_no,
+  			ding_corp_id,
+  			product_id,
+  			order_type,
+  			total_amount,
+  			pay_amount,
+   			pay_status,
+   			pay_time,
+   			expire_time,
+   			pay_channel,
+  			transaction_id,
+  			remark
+  			<if test="ext1 != null">,ext1</if>
+  			<if test="ext2 != null">,ext2</if>
+  			<if test="ext3 != null">,ext3</if>
+  		)values(
+  			#{orderNo},
+  			#{dingCorpId},
+  			#{productId},
+  			#{orderType},
+  			#{totalAmount},
+  			#{payAmount},
+   			#{payStatus},
+   			#{payTime},
+   			#{expireTime},
+   			#{payChannel},
+  			#{transactionId},
+  			#{remark}
+  			<if test="ext1 != null">,#{ext1}</if>
+  			<if test="ext2 != null">,#{ext2}</if>
+  			<if test="ext3 != null">,#{ext3}</if>
+  		)
+   	</insert>
+
+    <select id="selectExpiredUnpaidOrders" resultMap="DingOrderResult">
+        <include refid="selectDingOrderVo"/>
+        where pay_status = 0 and expire_time is not null and expire_time &lt; now()
+    </select>
+   
+</mapper>

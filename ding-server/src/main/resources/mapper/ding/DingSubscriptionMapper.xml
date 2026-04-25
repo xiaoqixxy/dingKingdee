@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.middle.ding.mapper.DingSubscriptionMapper">
+
+	<resultMap type="com.ruoyi.middle.ding.domain.DingSubscription" id="DingSubscriptionResult">
+		<id     property="id"    column="id"    />
+		<result property="dingCorpId"    column="ding_corp_id"    />
+		<result property="productId"    column="product_id"    />
+		<result property="productType"    column="product_type"    />
+		<result property="startTime"    column="start_time"    />
+		<result property="endTime"    column="end_time"    />
+		<result property="autoRenew"    column="auto_renew"    />
+		<result property="usedFormCount"    column="used_form_count"    />
+		<result property="monthUsedSync"    column="month_used_sync"    />
+		<result property="status"    column="status"    />
+		<result property="productName"    column="product_name"    />
+		<result property="ext1"    column="ext1"    />
+		<result property="ext2"    column="ext2"    />
+		<result property="ext3"    column="ext3"    />
+	</resultMap>
+	
+<sql id="selectDingSubscriptionVo">
+        select s.id, s.ding_corp_id, s.product_id, s.product_type, s.start_time, s.end_time, s.auto_renew, 
+               s.used_form_count, s.month_used_sync, s.status, p.product_name, s.ext1, s.ext2, s.ext3 
+ 		from ding_subscription s
+ 		left join ding_product p on s.product_id = p.id
+    </sql>
+
+	<select id="selectDingSubscriptionList" parameterType="com.ruoyi.middle.ding.domain.DingSubscription" resultMap="DingSubscriptionResult">
+	    <include refid="selectDingSubscriptionVo"/>
+		<where>
+		    <if test="dingCorpId != null and dingCorpId != ''">
+				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+			</if>
+			<if test="productId != null">
+				AND product_id = #{productId}
+			</if>
+			<if test="productType != null">
+				AND product_type = #{productType}
+			</if>
+			<if test="status != null">
+				AND status = #{status}
+			</if>
+	    </where>
+	    order by id desc
+	</select>
+	
+	<select id="selectDingSubscriptionById" parameterType="Long" resultMap="DingSubscriptionResult">
+		<include refid="selectDingSubscriptionVo"/>
+		where s.id = #{id}
+	</select>
+	
+	<select id="selectDingSubscriptionByCorpId" parameterType="String" resultMap="DingSubscriptionResult">
+		<include refid="selectDingSubscriptionVo"/>
+		where ding_corp_id = #{dingCorpId}
+	</select>
+	
+	<delete id="deleteDingSubscriptionById" parameterType="Long">
+   		delete from ding_subscription where id = #{id}
+   	</delete>
+   	
+   	<delete id="deleteDingSubscriptionByIds" parameterType="Long">
+   		delete from ding_subscription where id in
+   		<foreach collection="array" item="id" open="(" separator="," close=")">
+   			#{id}
+        </foreach> 
+   	</delete>
+
+   	<update id="updateDingSubscription" parameterType="com.ruoyi.middle.ding.domain.DingSubscription">
+   		update ding_subscription
+   		<set>
+   			<if test="dingCorpId != null and dingCorpId != ''">ding_corp_id = #{dingCorpId},</if>
+   			<if test="productId != null">product_id = #{productId},</if>
+   			<if test="productType != null">product_type = #{productType},</if>
+   			<if test="startTime != null">start_time = #{startTime},</if>
+   			<if test="endTime != null">end_time = #{endTime},</if>
+   			<if test="autoRenew != null">auto_renew = #{autoRenew},</if>
+   			<if test="usedFormCount != null">used_form_count = #{usedFormCount},</if>
+   			<if test="monthUsedSync != null">month_used_sync = #{monthUsedSync},</if>
+   			<if test="status != null">status = #{status},</if>
+   			<if test="ext1 != null">ext1 = #{ext1},</if>
+   			<if test="ext2 != null">ext2 = #{ext2},</if>
+   			<if test="ext3 != null">ext3 = #{ext3},</if>
+   		</set>
+   		where id = #{id}
+   	</update>
+   	
+   	<insert id="insertDingSubscription" parameterType="com.ruoyi.middle.ding.domain.DingSubscription" useGeneratedKeys="true" keyProperty="id">
+   		insert into ding_subscription(
+   			ding_corp_id,
+   			product_id,
+   			product_type,
+   			start_time,
+   			end_time,
+   			auto_renew,
+   			used_form_count,
+   			month_used_sync,
+   			status
+   			<if test="ext1 != null">,ext1</if>
+   			<if test="ext2 != null">,ext2</if>
+   			<if test="ext3 != null">,ext3</if>
+   		)values(
+   			#{dingCorpId},
+   			#{productId},
+   			#{productType},
+   			#{startTime},
+   			#{endTime},
+   			#{autoRenew},
+   			#{usedFormCount},
+   			#{monthUsedSync},
+   			#{status}
+   			<if test="ext1 != null">,#{ext1}</if>
+   			<if test="ext2 != null">,#{ext2}</if>
+   			<if test="ext3 != null">,#{ext3}</if>
+   		)
+   	</insert>
+   	
+</mapper>
