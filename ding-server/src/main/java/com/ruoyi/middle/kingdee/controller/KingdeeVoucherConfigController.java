@@ -93,13 +93,48 @@ public class KingdeeVoucherConfigController extends BaseController
     }
 
     /**
-     * 删除【请填写功能名称】
+     * 删除【请填写功能名称】（无需权限）
      */
-    @PreAuthorize("@ss.hasPermi('kingdee:voucherConfig:remove')")
-    @Log(title = "【请填写功能名称】", businessType = BusinessType.DELETE)
+	@Log(title = "【请填写功能名称】", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids)
     {
         return toAjax(kingdeeVoucherConfigService.deleteKingdeeVoucherConfigByIds(ids));
+    }
+
+    /**
+     * 根据钉钉企业ID查询凭证配置（无需权限）
+     */
+    @GetMapping("/byCorpId/{dingCorpId}")
+    public AjaxResult getByCorpId(@PathVariable("dingCorpId") String dingCorpId)
+    {
+        KingdeeVoucherConfig config = kingdeeVoucherConfigService.selectKingdeeVoucherConfigByCorpId(dingCorpId);
+        return success(config);
+    }
+
+    /**
+     * 根据钉钉企业ID查询凭证配置列表（无需权限）
+     */
+    @GetMapping("/list/{dingCorpId}")
+    public AjaxResult listByCorpId(@PathVariable("dingCorpId") String dingCorpId)
+    {
+        List<KingdeeVoucherConfig> list = kingdeeVoucherConfigService.selectKingdeeVoucherConfigListByCorpId(dingCorpId);
+        return success(list);
+    }
+
+    /**
+     * 保存或更新凭证配置（无需权限）
+     */
+    @PostMapping("/saveOrUpdate")
+    public AjaxResult saveOrUpdate(@RequestBody KingdeeVoucherConfig kingdeeVoucherConfig)
+    {
+        // 根据是否传入id判断新增还是更新
+        if (kingdeeVoucherConfig.getId() != null && !kingdeeVoucherConfig.getId().isEmpty()) {
+            // 有id → 更新
+            return toAjax(kingdeeVoucherConfigService.updateKingdeeVoucherConfig(kingdeeVoucherConfig));
+        } else {
+            // 无id → 新增
+            return toAjax(kingdeeVoucherConfigService.insertKingdeeVoucherConfig(kingdeeVoucherConfig));
+        }
     }
 }

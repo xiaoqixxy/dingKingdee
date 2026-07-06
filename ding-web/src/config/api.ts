@@ -1,4 +1,5 @@
-const API_BASE = 'https://web.xiexinyang.com/prod-api';
+// const API_BASE = 'https://web.xiexinyang.com/prod-api';
+const API_BASE = 'http://localhost:1007';
 
 export const API = {
   // 登录
@@ -23,5 +24,14 @@ export const API = {
     handleResult: `${API_BASE}/payment/handleResult`,
     // 根据订单号查询订单
     getByOrderNo: (orderNo: string) => `${API_BASE}/ding/order/no/${orderNo}`,
+  },
+  // 凭证配置
+  voucherConfig: {
+    // 根据企业ID查询凭证配置列表
+    listByCorpId: (dingCorpId: string) => `${API_BASE}/kingdee/voucherConfig/list/${dingCorpId}`,
+    // 保存或更新凭证配置
+    saveOrUpdate: `${API_BASE}/kingdee/voucherConfig/saveOrUpdate`,
+    // 删除凭证配置
+    delete: (id: string) => `${API_BASE}/kingdee/voucherConfig/${id}`,
   },
 };

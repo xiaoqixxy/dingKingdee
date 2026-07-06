@@ -105,4 +105,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </delete>
+
+    <select id="selectKingdeeVoucherConfigByCorpId" parameterType="String" resultMap="KingdeeVoucherConfigResult">
+        <include refid="selectKingdeeVoucherConfigVo"/>
+        where ding_corp_id = #{dingCorpId}
+        order by order_no asc, id desc
+        limit 1
+    </select>
+
+    <select id="selectKingdeeVoucherConfigByNameAndCorpId" resultMap="KingdeeVoucherConfigResult">
+        <include refid="selectKingdeeVoucherConfigVo"/>
+        where name = #{name} and ding_corp_id = #{dingCorpId}
+        limit 1
+    </select>
+
+    <select id="selectKingdeeVoucherConfigListByCorpId" parameterType="String" resultMap="KingdeeVoucherConfigResult">
+        <include refid="selectKingdeeVoucherConfigVo"/>
+        where ding_corp_id = #{dingCorpId}
+        order by order_no asc, id desc
+    </select>
 </mapper>

@@ -59,4 +59,29 @@ public interface IKingdeeVoucherConfigService
      * @return 结果
      */
     public int deleteKingdeeVoucherConfigById(String id);
+
+    /**
+     * 根据钉钉企业ID查询凭证配置
+     * 
+     * @param dingCorpId 钉钉企业ID
+     * @return 金蝶凭证配置
+     */
+    public KingdeeVoucherConfig selectKingdeeVoucherConfigByCorpId(String dingCorpId);
+
+    /**
+     * 根据钉钉企业ID查询凭证配置列表
+     * 
+     * @param dingCorpId 钉钉企业ID
+     * @return 金蝶凭证配置集合
+     */
+    public List<KingdeeVoucherConfig> selectKingdeeVoucherConfigListByCorpId(String dingCorpId);
+
+    /**
+     * 根据凭证名称和钉钉企业ID查询凭证配置
+     * 
+     * @param name 凭证名称
+     * @param dingCorpId 钉钉企业ID
+     * @return 金蝶凭证配置
+     */
+    public KingdeeVoucherConfig selectKingdeeVoucherConfigByNameAndCorpId(String name, String dingCorpId);
 }

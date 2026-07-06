@@ -6,7 +6,7 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 【请填写功能名称】对象 kingdee_voucher_config
+ * 金蝶凭证配置对象 kingdee_voucher_config
  * 
  * @author ruoyi
  * @date 2026-07-04
@@ -15,51 +15,51 @@ public class KingdeeVoucherConfig extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
-    /** $column.columnComment */
+    /** 主键ID */
     private String id;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 配置名称 */
+    @Excel(name = "配置名称")
     private String name;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 钉钉企业ID */
+    @Excel(name = "钉钉企业ID")
     private String dingCorpId;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 金蝶服务地址 */
+    @Excel(name = "金蝶服务地址")
     private String serverUrl;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 账套ID */
+    @Excel(name = "账套ID")
     private String cId;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 用户名 */
+    @Excel(name = "用户名")
     private String userName;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 应用ID */
+    @Excel(name = "应用ID")
     private String appId;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 应用密钥 */
+    @Excel(name = "应用密钥")
     private String appSecret;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 扩展字段1 */
+    @Excel(name = "扩展字段1")
     private String ext1;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 扩展字段2 */
+    @Excel(name = "扩展字段2")
     private String ext2;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 扩展字段3 */
+    @Excel(name = "扩展字段3")
     private String ext3;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 排序号 */
+    @Excel(name = "排序号")
     private Integer orderNo;
 
     public void setId(String id) 
@@ -102,12 +102,12 @@ public class KingdeeVoucherConfig extends BaseEntity
         return serverUrl;
     }
 
-    public void setcId(String cId) 
+    public void setCId(String cId) 
     {
         this.cId = cId;
     }
 
-    public String getcId() 
+    public String getCId() 
     {
         return cId;
     }
@@ -189,7 +189,7 @@ public class KingdeeVoucherConfig extends BaseEntity
             .append("name", getName())
             .append("dingCorpId", getDingCorpId())
             .append("serverUrl", getServerUrl())
-            .append("cId", getcId())
+            .append("cId", getCId())
             .append("userName", getUserName())
             .append("appId", getAppId())
             .append("appSecret", getAppSecret())

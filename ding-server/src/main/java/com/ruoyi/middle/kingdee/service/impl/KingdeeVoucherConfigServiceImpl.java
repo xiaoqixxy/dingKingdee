@@ -97,4 +97,37 @@ public class KingdeeVoucherConfigServiceImpl implements IKingdeeVoucherConfigSer
     {
         return kingdeeVoucherConfigMapper.deleteKingdeeVoucherConfigById(id);
     }
+
+    /**
+     * 根据钉钉企业ID查询凭证配置
+     * 
+     * @param dingCorpId 钉钉企业ID
+     * @return 金蝶凭证配置
+     */
+    @Override
+    public KingdeeVoucherConfig selectKingdeeVoucherConfigByCorpId(String dingCorpId)
+    {
+        return kingdeeVoucherConfigMapper.selectKingdeeVoucherConfigByCorpId(dingCorpId);
+    }
+
+    /**
+     * 根据钉钉企业ID查询凭证配置列表
+     * 
+     * @param dingCorpId 钉钉企业ID
+     * @return 金蝶凭证配置集合
+     */
+    @Override
+    public List<KingdeeVoucherConfig> selectKingdeeVoucherConfigListByCorpId(String dingCorpId)
+    {
+        return kingdeeVoucherConfigMapper.selectKingdeeVoucherConfigListByCorpId(dingCorpId);
+    }
+
+    /**
+     * 根据凭证名称和钉钉企业ID查询凭证配置
+     */
+    @Override
+    public KingdeeVoucherConfig selectKingdeeVoucherConfigByNameAndCorpId(String name, String dingCorpId)
+    {
+        return kingdeeVoucherConfigMapper.selectKingdeeVoucherConfigByNameAndCorpId(name, dingCorpId);
+    }
 }
