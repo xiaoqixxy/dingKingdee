@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import { initView } from 'dingtalk-docs-cool-app';
 import { API } from './config/api';
 import './App.css';
@@ -1272,6 +1272,18 @@ function App() {
             <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>← 返回列表</button>
           </div>
         )}
+        <div style={styles.formItem}>
+          <label style={styles.label}>
+            <span style={styles.labelIcon}>📝</span>
+            配置名称 <span style={styles.required}>*</span>
+          </label>
+          <div style={styles.inputWrapper}>
+            <div style={styles.inputIconBox}>📝</div>
+            <input type="text" style={styles.input} value={voucherName} onChange={(e) => setVoucherName(e.target.value)} placeholder="请输入配置名称" />
+          </div>
+          <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}></div>
+        </div>
+        <hr style={{ ...styles.hr, margin: "16px 0" }} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px 0', padding: '4px 0' }}>
           {fields.map(({ key, label, icon, placeholder, type }) => (
             <div key={key} style={styles.formItem}>
@@ -1292,25 +1304,13 @@ function App() {
             </div>
           ))}
         </div>
-        <hr style={{ ...styles.hr, margin: "16px 0" }} />
         <div style={styles.formItem}>
           <label style={styles.label}>
-            <span style={styles.labelIcon}>馃搵</span>
-            凭证名称 <span style={styles.required}>*</span>
-          </label>
-          <div style={styles.inputWrapper}>
-            <div style={styles.inputIconBox}>馃搵</div>
-            <input type="text" style={styles.input} value={voucherName} onChange={(e) => setVoucherName(e.target.value)} placeholder="凭证名称" />
-          </div>
-          <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}></div>
-        </div>
-        <div style={styles.formItem}>
-          <label style={styles.label}>
-            <span style={styles.labelIcon}>鈫曪笍</span>
+            <span style={styles.labelIcon}>⬆️</span>
             排序号 <span style={{ color: "#9ca3af", fontWeight: 400 }}>(可选)</span>
           </label>
           <div style={styles.inputWrapper}>
-            <div style={styles.inputIconBox}>鈫曪笍</div>
+            <div style={styles.inputIconBox}>⬆️</div>
             <input type="number" style={styles.input} value={orderNo ?? ""} onChange={(e) => setOrderNo(e.target.value ? parseInt(e.target.value) : undefined)} placeholder="排序号" />
           </div>
           <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}></div>
