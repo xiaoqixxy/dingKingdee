@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.system.mapper.KingdeeVoucherConfigMapper">
+<mapper namespace="com.ruoyi.middle.kingdee.mapper.KingdeeVoucherConfigMapper">
     
     <resultMap type="KingdeeVoucherConfig" id="KingdeeVoucherConfigResult">
         <result property="id"    column="id"    />
@@ -48,7 +48,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <insert id="insertKingdeeVoucherConfig" parameterType="KingdeeVoucherConfig">
         insert into kingdee_voucher_config
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="id != null">id,</if>
+            id,
             <if test="name != null">name,</if>
             <if test="dingCorpId != null">ding_corp_id,</if>
             <if test="serverUrl != null">server_url,</if>
@@ -62,7 +62,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="orderNo != null">order_no,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="id != null">#{id},</if>
+            #{id},
             <if test="name != null">#{name},</if>
             <if test="dingCorpId != null">#{dingCorpId},</if>
             <if test="serverUrl != null">#{serverUrl},</if>

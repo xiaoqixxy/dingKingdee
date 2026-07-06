@@ -1,90 +1,90 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="${comment}" prop="name">
+      <el-form-item label="配置名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入${comment}"
+          placeholder="请输入配置名称"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="dingCorpId">
+      <el-form-item label="钉钉企业ID" prop="dingCorpId">
         <el-input
           v-model="queryParams.dingCorpId"
-          placeholder="请输入${comment}"
+          placeholder="请输入钉钉企业ID"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="serverUrl">
+      <el-form-item label="金蝶服务地址" prop="serverUrl">
         <el-input
           v-model="queryParams.serverUrl"
-          placeholder="请输入${comment}"
+          placeholder="请输入金蝶服务地址"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="cId">
+      <el-form-item label="账套ID" prop="cId">
         <el-input
           v-model="queryParams.cId"
-          placeholder="请输入${comment}"
+          placeholder="请输入账套ID"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="userName">
+      <el-form-item label="用户名" prop="userName">
         <el-input
           v-model="queryParams.userName"
-          placeholder="请输入${comment}"
+          placeholder="请输入用户名"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="appId">
+      <el-form-item label="应用ID" prop="appId">
         <el-input
           v-model="queryParams.appId"
-          placeholder="请输入${comment}"
+          placeholder="请输入应用ID"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="appSecret">
+      <el-form-item label="应用密钥" prop="appSecret">
         <el-input
           v-model="queryParams.appSecret"
-          placeholder="请输入${comment}"
+          placeholder="请输入应用密钥"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="ext1">
+      <el-form-item label="扩展字段1" prop="ext1">
         <el-input
           v-model="queryParams.ext1"
-          placeholder="请输入${comment}"
+          placeholder="请输入扩展字段1"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="ext2">
+      <el-form-item label="扩展字段2" prop="ext2">
         <el-input
           v-model="queryParams.ext2"
-          placeholder="请输入${comment}"
+          placeholder="请输入扩展字段2"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="ext3">
+      <el-form-item label="扩展字段3" prop="ext3">
         <el-input
           v-model="queryParams.ext3"
-          placeholder="请输入${comment}"
+          placeholder="请输入扩展字段3"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="orderNo">
+      <el-form-item label="排序号" prop="orderNo">
         <el-input
           v-model="queryParams.orderNo"
-          placeholder="请输入${comment}"
+          placeholder="请输入排序号"
           clearable
           @keyup.enter="handleQuery"
         />
@@ -139,18 +139,18 @@
 
     <el-table v-loading="loading" :data="configList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="${comment}" align="center" prop="id" />
-      <el-table-column label="${comment}" align="center" prop="name" />
-      <el-table-column label="${comment}" align="center" prop="dingCorpId" />
-      <el-table-column label="${comment}" align="center" prop="serverUrl" />
-      <el-table-column label="${comment}" align="center" prop="cId" />
-      <el-table-column label="${comment}" align="center" prop="userName" />
-      <el-table-column label="${comment}" align="center" prop="appId" />
-      <el-table-column label="${comment}" align="center" prop="appSecret" />
-      <el-table-column label="${comment}" align="center" prop="ext1" />
-      <el-table-column label="${comment}" align="center" prop="ext2" />
-      <el-table-column label="${comment}" align="center" prop="ext3" />
-      <el-table-column label="${comment}" align="center" prop="orderNo" />
+      <el-table-column label="ID" align="center" prop="id" />
+      <el-table-column label="配置名称" align="center" prop="name" />
+      <el-table-column label="钉钉企业ID" align="center" prop="dingCorpId" />
+      <el-table-column label="金蝶服务地址" align="center" prop="serverUrl" />
+      <el-table-column label="账套ID" align="center" prop="cId" />
+      <el-table-column label="用户名" align="center" prop="userName" />
+      <el-table-column label="应用ID" align="center" prop="appId" />
+      <el-table-column label="应用密钥" align="center" prop="appSecret" />
+      <el-table-column label="扩展字段1" align="center" prop="ext1" />
+      <el-table-column label="扩展字段2" align="center" prop="ext2" />
+      <el-table-column label="扩展字段3" align="center" prop="ext3" />
+      <el-table-column label="排序号" align="center" prop="orderNo" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['kingdee:voucherConfig:edit']">修改</el-button>
@@ -167,41 +167,41 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改【请填写功能名称】对话框 -->
+    <!-- 添加或修改金蝶凭证配置对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="configRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="${comment}" prop="name">
-          <el-input v-model="form.name" placeholder="请输入${comment}" />
+        <el-form-item label="配置名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入配置名称" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="dingCorpId">
-          <el-input v-model="form.dingCorpId" placeholder="请输入${comment}" />
+        <el-form-item label="钉钉企业ID" prop="dingCorpId">
+          <el-input v-model="form.dingCorpId" placeholder="请输入钉钉企业ID" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="serverUrl">
-          <el-input v-model="form.serverUrl" placeholder="请输入${comment}" />
+        <el-form-item label="金蝶服务地址" prop="serverUrl">
+          <el-input v-model="form.serverUrl" placeholder="请输入金蝶服务地址" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="cId">
-          <el-input v-model="form.cId" placeholder="请输入${comment}" />
+        <el-form-item label="账套ID" prop="cId">
+          <el-input v-model="form.cId" placeholder="请输入账套ID" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="userName">
-          <el-input v-model="form.userName" placeholder="请输入${comment}" />
+        <el-form-item label="用户名" prop="userName">
+          <el-input v-model="form.userName" placeholder="请输入用户名" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="appId">
-          <el-input v-model="form.appId" placeholder="请输入${comment}" />
+        <el-form-item label="应用ID" prop="appId">
+          <el-input v-model="form.appId" placeholder="请输入应用ID" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="appSecret">
-          <el-input v-model="form.appSecret" placeholder="请输入${comment}" />
+        <el-form-item label="应用密钥" prop="appSecret">
+          <el-input v-model="form.appSecret" placeholder="请输入应用密钥" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="ext1">
-          <el-input v-model="form.ext1" placeholder="请输入${comment}" />
+        <el-form-item label="扩展字段1" prop="ext1">
+          <el-input v-model="form.ext1" placeholder="请输入扩展字段1" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="ext2">
-          <el-input v-model="form.ext2" placeholder="请输入${comment}" />
+        <el-form-item label="扩展字段2" prop="ext2">
+          <el-input v-model="form.ext2" placeholder="请输入扩展字段2" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="ext3">
-          <el-input v-model="form.ext3" placeholder="请输入${comment}" />
+        <el-form-item label="扩展字段3" prop="ext3">
+          <el-input v-model="form.ext3" placeholder="请输入扩展字段3" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="orderNo">
-          <el-input v-model="form.orderNo" placeholder="请输入${comment}" />
+        <el-form-item label="排序号" prop="orderNo">
+          <el-input v-model="form.orderNo" placeholder="请输入排序号" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -252,7 +252,7 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
-/** 查询【请填写功能名称】列表 */
+/** 查询金蝶凭证配置列表 */
 function getList() {
   loading.value = true
   listConfig(queryParams.value).then(response => {
@@ -310,7 +310,7 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset()
   open.value = true
-  title.value = "添加【请填写功能名称】"
+  title.value = "添加金蝶凭证配置"
 }
 
 /** 修改按钮操作 */
@@ -320,7 +320,7 @@ function handleUpdate(row) {
   getConfig(_id).then(response => {
     form.value = response.data
     open.value = true
-    title.value = "修改【请填写功能名称】"
+    title.value = "修改金蝶凭证配置"
   })
 }
 
@@ -348,7 +348,7 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value
-  proxy.$modal.confirm('是否确认删除【请填写功能名称】编号为"' + _ids + '"的数据项？').then(function() {
+  proxy.$modal.confirm('是否确认删除金蝶凭证配置编号为"' + _ids + '"的数据项？').then(function() {
     return delConfig(_ids)
   }).then(() => {
     getList()
