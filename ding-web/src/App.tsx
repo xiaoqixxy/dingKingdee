@@ -150,10 +150,12 @@ interface SortConfig {
 
 interface VoucherConfigItem {
   id?: number;
-  voucherName: string;
+  voucherName?: string;
+  name?: string;
   orderNo?: number;
   serverUrl?: string;
   cid?: string;
+  cId?: string;
   userName?: string;
   appId?: string;
   appSecret?: string;
@@ -541,11 +543,11 @@ function App() {
   const handleEditConfig = (item: VoucherConfigItem) => {
     setEditingVoucherId(item.id || null);
     setSyncMode(false);
-    setVoucherName(item.voucherName || "");
+    setVoucherName(item.voucherName || item.name || "");
     setOrderNo(item.orderNo);
     setKingdeeConfig({
       SERVER_URL: item.serverUrl || "",
-      CID: item.cid || "",
+      CID: item.cid || item.cId || "",
       USER_NAME: item.userName || "",
       APP_ID: item.appId || "",
       APP_SECRET: item.appSecret || "",
@@ -559,14 +561,14 @@ function App() {
     setViewMode("config");
   };
 
-  const handleSyncData = (item: VoucherConfigItem) => {
+  const handleSyncData = async (item: VoucherConfigItem) => {
     setEditingVoucherId(item.id || null);
     setSyncMode(true);
-    setVoucherName(item.voucherName || "");
+    setVoucherName(item.voucherName || item.name || "");
     setOrderNo(item.orderNo);
     setKingdeeConfig({
       SERVER_URL: item.serverUrl || "",
-      CID: item.cid || "",
+      CID: item.cid || item.cId || "",
       USER_NAME: item.userName || "",
       APP_ID: item.appId || "",
       APP_SECRET: item.appSecret || "",
@@ -576,6 +578,7 @@ function App() {
     setSheetFields(item.sheetFields || []);
     setFilterConditions(item.filterConditions || [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }]);
     setSortConfigs(item.sortConfigs || [{ fieldId: "", order: "asc" }]);
+    await fetchFormList();
     setCurrentStep(1);
     setViewMode("config");
   };
@@ -784,13 +787,97 @@ function App() {
       showMessage('请填写完整的金蝶配置信息', 'warning');
       return;
     }
+    if (!voucherName.trim()) {
+      showMessage('请填写凭证名称', 'warning');
+      return;
+    }
     try {
       setLoading(true);
-      await loginToK3Cloud();
-      await fetchFormList();
-      setCurrentStep(1);
+      const validFilters = filterConditions.filter(f => f.fieldId.trim());
+      const validSorts = sortConfigs.filter(s => s.fieldId.trim());
+      const corpId = getCorpIdFromUrl();
+      const submitData: any = {
+        voucherName: voucherName.trim(),
+        name: voucherName.trim(),
+        dingCorpId: corpId,
+        orderNo: orderNo,
+        serverUrl: kingdeeConfig.SERVER_URL.trim(),
+        cid: kingdeeConfig.CID.trim(),
+        cId: kingdeeConfig.CID.trim(),
+        userName: kingdeeConfig.USER_NAME.trim(),
+        appId: kingdeeConfig.APP_ID.trim(),
+        appSecret: kingdeeConfig.APP_SECRET.trim(),
+        selectedFormId,
+        selectedFormName,
+        filterConditions: validFilters,
+        sortConfigs: validSorts,
+        sheetFields,
+      };
+      if (editingVoucherId !== null) {
+        submitData.id = editingVoucherId;
+      }
+      const response = await fetch(API.voucherConfig.saveOrUpdate, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submitData),
+        mode: 'cors',
+      });
+      const result = await response.json();
+      if (result.code === 200) {
+        showMessage('保存成功');
+        handleBackToList();
+      } else {
+        showMessage(result.msg || '保存失败', 'error');
+      }
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : '登录失败', 'error');
+      showMessage(error instanceof Error ? error.message : '保存失败', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyConfig = async (item: VoucherConfigItem) => {
+    try {
+      setLoading(true);
+      const configForLogin = {
+        SERVER_URL: item.serverUrl,
+        CID: item.cid || item.cId,
+        USER_NAME: item.userName,
+        APP_ID: item.appId,
+        APP_SECRET: item.appSecret,
+      };
+      // Temporarily set kingdeeConfig for loginToK3Cloud to use
+      const prevConfig = { ...kingdeeConfig };
+      Object.keys(configForLogin).forEach((key) => {
+        (kingdeeConfig as any)[key] = (configForLogin as any)[key];
+      });
+      await loginToK3Cloud();
+      // Restore original config
+      Object.keys(prevConfig).forEach((key) => {
+        (kingdeeConfig as any)[key] = (prevConfig as any)[key];
+      });
+      showMessage('连接成功', 'success');
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : '连接失败', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteConfig = async (item: VoucherConfigItem) => {
+    if (!window.confirm(`确定要删除配置"${item.voucherName || item.name}"吗？此操作不可恢复。`)) return;
+    try {
+      setLoading(true);
+      const response = await fetch(API.voucherConfig.delete(String(item.id)), { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, mode: 'cors' });
+      const result = await response.json();
+      if (result.code === 200) {
+        showMessage('删除成功');
+        fetchVoucherList();
+      } else {
+        showMessage(result.msg || '删除失败', 'error');
+      }
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : '删除失败', 'error');
     } finally {
       setLoading(false);
     }
@@ -1132,9 +1219,11 @@ function App() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
           {voucherList.map((item) => (
             <div key={item.id} style={{ padding: "16px", background: "#fff", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <div style={{ fontWeight: 600, fontSize: "15px", color: "#1d2939", marginBottom: "8px" }}>{item.voucherName}</div>
-              <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "12px" }}>创建时间：{item.createTime}</div>
+              <div style={{ fontWeight: 600, fontSize: "15px", color: "#1d2939", marginBottom: "8px" }}>{item.voucherName || item.name}</div>
+              <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "12px" }}>服务器地址：{item.serverUrl}</div>
               <div style={{ display: "flex", gap: "8px" }}>
+                <button style={{ ...styles.button, background: "#f56c6c", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleDeleteConfig(item)}>删除</button>
+                <button style={{ ...styles.button, background: "#e6a23c", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleVerifyConfig(item)}>校验</button>
                 <button style={{ ...styles.button, ...styles.primaryBtn, padding: "4px 12px", fontSize: "12px" }} onClick={() => handleEditConfig(item)}>编辑</button>
                 <button style={{ ...styles.button, background: "#67c23a", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleSyncData(item)}>同步数据</button>
               </div>
@@ -1178,6 +1267,11 @@ function App() {
     ];
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+        {!syncMode && (
+          <div style={{ marginBottom: '12px' }}>
+            <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>← 返回列表</button>
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px 0', padding: '4px 0' }}>
           {fields.map(({ key, label, icon, placeholder, type }) => (
             <div key={key} style={styles.formItem}>
@@ -1222,7 +1316,7 @@ function App() {
           <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}></div>
         </div>
         <div style={styles.btnGroup}>
-          <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handleStep1Next} disabled={loading}>{loading ? '处理中...' : '下一步'}</button>
+          <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handleStep1Next} disabled={loading}>{loading ? '处理中...' : (syncMode ? '下一步' : '保存')}</button>
         </div>
       </div>
     );
@@ -1271,7 +1365,7 @@ function App() {
         </div>
       )}
       <div style={styles.btnGroup}>
-        <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={() => setCurrentStep(0)}>返回</button>
+        <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>返回列表</button>
         <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handleStep2Next} disabled={loading}>{loading ? '处理中...' : '下一步'}</button>
       </div>
     </div>
@@ -1362,11 +1456,6 @@ function App() {
       ) : (
         <div style={styles.card}>
           {renderProductInfo()}
-          <div style={styles.stepRow}>
-            <div style={styles.stepItem(currentStep === 0)}>1. 连接配置</div>
-            <div style={styles.stepItem(currentStep === 1)}>2. 选择表单</div>
-            <div style={styles.stepItem(currentStep === 2)}>3. 筛选排序</div>
-          </div>
           {currentStep === 0 && renderStep1()}
           {currentStep === 1 && renderStep2()}
           {currentStep === 2 && renderStep3()}
