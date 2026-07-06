@@ -148,6 +148,23 @@ interface SortConfig {
   order: 'asc' | 'desc';
 }
 
+interface VoucherConfigItem {
+  id?: number;
+  voucherName: string;
+  orderNo?: number;
+  serverUrl?: string;
+  cid?: string;
+  userName?: string;
+  appId?: string;
+  appSecret?: string;
+  selectedFormId?: string;
+  selectedFormName?: string;
+  filterConditions?: FilterCondition[];
+  sortConfigs?: SortConfig[];
+  sheetFields?: SheetField[];
+  createTime?: string;
+}
+
 interface ProductInfo {
   id: number;
   productName: string;
@@ -477,11 +494,95 @@ function App() {
   const [filterConditions, setFilterConditions] = useState<FilterCondition[]>([{ fieldId: '', operator: '=', value: '' as FilterConditionValue }]);
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ fieldId: '', order: 'asc' }]);
 
+  const [viewMode, setViewMode] = useState<"list" | "config">("list");
+  const [voucherList, setVoucherList] = useState<VoucherConfigItem[]>([]);
+  const [editingVoucherId, setEditingVoucherId] = useState<number | null>(null);
+  const [syncMode, setSyncMode] = useState(false);
+  const [voucherName, setVoucherName] = useState("");
+  const [orderNo, setOrderNo] = useState<number | undefined>(undefined);
+
   const getCorpIdFromUrl = (): string => {
     const path = window.location.pathname;
     const parts = path.split('/').filter(Boolean);
     const corpId = parts[parts.length - 1] || '';
     return corpId || 'jxdj';
+  };
+
+  const fetchVoucherList = async () => {
+    const corpId = getCorpIdFromUrl();
+    if (!corpId) return;
+    try {
+      const response = await fetch(API.voucherConfig.listByCorpId(corpId), { method: "GET", headers: { "Content-Type": "application/json" }, mode: "cors" });
+      const result = await response.json();
+      if (result.code === 200 && result.data) {
+        setVoucherList(result.data);
+      }
+    } catch (error) {
+      console.error("获取列表失败:", error);
+      showMessage("加载失败", "error");
+    }
+  };
+
+  const handleAddConfig = () => {
+    setEditingVoucherId(null);
+    setSyncMode(false);
+    setVoucherName("");
+    setOrderNo(undefined);
+    setKingdeeConfig(DEFAULT_CONFIG);
+    setSelectedFormId("");
+    setSelectedFormName("");
+    setSheetFields([]);
+    setFilterConditions([{ fieldId: "", operator: "=", value: "" as FilterConditionValue }]);
+    setSortConfigs([{ fieldId: "", order: "asc" }]);
+    setCurrentStep(0);
+    setViewMode("config");
+  };
+
+  const handleEditConfig = (item: VoucherConfigItem) => {
+    setEditingVoucherId(item.id || null);
+    setSyncMode(false);
+    setVoucherName(item.voucherName || "");
+    setOrderNo(item.orderNo);
+    setKingdeeConfig({
+      SERVER_URL: item.serverUrl || "",
+      CID: item.cid || "",
+      USER_NAME: item.userName || "",
+      APP_ID: item.appId || "",
+      APP_SECRET: item.appSecret || "",
+    });
+    setSelectedFormId(item.selectedFormId || "");
+    setSelectedFormName(item.selectedFormName || "");
+    setSheetFields(item.sheetFields || []);
+    setFilterConditions(item.filterConditions || [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }]);
+    setSortConfigs(item.sortConfigs || [{ fieldId: "", order: "asc" }]);
+    setCurrentStep(0);
+    setViewMode("config");
+  };
+
+  const handleSyncData = (item: VoucherConfigItem) => {
+    setEditingVoucherId(item.id || null);
+    setSyncMode(true);
+    setVoucherName(item.voucherName || "");
+    setOrderNo(item.orderNo);
+    setKingdeeConfig({
+      SERVER_URL: item.serverUrl || "",
+      CID: item.cid || "",
+      USER_NAME: item.userName || "",
+      APP_ID: item.appId || "",
+      APP_SECRET: item.appSecret || "",
+    });
+    setSelectedFormId(item.selectedFormId || "");
+    setSelectedFormName(item.selectedFormName || "");
+    setSheetFields(item.sheetFields || []);
+    setFilterConditions(item.filterConditions || [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }]);
+    setSortConfigs(item.sortConfigs || [{ fieldId: "", order: "asc" }]);
+    setCurrentStep(1);
+    setViewMode("config");
+  };
+
+  const handleBackToList = () => {
+    setViewMode("list");
+    fetchVoucherList();
   };
 
   const updateConfig = (key: keyof KingdeeBaseParams, value: string) => {
@@ -624,6 +725,13 @@ function App() {
   useEffect(() => {
     initView({ onReady: () => {}, onError: (e) => console.log('钉钉初始化失败：', e) });
   }, []);
+
+  useEffect(() => {
+    const corpId = getCorpIdFromUrl();
+    if (corpId && viewMode === "list") {
+      fetchVoucherList();
+    }
+  }, [viewMode]);
 
   const fetchFormList = async () => {
     try {
@@ -1010,6 +1118,33 @@ function App() {
   };
 
 
+  const renderVoucherList = () => (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#1d2939" }}>配置列表</h3>
+        <button style={{ ...styles.button, ...styles.primaryBtn, padding: "6px 16px", fontSize: "14px" }} onClick={handleAddConfig}>+ 新增配置</button>
+      </div>
+      {voucherList.length === 0 ? (
+        <div style={{ textAlign: "center", color: "#b0b8c1", padding: "40px", fontSize: "14px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #e5e7eb" }}>
+          暂无配置，点击右上角添加
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
+          {voucherList.map((item) => (
+            <div key={item.id} style={{ padding: "16px", background: "#fff", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div style={{ fontWeight: 600, fontSize: "15px", color: "#1d2939", marginBottom: "8px" }}>{item.voucherName}</div>
+              <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "12px" }}>创建时间：{item.createTime}</div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button style={{ ...styles.button, ...styles.primaryBtn, padding: "4px 12px", fontSize: "12px" }} onClick={() => handleEditConfig(item)}>编辑</button>
+                <button style={{ ...styles.button, background: "#67c23a", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleSyncData(item)}>同步数据</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   const renderProductInfo = () => {
     if (productLoading) return <div style={styles.loading}>加载产品信息中...</div>;
     if (!currentProduct) return null;
@@ -1062,6 +1197,29 @@ function App() {
               </div>
             </div>
           ))}
+        </div>
+        <hr style={{ ...styles.hr, margin: "16px 0" }} />
+        <div style={styles.formItem}>
+          <label style={styles.label}>
+            <span style={styles.labelIcon}>馃搵</span>
+            凭证名称 <span style={styles.required}>*</span>
+          </label>
+          <div style={styles.inputWrapper}>
+            <div style={styles.inputIconBox}>馃搵</div>
+            <input type="text" style={styles.input} value={voucherName} onChange={(e) => setVoucherName(e.target.value)} placeholder="凭证名称" />
+          </div>
+          <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}></div>
+        </div>
+        <div style={styles.formItem}>
+          <label style={styles.label}>
+            <span style={styles.labelIcon}>鈫曪笍</span>
+            排序号 <span style={{ color: "#9ca3af", fontWeight: 400 }}>(可选)</span>
+          </label>
+          <div style={styles.inputWrapper}>
+            <div style={styles.inputIconBox}>鈫曪笍</div>
+            <input type="number" style={styles.input} value={orderNo ?? ""} onChange={(e) => setOrderNo(e.target.value ? parseInt(e.target.value) : undefined)} placeholder="排序号" />
+          </div>
+          <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}></div>
         </div>
         <div style={styles.btnGroup}>
           <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handleStep1Next} disabled={loading}>{loading ? '处理中...' : '下一步'}</button>
@@ -1177,6 +1335,23 @@ function App() {
       </div>
     );
   };
+
+  if (viewMode === "list") {
+    return (
+      <div style={styles.container}>
+        {renderPayDialog()}
+        {renderChannelDialog()}
+        {upgradeDialogVisible ? (
+          renderUpgradeDialog()
+        ) : (
+          <div style={styles.card}>
+            {renderProductInfo()}
+            {renderVoucherList()}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
