@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.KingdeeVoucherConfigMapper">
+    
+    <resultMap type="KingdeeVoucherConfig" id="KingdeeVoucherConfigResult">
+        <result property="id"    column="id"    />
+        <result property="name"    column="name"    />
+        <result property="dingCorpId"    column="ding_corp_id"    />
+        <result property="serverUrl"    column="server_url"    />
+        <result property="cId"    column="c_id"    />
+        <result property="userName"    column="user_name"    />
+        <result property="appId"    column="app_id"    />
+        <result property="appSecret"    column="app_secret"    />
+        <result property="ext1"    column="ext1"    />
+        <result property="ext2"    column="ext2"    />
+        <result property="ext3"    column="ext3"    />
+        <result property="orderNo"    column="order_no"    />
+    </resultMap>
+
+    <sql id="selectKingdeeVoucherConfigVo">
+        select id, name, ding_corp_id, server_url, c_id, user_name, app_id, app_secret, ext1, ext2, ext3, order_no from kingdee_voucher_config
+    </sql>
+
+    <select id="selectKingdeeVoucherConfigList" parameterType="KingdeeVoucherConfig" resultMap="KingdeeVoucherConfigResult">
+        <include refid="selectKingdeeVoucherConfigVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="dingCorpId != null  and dingCorpId != ''"> and ding_corp_id = #{dingCorpId}</if>
+            <if test="serverUrl != null  and serverUrl != ''"> and server_url = #{serverUrl}</if>
+            <if test="cId != null  and cId != ''"> and c_id = #{cId}</if>
+            <if test="userName != null  and userName != ''"> and user_name like concat('%', #{userName}, '%')</if>
+            <if test="appId != null  and appId != ''"> and app_id = #{appId}</if>
+            <if test="appSecret != null  and appSecret != ''"> and app_secret = #{appSecret}</if>
+            <if test="ext1 != null  and ext1 != ''"> and ext1 = #{ext1}</if>
+            <if test="ext2 != null  and ext2 != ''"> and ext2 = #{ext2}</if>
+            <if test="ext3 != null  and ext3 != ''"> and ext3 = #{ext3}</if>
+            <if test="orderNo != null "> and order_no = #{orderNo}</if>
+        </where>
+    </select>
+    
+    <select id="selectKingdeeVoucherConfigById" parameterType="String" resultMap="KingdeeVoucherConfigResult">
+        <include refid="selectKingdeeVoucherConfigVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertKingdeeVoucherConfig" parameterType="KingdeeVoucherConfig">
+        insert into kingdee_voucher_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="name != null">name,</if>
+            <if test="dingCorpId != null">ding_corp_id,</if>
+            <if test="serverUrl != null">server_url,</if>
+            <if test="cId != null">c_id,</if>
+            <if test="userName != null">user_name,</if>
+            <if test="appId != null">app_id,</if>
+            <if test="appSecret != null">app_secret,</if>
+            <if test="ext1 != null">ext1,</if>
+            <if test="ext2 != null">ext2,</if>
+            <if test="ext3 != null">ext3,</if>
+            <if test="orderNo != null">order_no,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="name != null">#{name},</if>
+            <if test="dingCorpId != null">#{dingCorpId},</if>
+            <if test="serverUrl != null">#{serverUrl},</if>
+            <if test="cId != null">#{cId},</if>
+            <if test="userName != null">#{userName},</if>
+            <if test="appId != null">#{appId},</if>
+            <if test="appSecret != null">#{appSecret},</if>
+            <if test="ext1 != null">#{ext1},</if>
+            <if test="ext2 != null">#{ext2},</if>
+            <if test="ext3 != null">#{ext3},</if>
+            <if test="orderNo != null">#{orderNo},</if>
+         </trim>
+    </insert>
+
+    <update id="updateKingdeeVoucherConfig" parameterType="KingdeeVoucherConfig">
+        update kingdee_voucher_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="dingCorpId != null">ding_corp_id = #{dingCorpId},</if>
+            <if test="serverUrl != null">server_url = #{serverUrl},</if>
+            <if test="cId != null">c_id = #{cId},</if>
+            <if test="userName != null">user_name = #{userName},</if>
+            <if test="appId != null">app_id = #{appId},</if>
+            <if test="appSecret != null">app_secret = #{appSecret},</if>
+            <if test="ext1 != null">ext1 = #{ext1},</if>
+            <if test="ext2 != null">ext2 = #{ext2},</if>
+            <if test="ext3 != null">ext3 = #{ext3},</if>
+            <if test="orderNo != null">order_no = #{orderNo},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteKingdeeVoucherConfigById" parameterType="String">
+        delete from kingdee_voucher_config where id = #{id}
+    </delete>
+
+    <delete id="deleteKingdeeVoucherConfigByIds" parameterType="String">
+        delete from kingdee_voucher_config where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

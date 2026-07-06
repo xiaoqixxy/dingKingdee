@@ -37,10 +37,15 @@
 - 第三步（筛选排序）Section 改为卡片样式，条件行加浅灰背景，标题配 emoji 图标，空状态用虚线边框提示框
 
 ## 对公付款群聊配置
-- 点击「对公付款」弹出群聊卡片弹窗（非直接跳转）
+- 点击「对公付款」直接 window.open 跳转加群链接（无中间弹窗）
 - 钉钉群名：金蝶云星空连接器服务群
 - chatId: chat8ccf90a85881999e8d7d01b7dba6848e
 - 所属企业ID: dingbf492c95f9a6eab9acaaa37764f94726
 - 加群链接（有效）：https://qr.dingtalk.com/action/joingroup?code=v1,k1,O7abdQ5/e8+ADgHpaIqTm6ZkxcVyAlWUuOjiQRrCBnGdR7ksupjDEA==&_dt_no_comment=1&origin=11
 - 注意：dingtalk://...chatId=xxx 协议无效，会报「二维码校验失败」；必须使用 qr.dingtalk.com 邀请链接中的 code 参数
-- state: showGroupChatDialog；渲染函数: renderGroupChatDialog；弹窗宽度 480px
+
+## MySQL同步AI表格功能
+- 用户有「MySQL同步到AI表格」独立功能模块，已有内部说明文档
+- 配置流程三步：Step1 授权账号（含 IP 白名单）→ Step2 同步配置 → Step3 字段与同步机制选择
+- 高级功能（专业版/企业版）：修改字段名、自定义 SQL 查询、自定义视图、自定义索引
+- 已基于该文档生成格式化使用手册（Markdown），套餐数据与业务规则对齐

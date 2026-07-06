@@ -162,11 +162,11 @@ interface ProductInfo {
 }
 
 const DEFAULT_CONFIG: KingdeeBaseParams = {
-  SERVER_URL: 'http://1.95.15.142:1001/k3cloud',
-  CID: '65a14d62b909ef',
-  USER_NAME: 'administrator',
-  APP_ID: '307315_3cbJX7FFUpHVw5+Pw+QNyb9u2jTd5orL',
-  APP_SECRET: '383335b1f75b4fbdbed9c920d2175a34',
+  SERVER_URL: '',
+  CID: '',
+  USER_NAME: '',
+  APP_ID: '',
+  APP_SECRET: '',
 };
 
 const OPERATORS = ['=', '!=', '>', '>=', '<', '<=', '包含', '不包含'];
@@ -460,7 +460,6 @@ function App() {
   const [upgradeDialogVisible, setUpgradeDialogVisible] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<PackageOption | null>(null);
   const [payDialogVisible, setPayDialogVisible] = useState(false);
-  const [showGroupChatDialog, setShowGroupChatDialog] = useState(false);
   const [payInfo, setPayInfo] = useState<{ orderNo: string; qrCode: string; channelName: string; expireTime: string }>({ orderNo: '', qrCode: '', channelName: '', expireTime: '' });
   const [payCountdown, setPayCountdown] = useState('');
   const [selectedPayChannel, setSelectedPayChannel] = useState('alipay');
@@ -996,7 +995,7 @@ function App() {
               <div key={ch.value} style={{ ...styles.channelItem, background: (ch as any).isTransfer ? '#fef0f0' : '#f5f7fa' }} onClick={() => {
                 if ((ch as any).isTransfer) {
                   setChannelDialogVisible(false);
-                  setShowGroupChatDialog(true);
+                  window.open('https://qr.dingtalk.com/action/joingroup?code=v1,k1,O7abdQ5/e8+ADgHpaIqTm6ZkxcVyAlWUuOjiQRrCBnGdR7ksupjDEA==&_dt_no_comment=1&origin=11', '_blank');
                 } else {
                   handleConfirmPay(ch.value);
                 }
@@ -1010,64 +1009,6 @@ function App() {
     );
   };
 
-  const renderGroupChatDialog = () => {
-    if (!showGroupChatDialog) return null;
-    const groupName = '金蝶云星空连接器服务群';
-    const joinUrl = 'https://qr.dingtalk.com/action/joingroup?code=v1,k1,O7abdQ5/e8+ADgHpaIqTm6ZkxcVyAlWUuOjiQRrCBnGdR7ksupjDEA==&_dt_no_comment=1&origin=11';
-    return (
-      <div style={styles.dialogOverlay} onClick={() => setShowGroupChatDialog(false)}>
-        <div style={{ ...styles.dialogContent, width: '480px' }} onClick={(e) => e.stopPropagation()}>
-          <div style={styles.dialogHeader}>
-            <h3 style={{ margin: 0, fontSize: '15px' }}>对公付款服务支持</h3>
-            <button style={styles.dialogClose} onClick={() => setShowGroupChatDialog(false)}>×</button>
-          </div>
-          <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-            <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', textAlign: 'center', lineHeight: 1.6 }}>
-              对公付款请联系我们的服务群，<br />工作人员将协助您完成付款流程。
-            </p>
-            {/* 群聊卡片 */}
-            <div style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 100%)',
-              border: '1.5px solid #91caff',
-              borderRadius: '10px',
-              padding: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-            }}>
-              {/* 群头像 */}
-              <div style={{
-                width: '48px', height: '48px', borderRadius: '12px',
-                background: 'linear-gradient(135deg, #1677ff 0%, #4096ff 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '22px', flexShrink: 0, boxShadow: '0 2px 8px rgba(22,119,255,0.3)',
-              }}>💬</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', color: '#1d2939', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {groupName}
-                </div>
-                <div style={{ fontSize: '12px', color: '#9ca3af' }}>钉钉群聊 · 点击下方按钮加入</div>
-              </div>
-            </div>
-            {/* 加入按钮 */}
-            <button
-              style={{ ...styles.button, ...styles.primaryBtn, width: '100%', textAlign: 'center', marginRight: 0, padding: '10px 0', fontSize: '14px', borderRadius: '8px' }}
-              onClick={() => { window.open(joinUrl, '_blank'); }}
-            >
-              加入该群
-            </button>
-            <button
-              style={{ ...styles.button, ...styles.defaultBtn, width: '100%', textAlign: 'center', marginRight: 0, padding: '8px 0', fontSize: '13px', borderRadius: '8px' }}
-              onClick={() => setShowGroupChatDialog(false)}
-            >
-              取消
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const renderProductInfo = () => {
     if (productLoading) return <div style={styles.loading}>加载产品信息中...</div>;
@@ -1241,7 +1182,6 @@ function App() {
     <div style={styles.container}>
       {renderPayDialog()}
       {renderChannelDialog()}
-      {renderGroupChatDialog()}
       {upgradeDialogVisible ? (
         renderUpgradeDialog()
       ) : (
