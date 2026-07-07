@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { initView } from 'dingtalk-docs-cool-app';
 import { API } from './config/api';
 import './App.css';
@@ -193,11 +193,11 @@ const OPERATORS = ['=', '!=', '>', '>=', '<', '<=', '包含', '不包含'];
 const styles: Record<string, any> = {
   container: { width: '800px', height: '620px', margin: '0 auto', boxSizing: 'border-box' as const, overflow: 'hidden' },
   card: {
-    padding: '16px 20px',
+    padding: '24px 32px',
     background: '#fff',
     borderRadius: '12px',
-    boxShadow: '0 4px 16px rgba(22,119,255,0.12)',
-    border: '1px solid rgba(22,119,255,0.08)',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+    border: '1px solid #e5e7eb',
     height: '100%',
     boxSizing: 'border-box' as const,
     overflow: 'auto',
@@ -206,11 +206,11 @@ const styles: Record<string, any> = {
   },
   title: { textAlign: 'center', marginBottom: '28px', color: '#1d2939', fontSize: '20px', fontWeight: 700, letterSpacing: '0.3px' },
   stepRow: {
-    marginBottom: '12px',
+    marginBottom: '16px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '8px 16px',
+    padding: '12px 20px',
     background: '#f8fafc',
     borderRadius: '8px',
     border: '1px solid #e5e7eb',
@@ -227,48 +227,48 @@ const styles: Record<string, any> = {
     gap: '6px',
     transition: 'all 0.25s',
   }),
-  formItem: { marginBottom: '8px', display: 'flex', flexDirection: 'column' as const, gap: '4px' },
-  label: { color: '#374151', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' },
-  labelIcon: { fontSize: '14px', lineHeight: 1 },
-  inputWrapper: { display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: '6px', background: '#fff', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' },
-  inputIconBox: { width: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', color: '#9ca3af', flexShrink: 0, borderRight: '1px solid #f0f0f0', background: '#fafafa', alignSelf: 'stretch' as const },
+  formItem: { marginBottom: '20px', display: 'flex', flexDirection: 'column' as const, gap: '8px' },
+  label: { color: '#374151', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' },
+  labelIcon: { fontSize: '16px', lineHeight: 1 },
+  inputWrapper: { display: 'flex', alignItems: 'center', border: '1px solid #d9d9d9', borderRadius: '8px', background: '#fff', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' },
+  inputIconBox: { width: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#bfbfbf', flexShrink: 0, borderRight: '1px solid #f0f0f0', background: '#fafafa', alignSelf: 'stretch' as const },
   input: {
     flex: 1,
-    padding: '7px 10px',
+    padding: '10px 12px',
     border: 'none',
-    fontSize: '13px',
+    fontSize: '14px',
     color: '#1d2939',
     outline: 'none',
     background: 'transparent',
   },
   select: {
     flex: 1,
-    padding: '7px 10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '13px',
+    padding: '10px 12px',
+    border: '1px solid #d9d9d9',
+    borderRadius: '8px',
+    fontSize: '14px',
     background: '#fff',
     color: '#1d2939',
     outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
   },
-  button: { padding: '8px 18px', fontSize: '14px', borderRadius: '4px', border: 'none', cursor: 'pointer', marginRight: '10px', fontWeight: 500, transition: 'all 0.2s' },
+  button: { padding: '10px 24px', fontSize: '14px', borderRadius: '8px', border: 'none', cursor: 'pointer', marginRight: '12px', fontWeight: 500, transition: 'all 0.2s' },
   primaryBtn: { background: '#1677ff', color: '#fff' },
-  defaultBtn: { background: '#fff', border: '1px solid #d1d5db', color: '#374151' },
-  dangerBtn: { background: '#ff4d4f', color: '#fff', padding: '5px 10px', fontSize: '12px', borderRadius: '4px' },
-  btnGroup: { display: 'flex', justifyContent: 'center', marginTop: '14px', gap: '12px' },
-  sectionTitle: { margin: '0 0 0', color: '#1d2939', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' },
-  conditionRow: { marginBottom: '8px', display: 'flex', gap: '8px', alignItems: 'center', background: '#f8fafc', borderRadius: '8px', padding: '8px 10px', border: '1px solid #f0f0f0' },
-  filterSection: { marginBottom: '16px', background: '#fff', borderRadius: '10px', border: '1px solid #e5e7eb', padding: '12px 14px' },
-  filterHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' },
-  hr: { margin: '24px 0', border: 'none', borderTop: '1px solid #e5e7eb' },
-  loading: { textAlign: 'center', padding: '20px', color: '#6b7280' },
+  defaultBtn: { background: '#fff', border: '1px solid #d9d9d9', color: '#374151' },
+  dangerBtn: { background: '#ff4d4f', color: '#fff', padding: '6px 14px', fontSize: '13px', borderRadius: '6px' },
+  btnGroup: { display: 'flex', justifyContent: 'center', marginTop: '24px', gap: '16px' },
+  sectionTitle: { margin: '0 0 0', color: '#1d2939', fontWeight: 700, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' },
+  conditionRow: { marginBottom: '12px', display: 'flex', gap: '12px', alignItems: 'center', background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', border: '1px solid #f0f0f0' },
+  filterSection: { marginBottom: '20px', background: '#fff', borderRadius: '10px', border: '1px solid #e5e7eb', padding: '16px 18px' },
+  filterHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' },
+  hr: { margin: '28px 0', border: 'none', borderTop: '1px solid #e5e7eb' },
+  loading: { textAlign: 'center', padding: '24px', color: '#6b7280' },
   required: { color: '#ff4d4f' },
   productCard: {
-    padding: '10px 14px',
+    padding: '14px 18px',
     background: 'linear-gradient(135deg, #e6f4ff 0%, #f0f8ff 100%)',
-    borderRadius: '8px',
-    marginBottom: '12px',
+    borderRadius: '10px',
+    marginBottom: '16px',
     border: '1px solid #91caff',
     flexShrink: 0,
   },
@@ -281,7 +281,7 @@ const styles: Record<string, any> = {
     background: color,
     fontWeight: 500,
   }),
-  productInfo: { display: 'flex', flexWrap: 'wrap' as const, gap: '16px', fontSize: '13px', color: '#6b7280', marginTop: '8px' },
+  productInfo: { display: 'flex', flexWrap: 'wrap' as const, gap: '20px', fontSize: '13px', color: '#6b7280', marginTop: '10px' },
   dialogOverlay: {
     position: 'fixed' as const,
     top: 0, left: 0, right: 0, bottom: 0,
@@ -1324,45 +1324,86 @@ function App() {
 
   const renderStep2 = () => (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-      <div style={styles.formItem}>
-        <label style={styles.label}>
-          <span style={styles.labelIcon}>📋</span>
-          选择表单 <span style={styles.required}>*</span>
-        </label>
-        <div style={{ ...styles.inputWrapper, padding: 0 }}>
-          <div style={styles.inputIconBox}>📋</div>
-          <select style={{ ...styles.input, padding: '7px 10px' }} value={isOtherForm ? '__other__' : selectedFormId} onChange={(e) => {
-            if (e.target.value === '__other__') {
-              setIsOtherForm(true); setSelectedFormId(''); setSelectedFormName('');
-            } else {
-              setIsOtherForm(false);
-              const form = formList.find((f) => f.id === e.target.value);
-              setSelectedFormId(e.target.value); setSelectedFormName(form?.name || '');
-            }
-          }}>
-            <option value="">-- 请选择表单 --</option>
-            {formList.map((item) => (<option key={item.id} value={item.id}>{item.name}</option>))}
-            <option value="__other__">其他表单</option>
-          </select>
-        </div>
-      </div>
-      {isOtherForm && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px 0' }}>
+      {!isOtherForm ? (
+        <>
           <div style={styles.formItem}>
-            <label style={styles.label}><span style={styles.labelIcon}>📝</span>表单名称 <span style={styles.required}>*</span></label>
-            <div style={styles.inputWrapper}>
-              <div style={styles.inputIconBox}>📝</div>
-              <input type="text" style={styles.input} value={otherFormName} onChange={(e) => setOtherFormName(e.target.value)} placeholder="请输入表单名称" />
+            <label style={styles.label}>
+              <span style={styles.labelIcon}>📋</span>
+              选择表单 <span style={styles.required}>*</span>
+            </label>
+            <div style={{ ...styles.inputWrapper, padding: 0 }}>
+              <div style={styles.inputIconBox}>📋</div>
+              <select style={{ ...styles.input, padding: '10px 12px' }} value={selectedFormId} onChange={(e) => {
+                setIsOtherForm(false);
+                const form = formList.find((f) => f.id === e.target.value);
+                setSelectedFormId(e.target.value); setSelectedFormName(form?.name || '');
+              }}>
+                <option value="">-- 请选择表单 --</option>
+                {formList.map((item) => (<option key={item.id} value={item.id}>{item.name}</option>))}
+              </select>
             </div>
           </div>
-          <div style={styles.formItem}>
-            <label style={styles.label}><span style={styles.labelIcon}>🔖</span>表单 ID <span style={styles.required}>*</span></label>
-            <div style={styles.inputWrapper}>
-              <div style={styles.inputIconBox}>🔖</div>
-              <input type="text" style={styles.input} value={otherFormKey} onChange={(e) => setOtherFormKey(e.target.value)} placeholder="请输入表单 ID" />
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <button 
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: '#1677ff', 
+                fontSize: '14px', 
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                padding: '8px 16px'
+              }} 
+              onClick={() => {
+                setIsOtherForm(true);
+                setSelectedFormId('');
+                setSelectedFormName('');
+              }}
+            >
+              + 使用其他表单
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#374151' }}>填写自定义表单信息</h4>
+            <button 
+              style={{ 
+                background: 'none', 
+                border: '1px solid #d9d9d9', 
+                borderRadius: '6px',
+                color: '#6b7280', 
+                fontSize: '13px', 
+                cursor: 'pointer',
+                padding: '6px 14px'
+              }} 
+              onClick={() => {
+                setIsOtherForm(false);
+                setOtherFormName('');
+                setOtherFormKey('');
+              }}
+            >
+              返回选择列表
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px 0' }}>
+            <div style={styles.formItem}>
+              <label style={styles.label}><span style={styles.labelIcon}>📝</span>表单名称 <span style={styles.required}>*</span></label>
+              <div style={styles.inputWrapper}>
+                <div style={styles.inputIconBox}>📝</div>
+                <input type="text" style={styles.input} value={otherFormName} onChange={(e) => setOtherFormName(e.target.value)} placeholder="请输入表单名称" />
+              </div>
+            </div>
+            <div style={styles.formItem}>
+              <label style={styles.label}><span style={styles.labelIcon}>🔖</span>表单 ID <span style={styles.required}>*</span></label>
+              <div style={styles.inputWrapper}>
+                <div style={styles.inputIconBox}></div>
+                <input type="text" style={styles.input} value={otherFormKey} onChange={(e) => setOtherFormKey(e.target.value)} placeholder="请输入表单 ID" />
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
       <div style={styles.btnGroup}>
         <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>返回列表</button>
