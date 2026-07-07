@@ -490,6 +490,9 @@ function App() {
   const [isOtherForm, setIsOtherForm] = useState(false);
   const [otherFormName, setOtherFormName] = useState('');
   const [otherFormKey, setOtherFormKey] = useState('');
+  const [formSearchText, setFormSearchText] = useState('');
+  const [formDropdownOpen, setFormDropdownOpen] = useState(false);
+  const [displayValue, setDisplayValue] = useState('');
 
   const [sheetFields, setSheetFields] = useState<SheetField[]>([]);
   const [fieldLoading, setFieldLoading] = useState(false);
@@ -728,6 +731,20 @@ function App() {
   useEffect(() => {
     initView({ onReady: () => {}, onError: (e) => console.log('钉钉初始化失败：', e) });
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // 只有当点击的不是下拉框相关元素时才关闭
+      if (!target.closest('[data-form-dropdown]') && formDropdownOpen) {
+        setFormDropdownOpen(false);
+      }
+    };
+    if (formDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [formDropdownOpen]);
 
   useEffect(() => {
     const corpId = getCorpIdFromUrl();
@@ -1326,22 +1343,128 @@ function App() {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
       {!isOtherForm ? (
         <>
-          <div style={styles.formItem}>
+          <div style={{ ...styles.formItem, position: 'relative' }}>
             <label style={styles.label}>
               <span style={styles.labelIcon}>📋</span>
               选择表单 <span style={styles.required}>*</span>
             </label>
-            <div style={{ ...styles.inputWrapper, padding: 0 }}>
-              <div style={styles.inputIconBox}>📋</div>
-              <select style={{ ...styles.input, padding: '10px 12px' }} value={selectedFormId} onChange={(e) => {
-                setIsOtherForm(false);
-                const form = formList.find((f) => f.id === e.target.value);
-                setSelectedFormId(e.target.value); setSelectedFormName(form?.name || '');
-              }}>
-                <option value="">-- 请选择表单 --</option>
-                {formList.map((item) => (<option key={item.id} value={item.id}>{item.name}</option>))}
-              </select>
+            <div 
+              data-form-dropdown="true"
+              style={{ ...styles.inputWrapper, padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }} 
+              onClick={(e) => {
+                // 只有点击图标或箭头区域才切换下拉框
+                const target = e.target as HTMLElement;
+                if (target.closest('[style*="inputIconBox"]') || target.closest('[style*="paddingRight"]')) {
+                  setFormDropdownOpen(!formDropdownOpen);
+                }
+              }}
+            >
+              <div style={styles.inputIconBox}></div>
+              <input 
+                type="text" 
+                style={{ ...styles.input, padding: '10px 12px' }} 
+                value={displayValue}
+                placeholder="-- 请选择或搜索表单 --"
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDisplayValue(val);
+                  setFormSearchText(val);
+                  setFormDropdownOpen(true);
+                  // 如果清空了输入，清除选中状态
+                  if (!val.trim()) {
+                    setSelectedFormId('');
+                    setSelectedFormName('');
+                  }
+                }}
+                onFocus={() => {
+                  setFormDropdownOpen(true);
+                  // 聚焦时如果有选中的表单名，清空显示让用户重新输入
+                  if (selectedFormName && !formSearchText) {
+                    setDisplayValue('');
+                    setFormSearchText('');
+                  }
+                }}
+                onBlur={() => {
+                  // 失焦时如果没有输入搜索内容但有选中的表单，恢复显示表单名
+                  if (!formSearchText && selectedFormName) {
+                    setDisplayValue(selectedFormName);
+                  }
+                }}
+              />
+              <div 
+                style={{ paddingRight: '12px', color: '#bfbfbf', fontSize: '12px', cursor: 'pointer' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFormDropdownOpen(!formDropdownOpen);
+                }}
+              >
+                {formDropdownOpen ? '▲' : '▼'}
+              </div>
             </div>
+            {formDropdownOpen && (
+              <div data-form-dropdown="true" style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                maxHeight: '240px',
+                overflowY: 'auto',
+                background: '#fff',
+                border: '1px solid #d9d9d9',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                zIndex: 1000,
+                marginTop: '4px',
+              }}>
+                {formList
+                  .filter(item => 
+                    !formSearchText || 
+                    item.name.toLowerCase().includes(formSearchText.toLowerCase())
+                  )
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        padding: '10px 12px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        background: selectedFormId === item.id ? '#e6f4ff' : '#fff',
+                        borderBottom: '1px solid #f0f0f0',
+                        transition: 'background 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedFormId !== item.id) {
+                          e.currentTarget.style.background = '#f5f5f5';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedFormId !== item.id) {
+                          e.currentTarget.style.background = '#fff';
+                        }
+                      }}
+                      onClick={() => {
+                        setSelectedFormId(item.id);
+                        setSelectedFormName(item.name);
+                        setDisplayValue(item.name);
+                        setFormSearchText('');
+                        setFormDropdownOpen(false);
+                      }}
+                    >
+                      {item.name}
+                    </div>
+                  ))
+                }
+                {formList.filter(item => 
+                  !formSearchText || 
+                  item.name.toLowerCase().includes(formSearchText.toLowerCase())
+                ).length === 0 && (
+                  <div style={{ padding: '16px', textAlign: 'center', color: '#bfbfbf', fontSize: '13px' }}>
+                    未找到匹配的表单
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <button 
@@ -1354,10 +1477,13 @@ function App() {
                 textDecoration: 'underline',
                 padding: '8px 16px'
               }} 
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setIsOtherForm(true);
                 setSelectedFormId('');
                 setSelectedFormName('');
+                setDisplayValue('');
+                setFormSearchText('');
               }}
             >
               + 使用其他表单
