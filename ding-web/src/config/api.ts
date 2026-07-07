@@ -1,5 +1,5 @@
 // const API_BASE = 'https://web.xiexinyang.com/prod-api';
-const API_BASE = 'http://localhost:1007';
+const API_BASE = 'http://localhost:1007';//本地
 
 export const API = {
   // 登录
