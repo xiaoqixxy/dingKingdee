@@ -242,25 +242,42 @@ public class ContoryUtil {
      * // 输出：FBillNo = 'PUR00001'
      * </pre>
      */
-    private static String buildFilterString(JSONArray filterConditions) {
-        if (filterConditions == null || filterConditions.isEmpty()) {
-            return "";
-        }
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < filterConditions.size(); i++) {
-            if (i != 0) {
-                result.append(" and ");
-            }
-            JSONObject filterCondition = filterConditions.getJSONObject(i);
-            result.append(filterCondition.getString("fieldId"));
-            result.append(" ");
-            result.append(filterCondition.getString("operator"));
-            result.append(" '");
-            result.append(filterCondition.getString("value"));
-            result.append("'");
-        }
-        return result.toString();
-    }
+//    private static String buildFilterString(JSONArray filterConditions) {
+//        if (filterConditions == null || filterConditions.isEmpty()) {
+//            return "";
+//        }
+//        StringBuilder result = new StringBuilder();
+//        for (int i = 0; i < filterConditions.size(); i++) {
+//            if (i != 0) {
+//                result.append(" and ");
+//            }
+//            JSONObject filterCondition = filterConditions.getJSONObject(i);
+//            if ("包含于".equals(filterCondition.getString("operator"))) {
+//                List<String> values = filterCondition.getList("value",String.class);
+//                result.append(" ( ");
+//                for (int i1 = 0; i1 < values.size(); i1++) {
+//                    if (i1 != 0) {
+//                        result.append(" or ");
+//                    }
+//                    result.append(filterCondition.getString("fieldId"));
+//                    result.append(" ");
+//                    result.append(filterCondition.getString(" = "));
+//                    result.append(" '");
+//                    result.append(values.get(i1));
+//                    result.append("' ");
+//                }
+//                result.append(" ) ");
+//            }else {
+//                result.append(filterCondition.getString("fieldId"));
+//                result.append(" ");
+//                result.append(filterCondition.getString("operator"));
+//                result.append(" '");
+//                result.append(filterCondition.getString("value"));
+//                result.append("' ");
+//            }
+//        }
+//        return result.toString();
+//    }
 
     /**
      * 构建金蝶排序字符串
@@ -385,5 +402,162 @@ public class ContoryUtil {
         else {
             return String.valueOf(fieldValue);
         }
+    }
+
+
+    /**
+     * 构建金蝶过滤条件字符串
+     * <p>
+     * 将钉钉格式的过滤条件转换为金蝶API的FilterString格式。
+     * 支持条件组结构,组内条件使用AND连接,组间使用OR连接。
+     *
+     * @param filterConditions 钉钉格式的过滤条件数组(支持嵌套的条件组结构)
+     *                         扁平结构: [{fieldId, operator, value}, ...]
+     *                         分组结构: [{conditions: [{fieldId, operator, value}, ...]}, ...]
+     * @return 金蝶格式的过滤字符串
+     * @example
+     * <pre>
+     * // 示例1: 扁平结构(向后兼容)
+     * // 输入: [{fieldId: "FBillNo", operator: "=", value: "PUR00001"}]
+     * // 输出: FBillNo = 'PUR00001'
+     *
+     * // 示例2: 分组结构 - 单个组(AND关系)
+     * // 输入: [{conditions: [
+     * //          {fieldId: "FBillNo", operator: "=", value: "PUR00001"},
+     * //          {fieldId: "FDate", operator: ">=", value: "2024-01-01"}
+     * //        ]}]
+     * // 输出: (FBillNo = 'PUR00001' and FDate >= '2024-01-01')
+     *
+     * // 示例3: 分组结构 - 多个组(OR关系)
+     * // 输入: [
+     * //   {conditions: [{fieldId: "FBillNo", operator: "=", value: "PUR00001"}]},
+     * //   {conditions: [{fieldId: "FSupplierId", operator: "=", value: "SUP001"}]}
+     * // ]
+     * // 输出: (FBillNo = 'PUR00001') or (FSupplierId = 'SUP001')
+     * </pre>
+     */
+    private static String buildFilterString(JSONArray filterConditions) {
+        // 空值检查
+        if (filterConditions == null || filterConditions.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder result = new StringBuilder();
+
+        // 判断是否为分组结构:检查第一个元素是否包含"conditions"字段
+        boolean isGrouped = false;
+        if (!filterConditions.isEmpty()) {
+            JSONObject firstItem = filterConditions.getJSONObject(0);
+            isGrouped = firstItem.containsKey("conditions");
+        }
+
+        if (isGrouped) {
+            // ===== 处理分组结构 =====
+            // 遍历每个条件组,组间用 OR 连接
+            for (int groupIndex = 0; groupIndex < filterConditions.size(); groupIndex++) {
+                JSONObject group = filterConditions.getJSONObject(groupIndex);
+                JSONArray conditions = group.getJSONArray("conditions");
+
+                // 跳过空组
+                if (conditions == null || conditions.isEmpty()) {
+                    continue;
+                }
+
+                // 组间添加 OR 分隔符
+                if (groupIndex > 0) {
+                    result.append(" or ");
+                }
+
+                // 构建组内条件(AND连接)
+                String groupFilter = buildGroupFilterString(conditions);
+                if (!groupFilter.isEmpty()) {
+                    // 多条件组需要用括号包裹
+                    if (conditions.size() > 1) {
+                        result.append("(").append(groupFilter).append(")");
+                    } else {
+                        result.append(groupFilter);
+                    }
+                }
+            }
+        } else {
+            // ===== 处理扁平结构(向后兼容) =====
+            // 遍历所有条件,条件间用 AND 连接
+            for (int i = 0; i < filterConditions.size(); i++) {
+                if (i != 0) {
+                    result.append(" and ");
+                }
+                JSONObject filterCondition = filterConditions.getJSONObject(i);
+                result.append(buildSingleCondition(filterCondition));
+            }
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * 构建单个条件组的过滤字符串(组内条件用AND连接)
+     *
+     * @param conditions 条件数组
+     * @return 组内条件的过滤字符串
+     */
+    private static String buildGroupFilterString(JSONArray conditions) {
+        StringBuilder groupResult = new StringBuilder();
+
+        for (int i = 0; i < conditions.size(); i++) {
+            if (i != 0) {
+                groupResult.append(" and ");
+            }
+            JSONObject condition = conditions.getJSONObject(i);
+            groupResult.append(buildSingleCondition(condition));
+        }
+
+        return groupResult.toString();
+    }
+
+    /**
+     * 构建单个条件的过滤字符串
+     * <p>
+     * 支持普通操作符和"包含于"特殊操作符。
+     * "包含于"用于下拉选项字段的多选匹配,转换为 SQL IN 语法。
+     *
+     * @param condition 单个条件对象
+     * @return 单条件的过滤字符串
+     */
+    private static String buildSingleCondition(JSONObject condition) {
+        String fieldId = condition.getString("fieldId");
+        String operator = condition.getString("operator");
+        Object value = condition.get("value");
+
+        // 处理"包含于"操作符(多选匹配)
+        if ("包含于".equals(operator)) {
+            if (value instanceof List) {
+                List<String> values = (List<String>) value;
+                if (values.isEmpty()) {
+                    return "";
+                }
+
+                StringBuilder inClause = new StringBuilder();
+                inClause.append(fieldId).append(" in (");
+
+                for (int i = 0; i < values.size(); i++) {
+                    if (i > 0) {
+                        inClause.append(", ");
+                    }
+                    inClause.append("'").append(values.get(i)).append("'");
+                }
+
+                inClause.append(")");
+                return inClause.toString();
+            }
+            return "";
+        }
+
+        // 处理普通操作符
+        StringBuilder singleResult = new StringBuilder();
+        singleResult.append(fieldId).append(" ");
+        singleResult.append(operator).append(" ");
+        singleResult.append("'").append(value).append("'");
+
+        return singleResult.toString();
     }
 }
