@@ -143,6 +143,10 @@ interface FilterCondition {
   value: FilterConditionValue;
 }
 
+interface FilterConditionGroup {
+  conditions: FilterCondition[];
+}
+
 interface SortConfig {
   fieldId: string;
   order: 'asc' | 'desc';
@@ -188,7 +192,14 @@ const DEFAULT_CONFIG: KingdeeBaseParams = {
   APP_SECRET: '',
 };
 
-const OPERATORS = ['=', '!=', '>', '>=', '<', '<=', '包含', '不包含'];
+const OPERATORS = ['=', '!=', '>', '>=', '<', '<='];
+const DATE_QUICK_SELECTS = [
+  { label: '近7天', value: 'last_7_days' },
+  { label: '近30天', value: 'last_30_days' },
+  { label: '本周', value: 'this_week' },
+  { label: '本月', value: 'this_month' },
+  { label: '本年', value: 'this_year' },
+];
 
 const styles: Record<string, any> = {
   container: { width: '800px', height: '620px', margin: '0 auto', boxSizing: 'border-box' as const, overflow: 'hidden' },
@@ -496,7 +507,7 @@ function App() {
 
   const [sheetFields, setSheetFields] = useState<SheetField[]>([]);
   const [fieldLoading, setFieldLoading] = useState(false);
-  const [filterConditions, setFilterConditions] = useState<FilterCondition[]>([{ fieldId: '', operator: '=', value: '' as FilterConditionValue }]);
+  const [filterConditions, setFilterConditions] = useState<FilterConditionGroup[]>([{ conditions: [{ fieldId: '', operator: '=', value: '' as FilterConditionValue }] }]);
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ fieldId: '', order: 'asc' }]);
 
   const [viewMode, setViewMode] = useState<"list" | "config">("list");
@@ -537,7 +548,7 @@ function App() {
     setSelectedFormId("");
     setSelectedFormName("");
     setSheetFields([]);
-    setFilterConditions([{ fieldId: "", operator: "=", value: "" as FilterConditionValue }]);
+    setFilterConditions([{ conditions: [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }] }]);
     setSortConfigs([{ fieldId: "", order: "asc" }]);
     setCurrentStep(0);
     setViewMode("config");
@@ -558,7 +569,7 @@ function App() {
     setSelectedFormId(item.selectedFormId || "");
     setSelectedFormName(item.selectedFormName || "");
     setSheetFields(item.sheetFields || []);
-    setFilterConditions(item.filterConditions || [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }]);
+    setFilterConditions(item.filterConditions ? [{ conditions: item.filterConditions }] : [{ conditions: [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }] }]);
     setSortConfigs(item.sortConfigs || [{ fieldId: "", order: "asc" }]);
     setCurrentStep(0);
     setViewMode("config");
@@ -579,7 +590,7 @@ function App() {
     setSelectedFormId(item.selectedFormId || "");
     setSelectedFormName(item.selectedFormName || "");
     setSheetFields(item.sheetFields || []);
-    setFilterConditions(item.filterConditions || [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }]);
+    setFilterConditions(item.filterConditions ? [{ conditions: item.filterConditions }] : [{ conditions: [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }] }]);
     setSortConfigs(item.sortConfigs || [{ fieldId: "", order: "asc" }]);
     await fetchFormList();
     setCurrentStep(1);
@@ -810,7 +821,10 @@ function App() {
     }
     try {
       setLoading(true);
-      const validFilters = filterConditions.filter(f => f.fieldId.trim());
+      // 过滤掉空条件,保持嵌套的分组结构
+      const validFilters = filterConditions.map(group => ({
+        conditions: group.conditions.filter(f => f.fieldId.trim())
+      })).filter(group => group.conditions.length > 0);
       const validSorts = sortConfigs.filter(s => s.fieldId.trim());
       const corpId = getCorpIdFromUrl();
       const submitData: any = {
@@ -933,7 +947,10 @@ function App() {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const validFilters = filterConditions.filter(f => f.fieldId.trim());
+      // 过滤掉空条件,保持嵌套的分组结构
+      const validFilters = filterConditions.map(group => ({
+        conditions: group.conditions.filter(f => f.fieldId.trim())
+      })).filter(group => group.conditions.length > 0);
       const validSorts = sortConfigs.filter(s => s.fieldId.trim());
       const submitData = { ...kingdeeConfig, selectedFormId, selectedFormName, filterConditions: validFilters, sortConfigs: validSorts, sheetFields };
       console.log('提交数据：', submitData);
@@ -956,20 +973,56 @@ function App() {
     return `${limit}个`;
   };
 
-  const addFilter = () => {
-    setFilterConditions([...filterConditions, { fieldId: '', operator: '=', value: '' as FilterConditionValue }]);
+  // 在指定组添加条件(AND关系)
+  const addFilter = (groupIndex?: number) => {
+    setFilterConditions(prev => {
+      const newGroups = [...prev];
+      const targetIndex = groupIndex !== undefined ? groupIndex : newGroups.length - 1;
+      newGroups[targetIndex] = {
+        ...newGroups[targetIndex],
+        conditions: [...newGroups[targetIndex].conditions, { fieldId: '', operator: '=', value: '' as FilterConditionValue }]
+      };
+      return newGroups;
+    });
   };
 
-  const removeFilter = (index: number) => {
-    const newFilters = [...filterConditions];
-    newFilters.splice(index, 1);
-    setFilterConditions(newFilters);
+  // 创建新的条件组(OR关系)
+  const addOr = () => {
+    setFilterConditions(prev => [
+      ...prev,
+      { conditions: [{ fieldId: '', operator: '=', value: '' as FilterConditionValue }] }
+    ]);
   };
 
-  const updateFilter = (index: number, key: keyof FilterCondition, value: FilterConditionValue) => {
-    const newFilters = [...filterConditions];
-    (newFilters[index] as any)[key] = value;
-    setFilterConditions(newFilters);
+  // 删除条件或整个组
+  const removeFilter = (groupIndex: number, conditionIndex: number) => {
+    setFilterConditions(prev => {
+      const newGroups = [...prev];
+      const group = newGroups[groupIndex];
+      
+      // 如果组内只有一个条件且不是唯一组,删除整个组
+      if (group.conditions.length === 1 && newGroups.length > 1) {
+        newGroups.splice(groupIndex, 1);
+      } else {
+        // 否则只删除该条件
+        const newConditions = [...group.conditions];
+        newConditions.splice(conditionIndex, 1);
+        newGroups[groupIndex] = { ...group, conditions: newConditions };
+      }
+      
+      return newGroups;
+    });
+  };
+
+  // 更新特定条件
+  const updateFilter = (groupIndex: number, conditionIndex: number, key: keyof FilterCondition, value: FilterConditionValue) => {
+    setFilterConditions(prev => {
+      const newGroups = [...prev];
+      const newConditions = [...newGroups[groupIndex].conditions];
+      (newConditions[conditionIndex] as any)[key] = value;
+      newGroups[groupIndex] = { ...newGroups[groupIndex], conditions: newConditions };
+      return newGroups;
+    });
   };
 
   const addSort = () => {
@@ -1541,31 +1594,135 @@ function App() {
   const renderStep3 = () => {
     if (fieldLoading) return <div style={styles.loading}>加载表单字段中...</div>;
     const getFieldById = (fieldId: string) => sheetFields.find((f) => f.id === fieldId);
-    const renderFilterValue = (filter: FilterCondition, index: number) => {
+    
+    // 根据字段类型获取可用的操作符
+    const getAvailableOperators = (fieldId: string) => {
+      const field = getFieldById(fieldId);
+      if (!field) return OPERATORS;
+      
+      // 下拉选项类型:添加"包含于"操作符
+      if (field.type === 'singleSelect' && field.property?.choices) {
+        return [...OPERATORS, '包含于'];
+      }
+      
+      return OPERATORS;
+    };
+    
+    const renderFilterValue = (filter: FilterCondition, groupIndex: number, conditionIndex: number) => {
       const field = getFieldById(filter.fieldId);
-      if (!field) return <input type="text" style={{ ...styles.input, width: '150px' }} value={filter.value as string} onChange={(e) => updateFilter(index, 'value', e.target.value)} placeholder="筛选值" disabled />;
-      if (field.type === 'date') return <input type="date" style={{ ...styles.input, width: '180px' }} value={filter.value as string} onChange={(e) => updateFilter(index, 'value', e.target.value)} />;
-      if (field.type === 'singleSelect' && field.property?.choices) return <MultiSelect options={field.property.choices} value={Array.isArray(filter.value) ? filter.value : []} onChange={(val) => updateFilter(index, 'value', val)} placeholder="请选择" />;
-      return <input type="text" style={{ ...styles.input, width: '150px' }} value={filter.value as string} onChange={(e) => updateFilter(index, 'value', e.target.value)} placeholder="筛选值" />;
+      if (!field) return <input type="text" style={{ ...styles.input, width: '150px', border: '1px solid #d9d9d9', borderRadius: '8px' }} value={filter.value as string} onChange={(e) => updateFilter(groupIndex, conditionIndex, 'value', e.target.value)} placeholder="筛选值" disabled />;
+      
+      // 日期字段:添加快速时间选择
+      if (field.type === 'date') {
+        const isQuickSelect = typeof filter.value === 'string' && DATE_QUICK_SELECTS.some(qs => qs.value === filter.value);
+        
+        return (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {!isQuickSelect && (
+              <input 
+                type="date" 
+                style={{ ...styles.input, width: '180px', border: '1px solid #d9d9d9', borderRadius: '8px' }} 
+                value={filter.value as string} 
+                onChange={(e) => updateFilter(groupIndex, conditionIndex, 'value', e.target.value)} 
+                placeholder="选择日期"
+              />
+            )}
+            <select 
+              style={{ ...styles.select, width: '120px', fontSize: '12px', padding: '8px' }}
+              value={isQuickSelect ? filter.value : ''}
+              onChange={(e) => updateFilter(groupIndex, conditionIndex, 'value', e.target.value)}
+            >
+              <option value="">自定义</option>
+              {DATE_QUICK_SELECTS.map(item => (
+                <option key={item.value} value={item.value}>{item.label}</option>
+              ))}
+            </select>
+          </div>
+        );
+      }
+      
+      if (field.type === 'singleSelect' && field.property?.choices) return <MultiSelect options={field.property.choices} value={Array.isArray(filter.value) ? filter.value : []} onChange={(val) => updateFilter(groupIndex, conditionIndex, 'value', val)} placeholder="请选择" />;
+      return <input type="text" style={{ ...styles.input, width: '150px', border: '1px solid #d9d9d9', borderRadius: '8px' }} value={filter.value as string} onChange={(e) => updateFilter(groupIndex, conditionIndex, 'value', e.target.value)} placeholder="筛选值" />;
     };
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', paddingRight: '2px' }}>
         <div style={styles.filterSection}>
           <div style={styles.filterHeader}>
             <h4 style={styles.sectionTitle}>🔍 筛选条件</h4>
-            <button style={{ ...styles.button, ...styles.defaultBtn, padding: '4px 12px', fontSize: '12px' }} onClick={addFilter} disabled={sheetFields.length === 0}>+ 添加筛选</button>
           </div>
-          {filterConditions.length === 0 ? <div style={{ textAlign: 'center', color: '#b0b8c1', padding: '12px', fontSize: '13px', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #e5e7eb' }}>暂无筛选条件，点击右侧按钮添加</div> : filterConditions.map((filter, index) => (
-            <div key={index} style={styles.conditionRow}>
-              <select style={{ ...styles.select, width: '200px' }} value={filter.fieldId} onChange={(e) => { updateFilter(index, 'fieldId', e.target.value); updateFilter(index, 'value', ''); }}>
-                <option value="">-- 选择字段 --</option>
-                {sheetFields.map((field) => (<option key={field.id} value={field.id}>{field.name}</option>))}
-              </select>
-              <select style={{ ...styles.select, width: '100px' }} value={filter.operator} onChange={(e) => updateFilter(index, 'operator', e.target.value)}>
-                {OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
-              </select>
-              {renderFilterValue(filter, index)}
-              <button style={{ ...styles.button, ...styles.dangerBtn }} onClick={() => removeFilter(index)}>删除</button>
+          {filterConditions.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#b0b8c1', padding: '12px', fontSize: '13px', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #e5e7eb' }}>暂无筛选条件</div>
+          ) : filterConditions.map((group, groupIndex) => (
+            <div key={groupIndex}>
+              {/* 从第二个组开始显示分隔线 */}
+              {groupIndex > 0 && (
+                <div style={{ borderTop: '1px solid #e5e7eb', margin: '16px 0 12px' }} />
+              )}
+              
+              {/* 当前组内的所有条件(AND关系) */}
+              {group.conditions.map((filter, conditionIndex) => (
+                <div key={conditionIndex} style={{ marginBottom: '12px' }}>
+                  <div style={styles.conditionRow}>
+                    <select style={{ ...styles.select, width: '200px' }} value={filter.fieldId} onChange={(e) => { 
+                      updateFilter(groupIndex, conditionIndex, 'fieldId', e.target.value); 
+                      updateFilter(groupIndex, conditionIndex, 'operator', '=');
+                      updateFilter(groupIndex, conditionIndex, 'value', ''); 
+                    }}>
+                      <option value="">-- 选择字段 --</option>
+                      {sheetFields.map((field) => (<option key={field.id} value={field.id}>{field.name}</option>))}
+                    </select>
+                    <select style={{ ...styles.select, width: '100px' }} value={filter.operator} onChange={(e) => updateFilter(groupIndex, conditionIndex, 'operator', e.target.value)}>
+                      {getAvailableOperators(filter.fieldId).map((op) => (<option key={op} value={op}>{op}</option>))}
+                    </select>
+                    {renderFilterValue(filter, groupIndex, conditionIndex)}
+                    <button style={{ ...styles.button, ...styles.dangerBtn }} onClick={() => removeFilter(groupIndex, conditionIndex)}>删除</button>
+                  </div>
+                </div>
+              ))}
+              
+              {/* 每个组底部显示"并且"和"或"按钮 */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px', marginLeft: '12px' }}>
+                <button 
+                  style={{ 
+                    padding: '6px 16px', 
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '6px',
+                    background: '#fff',
+                    color: '#6b7280',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s'
+                  }}
+                  onClick={() => addFilter(groupIndex)}
+                >
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#7c3aed' }}>+</span>
+                  并且
+                </button>
+                <button 
+                  style={{ 
+                    padding: '6px 16px', 
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '6px',
+                    background: '#fff',
+                    color: '#6b7280',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s'
+                  }}
+                  onClick={addOr}
+                >
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#7c3aed' }}>+</span>
+                  或
+                </button>
+              </div>
             </div>
           ))}
         </div>
