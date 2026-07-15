@@ -144,5 +144,5 @@ public interface K3CloudProxyService {
      * @return 钉钉格式的分页记录数据
      * @throws ParseException 日期解析异常
      */
-    JSONObject recordsWithParams(Integer maxResults, Integer nextToken, String paramsJson) throws ParseException;
+    JSONObject recordsWithParams(Integer maxResults, Integer nextToken, String paramsJson,String corpId) throws ParseException;
 }

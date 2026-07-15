@@ -6,6 +6,10 @@ import com.ruoyi.middle.kingdee.constant.DateConverterUtil;
 import com.ruoyi.middle.kingdee.constant.FieldTypeConstant;
 
 import java.text.ParseException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -323,7 +327,7 @@ public class ContoryUtil {
      * @throws ParseException 日期解析异常
      */
     public static JSONObject kingdeeToDingResult(JSONObject dingFieldData, List<List<Object>> kingdeeData,
-            Integer nextToken, Integer maxResult) throws ParseException {
+            Integer nextToken, Integer maxResult,Integer singleSyncLimit) throws ParseException {
         JSONArray records = new JSONArray();
         JSONArray dingFields = dingFieldData.getJSONArray("fields");
         
@@ -348,10 +352,17 @@ public class ContoryUtil {
         // 构建分页结果
         JSONObject resultJson = new JSONObject();
         if (!records.isEmpty() && records.size() >= maxResult) {
-            // 后续还有数据
-            resultJson.put("nextToken", nextToken + maxResult);
-            resultJson.put("hasMore", true);
-            resultJson.put("records", records);
+            //数量达到权益上线，截断接口
+            if (singleSyncLimit <= nextToken + maxResult) {
+                resultJson.put("nextToken", "");
+                resultJson.put("hasMore", false);
+                resultJson.put("records", records);
+            }else {
+                // 后续还有数据
+                resultJson.put("nextToken", nextToken + maxResult);
+                resultJson.put("hasMore", true);
+                resultJson.put("records", records);
+            }
         } else {
             // 数据已全部返回
             resultJson.put("nextToken", "");
@@ -517,8 +528,9 @@ public class ContoryUtil {
     /**
      * 构建单个条件的过滤字符串
      * <p>
-     * 支持普通操作符和"包含于"特殊操作符。
-     * "包含于"用于下拉选项字段的多选匹配,转换为 SQL IN 语法。
+     * 支持普通操作符、"包含于"特殊操作符和日期占位符解析。
+     * - "包含于":用于下拉选项字段的多选匹配,转换为 SQL IN 语法
+     * - 日期占位符:自动解析为具体日期范围(如 this_year → FDATE >= '2024-01-01' and FDATE <= '2024-12-31')
      *
      * @param condition 单个条件对象
      * @return 单条件的过滤字符串
@@ -530,26 +542,16 @@ public class ContoryUtil {
 
         // 处理"包含于"操作符(多选匹配)
         if ("包含于".equals(operator)) {
-            if (value instanceof List) {
-                List<String> values = (List<String>) value;
-                if (values.isEmpty()) {
-                    return "";
-                }
+            return buildInClause(fieldId, value);
+        }
 
-                StringBuilder inClause = new StringBuilder();
-                inClause.append(fieldId).append(" in (");
-
-                for (int i = 0; i < values.size(); i++) {
-                    if (i > 0) {
-                        inClause.append(", ");
-                    }
-                    inClause.append("'").append(values.get(i)).append("'");
-                }
-
-                inClause.append(")");
-                return inClause.toString();
+        // 处理日期占位符(仅当操作符为 "=" 且值为占位符字符串时)
+        if ("=".equals(operator) && value instanceof String) {
+            String datePlaceholder = (String) value;
+            String resolvedDateFilter = resolveDatePlaceholder(fieldId, datePlaceholder);
+            if (resolvedDateFilter != null) {
+                return resolvedDateFilter;
             }
-            return "";
         }
 
         // 处理普通操作符
@@ -559,5 +561,106 @@ public class ContoryUtil {
         singleResult.append("'").append(value).append("'");
 
         return singleResult.toString();
+    }
+
+    /**
+     * 构建 IN 子句(用于"包含于"操作符)
+     *
+     * @param fieldId 字段名
+     * @param value   值(应为 List<String>)
+     * @return IN 子句字符串
+     */
+    private static String buildInClause(String fieldId, Object value) {
+        if (value instanceof List) {
+            List<String> values = (List<String>) value;
+            if (values.isEmpty()) {
+                return "";
+            }
+
+            StringBuilder inClause = new StringBuilder();
+            inClause.append(fieldId).append(" in (");
+
+            for (int i = 0; i < values.size(); i++) {
+                if (i > 0) {
+                    inClause.append(", ");
+                }
+                inClause.append("'").append(values.get(i)).append("'");
+            }
+
+            inClause.append(")");
+            return inClause.toString();
+        }
+        return "";
+    }
+
+    /**
+     * 解析日期占位符为具体的日期范围过滤表达式
+     * <p>
+     * 支持的占位符(与前端 DATE_QUICK_SELECTS 保持一致):
+     * - last_7_days: 近7天
+     * - last_30_days: 近30天
+     * - this_week: 本周(周一到周日)
+     * - this_month: 本月(1号到月末)
+     * - this_year: 本年(1月1日到12月31日)
+     *
+     * @param fieldId         字段名(如 FDATE)
+     * @param datePlaceholder 日期占位符字符串
+     * @return 解析后的日期范围过滤表达式,若无法识别则返回 null
+     * @example
+     * <pre>
+     * resolveDatePlaceholder("FDATE", "this_year")
+     *   → "FDATE >= '2026-01-01' and FDATE <= '2026-12-31'"
+     *
+     * resolveDatePlaceholder("FDATE", "last_7_days")
+     *   → "FDATE >= '2026-07-03' and FDATE <= '2026-07-09'"
+     * </pre>
+     */
+    private static String resolveDatePlaceholder(String fieldId, String datePlaceholder) {
+        LocalDate today = LocalDate.now();
+
+        LocalDate startDate;
+        LocalDate endDate;
+
+        switch (datePlaceholder) {
+            case "last_7_days":
+                // 近7天: 今天往前推6天到今天(共7天)
+                startDate = today.minusDays(6);
+                endDate = today;
+                break;
+
+            case "last_30_days":
+                // 近30天: 今天往前推29天到今天(共30天)
+                startDate = today.minusDays(29);
+                endDate = today;
+                break;
+
+            case "this_week":
+                // 本周: 本周一到本周日
+                startDate = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                endDate = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+                break;
+
+            case "this_month":
+                // 本月: 本月1号到月末
+                startDate = today.withDayOfMonth(1);
+                endDate = today.with(TemporalAdjusters.lastDayOfMonth());
+                break;
+
+            case "this_year":
+                // 本年: 1月1日到12月31日
+                startDate = today.withDayOfYear(1);
+                endDate = today.with(TemporalAdjusters.lastDayOfYear());
+                break;
+
+            default:
+                // 无法识别的占位符,返回 null 让调用方按普通值处理
+                return null;
+        }
+
+        // 构建日期范围过滤表达式: FIELD >= 'startDate' and FIELD <= 'endDate'
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        return String.format("%s >= '%s' and %s <= '%s'",
+                fieldId, startDate.format(formatter),
+                fieldId, endDate.format(formatter));
     }
 }

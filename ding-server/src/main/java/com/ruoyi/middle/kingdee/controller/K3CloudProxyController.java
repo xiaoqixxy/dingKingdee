@@ -98,11 +98,13 @@ public class K3CloudProxyController {
             String nextToken = request.getString("nextToken");
             String paramsJson = request.getString("params");
             JSONObject context = request.getJSONObject("context");
+            String corpId = context.getString("corpId");
             
             JSONObject recordsResult = k3CloudProxyService.recordsWithParams(
                 maxResults != null ? maxResults : 300,
                 nextToken != null && !nextToken.isEmpty() ? Integer.parseInt(nextToken) : 0,
-                paramsJson
+                paramsJson,
+                    corpId
             );
             
             JSONObject result = new JSONObject();
@@ -110,7 +112,7 @@ public class K3CloudProxyController {
             result.put("msg", "success");
             result.put("data", recordsResult);
             
-            log.info("records返回: {}", result);
+//            log.info("records返回: {}", result);
             return result;
         } catch (Exception e) {
             log.error("records处理失败", e);

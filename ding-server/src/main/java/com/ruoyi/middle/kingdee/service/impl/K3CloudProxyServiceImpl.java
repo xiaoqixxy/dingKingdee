@@ -3,11 +3,15 @@ package com.ruoyi.middle.kingdee.service.impl;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.kingdee.bos.webapi.entity.DataCenter;
+import com.ruoyi.middle.ding.domain.DingProduct;
+import com.ruoyi.middle.ding.domain.DingSubscription;
+import com.ruoyi.middle.ding.service.IDingSubscriptionService;
 import com.ruoyi.middle.kingdee.dto.KingdeeLoginRequest;
 import com.ruoyi.middle.kingdee.service.K3CloudProxyService;
 import com.ruoyi.middle.kingdee.util.ContoryUtil;
 import com.ruoyi.middle.util.KingdeeK3CloudUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
@@ -34,6 +38,9 @@ import java.util.Map;
 @Slf4j
 @Service
 public class K3CloudProxyServiceImpl implements K3CloudProxyService {
+
+    @Autowired
+    private IDingSubscriptionService dingSubscriptionService;
 
     /**
      * 转发请求到金蝶K3Cloud服务器
@@ -194,8 +201,8 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
         List<List<Object>> query = util.query(queryJson);
 
         // 转换结果并返回
-        JSONObject result = ContoryUtil.kingdeeToDingResult(dingFieldData, query, nextToken, maxResult);
-        log.info("查询结果：{}", result);
+        JSONObject result = ContoryUtil.kingdeeToDingResult(dingFieldData, query, nextToken, maxResult,50000);
+        log.info("查询结果：{}", result.size());
         return result;
     }
 
@@ -233,8 +240,14 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
      * 查询业务数据记录（钉钉格式）
      */
     @Override
-    public JSONObject recordsWithParams(Integer maxResults, Integer nextToken, String paramsJson) throws ParseException {
+    public JSONObject recordsWithParams(Integer maxResults, Integer nextToken, String paramsJson,String corpId) throws ParseException {
         try {
+            DingProduct dingProduct = dingSubscriptionService.getOrRegisterDefaultProduct(corpId);
+            //获取同步数量上线
+            Integer singleSyncLimit = dingProduct.getSingleSyncLimit();
+            System.err.println("singleSyncLimit => " + singleSyncLimit);
+            System.err.println("nextToken => " + nextToken);
+
             // 解析params
             JSONObject params = JSONObject.parseObject(paramsJson);
             String SERVER_URL = params.getString("SERVER_URL");
@@ -256,10 +269,10 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
             JSONObject queryJson = ContoryUtil.kingdeeToKingdeeQuery(dingFieldData, nextToken, maxResults, filterConditions, sortConfigs);
             List<List<Object>> query = util.query(queryJson);
             
-            JSONObject result = ContoryUtil.kingdeeToDingResult(dingFieldData, query, nextToken, maxResults);
+            JSONObject result = ContoryUtil.kingdeeToDingResult(dingFieldData, query, nextToken, maxResults,singleSyncLimit);
             //添加权限过滤
 
-            log.info("records查询成功: {}", result);
+            log.info("records查询成功: {}", result.size());
             return result;
         } catch (Exception e) {
             log.error("records查询失败", e);

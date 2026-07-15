@@ -924,9 +924,22 @@ function App() {
       }
       formId = otherFormKey.trim();
       formName = otherFormName.trim();
-    } else if (!selectedFormId) {
-      showMessage('请选择需要同步的表单', 'warning');
-      return;
+    } else {
+      // 非其他表单模式下，必须有有效的 selectedFormId 和 selectedFormName
+      if (!selectedFormId || !selectedFormId.trim()) {
+        showMessage('请选择需要同步的表单', 'warning');
+        return;
+      }
+      if (!selectedFormName || !selectedFormName.trim()) {
+        showMessage('请选择需要同步的表单', 'warning');
+        return;
+      }
+      // 验证选中的表单是否在列表中（防止使用已删除的表单）
+      const isValidForm = formList.some(f => f.id === selectedFormId);
+      if (!isValidForm) {
+        showMessage('所选表单不存在，请重新选择', 'warning');
+        return;
+      }
     }
     try {
       setLoading(true);
@@ -1586,7 +1599,13 @@ function App() {
       )}
       <div style={styles.btnGroup}>
         <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>返回列表</button>
-        <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handleStep2Next} disabled={loading}>{loading ? '处理中...' : '下一步'}</button>
+        <button 
+          style={{ ...styles.button, ...styles.primaryBtn }} 
+          onClick={handleStep2Next} 
+          disabled={loading || (isOtherForm ? (!otherFormName.trim() || !otherFormKey.trim()) : (!selectedFormId || !selectedFormName))}
+        >
+          {loading ? '处理中...' : '下一步'}
+        </button>
       </div>
     </div>
   );
@@ -1630,7 +1649,14 @@ function App() {
             <select 
               style={{ ...styles.select, width: '120px', fontSize: '12px', padding: '8px' }}
               value={isQuickSelect ? filter.value : ''}
-              onChange={(e) => updateFilter(groupIndex, conditionIndex, 'value', e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                // 选择占位符时自动将operator设为"=",清空时恢复默认
+                if (val) {
+                  updateFilter(groupIndex, conditionIndex, 'operator', '=');
+                }
+                updateFilter(groupIndex, conditionIndex, 'value', val);
+              }}
             >
               <option value="">自定义</option>
               {DATE_QUICK_SELECTS.map(item => (
@@ -1671,9 +1697,16 @@ function App() {
                       <option value="">-- 选择字段 --</option>
                       {sheetFields.map((field) => (<option key={field.id} value={field.id}>{field.name}</option>))}
                     </select>
-                    <select style={{ ...styles.select, width: '100px' }} value={filter.operator} onChange={(e) => updateFilter(groupIndex, conditionIndex, 'operator', e.target.value)}>
-                      {getAvailableOperators(filter.fieldId).map((op) => (<option key={op} value={op}>{op}</option>))}
-                    </select>
+                    {/* 当日期字段选择了占位符时,隐藏操作符选择器 */}
+                    {!(() => {
+                      const field = getFieldById(filter.fieldId);
+                      const isDatePlaceholder = field?.type === 'date' && typeof filter.value === 'string' && DATE_QUICK_SELECTS.some(qs => qs.value === filter.value);
+                      return isDatePlaceholder;
+                    })() && (
+                      <select style={{ ...styles.select, width: '100px' }} value={filter.operator} onChange={(e) => updateFilter(groupIndex, conditionIndex, 'operator', e.target.value)}>
+                        {getAvailableOperators(filter.fieldId).map((op) => (<option key={op} value={op}>{op}</option>))}
+                      </select>
+                    )}
                     {renderFilterValue(filter, groupIndex, conditionIndex)}
                     <button style={{ ...styles.button, ...styles.dangerBtn }} onClick={() => removeFilter(groupIndex, conditionIndex)}>删除</button>
                   </div>
