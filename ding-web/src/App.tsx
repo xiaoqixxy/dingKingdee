@@ -202,7 +202,7 @@ const DATE_QUICK_SELECTS = [
 ];
 
 const styles: Record<string, any> = {
-  container: { width: '800px', height: '620px', margin: '0 auto', boxSizing: 'border-box' as const, overflow: 'hidden' },
+  container: { width: '750px', height: '580px', margin: '0 auto', boxSizing: 'border-box' as const, overflow: 'hidden' },
   card: {
     padding: '24px 32px',
     background: '#fff',
@@ -1092,7 +1092,7 @@ function App() {
         desc: '个人或小团队试用，轻量级数据管理。',
         syncLimit: '数据同步上限支持 1000 行',
         form: false,
-        report: false,
+        // report: false,
         footerNotes: ['租户内不限使用人数。', '租户内限制 AI 表格数量为 3 张表。'],
         color: '#6b7280',
         tagColor: '#e5e7eb',
@@ -1104,7 +1104,7 @@ function App() {
         desc: '成长型团队，日常业务数据分析与管理。',
         syncLimit: '数据同步上限支持 20000 行',
         form: true,
-        report: true,
+        // report: true,
         footerNotes: ['租户内不限使用人数。', '租户内不限 AI 表格数量。'],
         color: '#1677ff',
         tagColor: '#e6f4ff',
@@ -1116,7 +1116,7 @@ function App() {
         desc: '中大型企业，海量数据处理与多部门协作。',
         syncLimit: '数据同步上限支持 50000 行',
         form: true,
-        report: true,
+        // report: true,
         footerNotes: ['租户内不限使用人数。', '租户内不限 AI 表格数量。'],
         color: '#7c3aed',
         tagColor: '#f5f3ff',
@@ -1183,7 +1183,7 @@ function App() {
                 <div style={styles.planFeatures}>
                   {renderPlanFeature(true, plan.syncLimit)}
                   {renderPlanFeature(plan.form, plan.form ? '支持自定义表单' : '不支持自定义表单')}
-                  {renderPlanFeature(plan.report, plan.report ? '支持报表' : '不支持报表')}
+                  {/*{renderPlanFeature(plan.report, plan.report ? '支持报表' : '不支持报表')}*/}
                 </div>
 
                 <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '10px 0 8px' }} />
@@ -1257,8 +1257,8 @@ function App() {
   const renderChannelDialog = () => {
     if (!channelDialogVisible) return null;
     const channelOptions = [
-      { value: 'alipay', label: '支付宝' },
-      { value: 'wechat_pay', label: '微信支付' },
+      // { value: 'alipay', label: '支付宝' },
+      // { value: 'wechat_pay', label: '微信支付' },
       { value: 'transfer', label: '对公付款', isTransfer: true },
     ];
     return (

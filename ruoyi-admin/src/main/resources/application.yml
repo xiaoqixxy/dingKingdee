@@ -16,7 +16,7 @@ ruoyi:
 # 开发环境配置
 server:
   # 服务器的HTTP端口，默认为8080
-  port: 1007
+  port: 1009
   servlet:
     # 应用的访问路径
     context-path: /
@@ -146,7 +146,7 @@ payment:
     private-key: MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC7sfBlQ7ZwzlZf8rHBs5yV3D2P/us0scSbMErt98RsSR0PjvU/sMhrL4wOKuHHxWKhtjvx1LANlN0Bf83NYMQJub7b72cEx2NLNnJn9ecuIwwkVqIkAADH8lhmhBxzbVb/QcDfDquxPgM6ho3nH3Wq8vZ5nxlFLpD08jTavflKy7/hQHzVTzmFkCoWseMxCGOwSTrWfZ5fPWXlohbe/Fhs8Jhe4TLsHe6XuGm3fQTUkD99kIkU9bq6owskGt/2IdW0Q8fH7myhoMKGeySX29D000tdvSHnMurLMOUCKUAc7ixMviVEFgnIrZ6Nsf0kLLZB9BDRecqNvyNWn3cK+ZOfAgMBAAECggEBAKjzUuDUQrToBvf3Deq+MoTy6rdjT3TvT3ohzlDGZhjS90W5+SiLiNxywC9Ailu4YUAPOYZFXPPcu9NNp4LnR485k4OFy8WRdN+O8wyBXMc65QMQuIKPPiS9ELW21aVRFq5OEb63BfVVTLKxy6nvt4tZiGORwr1zXSgfnVQJDQ01K50uHzH2f+0WyFwYSQ+ZG6NdsBbKk5HDysNkGrFso/xPazahm+0JaiSelQyS3D4wjkovRlKara5J1Ctglb48jD0/derivIq5ekQJAF+kToFWProfRSdt5zRw8udOI7WeCfcNKqSxA5umEMqIIO4vLCj/gbiWETxAFdw1JSOerQECgYEA/RO5zQsgWw6O3J1qSmJn6R0uuHzEsezsYXr/hKTLekxj0wb1xGYtzWaizvJBEKiIhA3A4o/17Uu1f+IFyhI8smRx6ZsNX7tj02CIfWKq0WWOdh4ux/N5CqpBxAPk5gaTWS9FIk0gyv1sYIKUrQpdu5gLCG0YRhbFWvlB6Da7DacCgYEAvdzl5S75rM35x7unq4UWd2VgRkV4lWSs9jiUIy4CHZ6gLfPzILHL7IAhgU87o0cfflvBahrDHd4OyrKLHfMXSuplidasze88+2EXOayYmb8ErS8KJ2Aq2WIqdlw0nLoSD3/3pni/VENm0jYODqramVo4R2b8T4vwVKLAN3GzuUkCgYARw2ivM7C5s3PjmEj1n6KbgijdWiSUOIT+8pssvERr+SColzx45JMib6nNzMM0YB/05OI9BM3GMiIzL7IoVM9d1h8IvpFZvtVq6MOryVkkCXTOZZ/y+OvuC7VCBOP0IVIGWIMJvVAn71HEFGZLHwclO67KkJ27ja2cjRJLMkw+0QKBgBEiD/TgilNXuwSVIIpP1jksAsYUms8QaLNHY8bQ7gvyNo4vB2+Z28cZwOxEVCNl1ae3a/rBM35MfZU5C2jGeQGfqU4I+0sSHbSpjEj+FD87h5aBOi9XdEZtn1tS8sR53gtcBuMU3l8iPfMWQap9LIDOLWn0Fyyueh+JGENolUlRAoGBALvdR7BIlrC8rxbVVZsW9OA+UaOsMc60lLgogrOT47q3SZQ7K+YXktT+76R35RYzk0us3FhKnEL2hzv5SMNe8odsXexrptg5zSAyFbdvX2ClV0IXQIu1tbIPvylqIIZ8tIgV58r9PDBqRjr0SUzVDC0XP0UVVyHzrNdeY3ZV80CO
     alipay-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApwhseJd/so8pSJuY/43d7ogSRc1ee+c83vUHwmNaXmdERNqYZGTA4+TLXSSPEBjY5mVJBaUa6h6bLc5CUNAcW1Dsloee2ejk27ES9Pi+X9T3R7sEjB5b27+3Ck7dqmsISrmogSujxFiFsm8nYTuKbpI6s3AX1rLmHJeJCq6vhpOqZkDix9NE9fqRnVFzcDY0tJvOAYoevlZ49qbv/uwn+1WbRdNVs9WMaS4nE/2U8odY3xk22rqYFlxocbGIqMZZYc5nQdfj9gJ8zrfi7Ypw/HI/fyrJxHRHb2GZXevs28yqNKLUtHhGgGzQetimzOQPzgHS+Tii7eqxluBaBpUYZQIDAQAB
     gateway-url: openapi.alipay.com
-    notify-url: https://web.xiexinyang.com/prod-api/payment/callback/alipay
+    notify-url: https://web.jxdingjiang.com/prod-api/payment/callback/alipay
     return-url: https://your-domain.com/payment/return
   # 微信支付配置
   wechat:
@@ -156,7 +156,7 @@ payment:
     private-key-path: C:/Users/16424/Desktop/ding-kingdee/ruoyi-admin/src/main/resources/cert/wxpay/apiclient_key.pem
     cert-path: C:/Users/16424/Desktop/ding-kingdee/ruoyi-admin/src/main/resources/cert/wxpay/apiclient_cert.pem
     cert-serial-no: 13A513E7EB08A3F98BB7B6A345218C45817D9589
-    notify-url: https://web.xiexinyang.com/prod-api/payment/callback/wechat_pay
+    notify-url: https://web.jxdingjiang.com/prod-api/payment/callback/wechat_pay
   # 钉钉支付配置
   dingpay:
     app-id: your_ding_app_id

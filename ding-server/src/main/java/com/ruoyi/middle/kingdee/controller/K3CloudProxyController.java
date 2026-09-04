@@ -5,6 +5,8 @@ import com.ruoyi.common.annotation.Anonymous;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.middle.kingdee.dto.KingdeeLoginRequest;
 import com.ruoyi.middle.kingdee.service.K3CloudProxyService;
+import com.ruoyi.middle.kingdee.util.SignatureUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -49,13 +51,20 @@ public class K3CloudProxyController {
      * 获取表结构接口（钉钉格式）
      */
     @PostMapping("/sheetMeta")
-    public JSONObject sheetMeta(@RequestBody JSONObject request) {
+    public JSONObject sheetMeta(@RequestBody String rawBody, HttpServletRequest request) {
+//        String timestamp = request.getHeader("Ding-Docs-Timestamp");
+//        String signature = request.getHeader("Ding-Docs-Signature");
+        // 使用 rawBody 验签
+//        if (!SignatureUtil.verifySignature(SignatureUtil.secretKey, rawBody, Long.parseLong(timestamp), signature)) {
+//            throw new RuntimeException("Signature verification failed");
+//        }
         try {
-            log.info("收到钉钉sheetMeta请求: {}", request);
+            JSONObject requestBody = JSONObject.parseObject(rawBody);
+            log.info("收到钉钉sheetMeta请求: {}", requestBody);
             
-            String requestId = request.getString("requestId");
-            String paramsJson = request.getString("params");
-            JSONObject context = request.getJSONObject("context");
+            String requestId = requestBody.getString("requestId");
+            String paramsJson = requestBody.getString("params");
+            JSONObject context = requestBody.getJSONObject("context");
             
             log.info("请求ID: {}, UnionId: {}, CorpId: {}", 
                 requestId, 
@@ -89,15 +98,22 @@ public class K3CloudProxyController {
      * 获取表记录接口（钉钉格式）
      */
     @PostMapping("/records")
-    public JSONObject records(@RequestBody JSONObject request) {
+    public JSONObject records(@RequestBody String rawBody, HttpServletRequest request) {
+        String timestamp = request.getHeader("Ding-Docs-Timestamp");
+        String signature = request.getHeader("Ding-Docs-Signature");
+        // 使用 rawBody 验签
+        if (!SignatureUtil.verifySignature(SignatureUtil.secretKey, rawBody, Long.parseLong(timestamp), signature)) {
+            throw new RuntimeException("Signature verification failed");
+        }
         try {
-            log.info("收到钉钉records请求: {}", request);
+            JSONObject requestBody = JSONObject.parseObject(rawBody);
+            log.info("收到钉钉records请求: {}", requestBody);
             
-            String requestId = request.getString("requestId");
-            Integer maxResults = request.getInteger("maxResults");
-            String nextToken = request.getString("nextToken");
-            String paramsJson = request.getString("params");
-            JSONObject context = request.getJSONObject("context");
+            String requestId = requestBody.getString("requestId");
+            Integer maxResults = requestBody.getInteger("maxResults");
+            String nextToken = requestBody.getString("nextToken");
+            String paramsJson = requestBody.getString("params");
+            JSONObject context = requestBody.getJSONObject("context");
             String corpId = context.getString("corpId");
             
             JSONObject recordsResult = k3CloudProxyService.recordsWithParams(

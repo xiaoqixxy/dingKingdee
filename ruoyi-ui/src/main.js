@@ -43,6 +43,8 @@ import ImageUpload from "@/components/ImageUpload"
 import ImagePreview from "@/components/ImagePreview"
 // 字典标签组件
 import DictTag from '@/components/DictTag'
+// ECharts 图表组件
+import Echart from '@/components/Echart'
 
 const app = createApp(App)
 
@@ -65,6 +67,7 @@ app.component('ImageUpload', ImageUpload)
 app.component('ImagePreview', ImagePreview)
 app.component('RightToolbar', RightToolbar)
 app.component('Editor', Editor)
+app.component('Echart', Echart)
 
 app.use(router)
 app.use(store)
