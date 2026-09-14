@@ -148,6 +148,7 @@ public class KingdeeK3CloudUtil {
         try {
             log.info("调用WebApi查询接口开始 ==> 请求报文: {}", param);
             List<List<Object>> result = api.executeBillQuery(param.toJSONString());
+            com.ruoyi.middle.kingdee.util.KingdeeQueryResponse.requireSuccess(result);
             log.info("调用WebApi查询接口成功 ==> 返回行数: {}", result.size());
             return result;
         } catch (Exception e) {

@@ -135,6 +135,15 @@ interface SheetField {
   property?: { choices?: { name: string; value: string }[]; formatter?: string };
 }
 
+type HeaderFillMode = 'FIRST_ROW' | 'ALL_ROWS';
+interface EntryOption {
+  key: string;
+  name: string;
+  supported: boolean;
+  reason?: string;
+  fields: SheetField[];
+}
+
 type FilterConditionValue = string | string[];
 
 interface FilterCondition {
@@ -165,6 +174,8 @@ interface VoucherConfigItem {
   appSecret?: string;
   selectedFormId?: string;
   selectedFormName?: string;
+  selectedEntryKey?: string;
+  headerFillMode?: HeaderFillMode;
   filterConditions?: FilterCondition[];
   sortConfigs?: SortConfig[];
   sheetFields?: SheetField[];
@@ -208,9 +219,9 @@ const DATE_QUICK_SELECTS = [
 ];
 
 const styles: Record<string, any> = {
-  container: { width: '750px', height: '580px', margin: '0 auto', boxSizing: 'border-box' as const, overflow: 'hidden' },
+  container: { width: '750px', maxWidth: '100%', height: '580px', margin: '0 auto', boxSizing: 'border-box' as const, overflow: 'hidden' },
   card: {
-    padding: '24px 32px',
+    padding: 'var(--plugin-padding)',
     background: '#fff',
     borderRadius: '12px',
     boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
@@ -218,8 +229,8 @@ const styles: Record<string, any> = {
     height: '100%',
     boxSizing: 'border-box' as const,
     overflow: 'auto',
-    display: 'flex',
-    flexDirection: 'column' as const,
+    minHeight: 0,
+    minWidth: 0,
   },
   title: { textAlign: 'center', marginBottom: '28px', color: '#1d2939', fontSize: '20px', fontWeight: 700, letterSpacing: '0.3px' },
   stepRow: {
@@ -244,14 +255,19 @@ const styles: Record<string, any> = {
     gap: '6px',
     transition: 'all 0.25s',
   }),
-  formItem: { marginBottom: '20px', display: 'flex', flexDirection: 'column' as const, gap: '8px' },
+  formSelectionPanel: { padding: '16px', border: '1px solid #e5e7eb', borderRadius: '10px', background: '#fff', minWidth: 0 },
+  formSelectionHeading: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' },
+  formSelectionIcon: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', flexShrink: 0, borderRadius: '10px', background: '#e6f4ff', fontSize: '21px' },
+  formItem: { marginBottom: '14px', display: 'flex', flexDirection: 'column' as const, gap: '8px' },
   label: { color: '#374151', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' },
   labelIcon: { fontSize: '16px', lineHeight: 1 },
   inputWrapper: { display: 'flex', alignItems: 'center', border: '1px solid #d9d9d9', borderRadius: '8px', background: '#fff', overflow: 'hidden', transition: 'border-color 0.2s, box-shadow 0.2s' },
   inputIconBox: { width: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#bfbfbf', flexShrink: 0, borderRight: '1px solid #f0f0f0', background: '#fafafa', alignSelf: 'stretch' as const },
   input: {
     flex: 1,
-    padding: '10px 12px',
+    minWidth: 0,
+    maxWidth: '100%',
+    padding: '9px 12px',
     border: 'none',
     fontSize: '14px',
     color: '#1d2939',
@@ -260,7 +276,9 @@ const styles: Record<string, any> = {
   },
   select: {
     flex: 1,
-    padding: '10px 12px',
+    minWidth: 0,
+    maxWidth: '100%',
+    padding: '9px 12px',
     border: '1px solid #d9d9d9',
     borderRadius: '8px',
     fontSize: '14px',
@@ -269,15 +287,15 @@ const styles: Record<string, any> = {
     outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
   },
-  button: { padding: '10px 24px', fontSize: '14px', borderRadius: '8px', border: 'none', cursor: 'pointer', marginRight: '12px', fontWeight: 500, transition: 'all 0.2s' },
+  button: { padding: '10px 24px', fontSize: '14px', borderRadius: '8px', border: 'none', cursor: 'pointer', marginRight: 0, minHeight: '36px', fontWeight: 500, transition: 'all 0.2s' },
   primaryBtn: { background: '#1677ff', color: '#fff' },
   defaultBtn: { background: '#fff', border: '1px solid #d9d9d9', color: '#374151' },
   dangerBtn: { background: '#ff4d4f', color: '#fff', padding: '6px 14px', fontSize: '13px', borderRadius: '6px' },
-  btnGroup: { display: 'flex', justifyContent: 'center', marginTop: '24px', gap: '16px' },
+  btnGroup: { display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', marginTop: '16px', gap: '8px', padding: '12px 0 0', borderTop: '1px solid #e5e7eb' },
   sectionTitle: { margin: '0 0 0', color: '#1d2939', fontWeight: 700, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' },
-  conditionRow: { marginBottom: '12px', display: 'flex', gap: '12px', alignItems: 'center', background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', border: '1px solid #f0f0f0' },
-  filterSection: { marginBottom: '20px', background: '#fff', borderRadius: '10px', border: '1px solid #e5e7eb', padding: '16px 18px' },
-  filterHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' },
+  conditionRow: { marginBottom: '10px', display: 'flex', flexWrap: 'wrap', minWidth: 0, gap: '8px', alignItems: 'center', background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', border: '1px solid #f0f0f0' },
+  filterSection: { marginBottom: '20px', background: '#fff', borderRadius: '10px', border: '1px solid #e5e7eb', padding: '12px' },
+  filterHeader: { display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' },
   hr: { margin: '28px 0', border: 'none', borderTop: '1px solid #e5e7eb' },
   loading: { textAlign: 'center', padding: '24px', color: '#6b7280' },
   required: { color: '#ff4d4f' },
@@ -298,7 +316,7 @@ const styles: Record<string, any> = {
     background: color,
     fontWeight: 500,
   }),
-  productInfo: { display: 'flex', flexWrap: 'wrap' as const, gap: '20px', fontSize: '13px', color: '#6b7280', marginTop: '10px' },
+  productInfo: { display: 'flex', flexWrap: 'wrap' as const, gap: '6px 16px', fontSize: '12px', color: '#6b7280', marginTop: '10px' },
   dialogOverlay: {
     position: 'fixed' as const,
     top: 0, left: 0, right: 0, bottom: 0,
@@ -313,9 +331,10 @@ const styles: Record<string, any> = {
     background: '#fff',
     borderRadius: '12px',
     width: '90%',
-    maxWidth: '500px',
-    maxHeight: '80vh',
-    overflow: 'hidden',
+    maxWidth: 'calc(100vw - 24px)',
+    maxHeight: 'calc(100dvh - 24px)',
+    overflowY: 'auto',
+    flexShrink: 1,
     display: 'flex',
     flexDirection: 'column' as const,
     boxShadow: '0 20px 60px rgba(22,119,255,0.2)',
@@ -378,11 +397,12 @@ const styles: Record<string, any> = {
     borderRadius: '12px',
     boxShadow: '0 4px 16px rgba(22,119,255,0.12)',
     border: '1px solid rgba(22,119,255,0.08)',
-    padding: '16px 20px',
+    padding: 'var(--plugin-padding)',
     boxSizing: 'border-box' as const,
     display: 'flex',
     flexDirection: 'column' as const,
-    overflow: 'hidden',
+    overflowY: 'auto',
+    minHeight: 0,
   },
   upgradeTopBar: {
     display: 'flex',
@@ -410,15 +430,15 @@ const styles: Record<string, any> = {
   },
   planGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
     gap: '16px',
-    flex: 1,
+    flexShrink: 0,
     marginTop: '12px',
-    overflow: 'hidden',
+    paddingBottom: '4px',
   },
   planCard: {
     borderRadius: '10px',
-    padding: '18px 16px',
+    padding: '40px 14px 14px', minWidth: 0,
     display: 'flex',
     flexDirection: 'column' as const,
     position: 'relative' as const,
@@ -453,6 +473,7 @@ const styles: Record<string, any> = {
     justifyContent: 'center',
   },
   planFeatures: {
+    minHeight: '64px',
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '10px',
@@ -462,6 +483,7 @@ const styles: Record<string, any> = {
     alignItems: 'center',
   },
   planFooterNotes: {
+    minHeight: '56px',
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '6px',
@@ -512,6 +534,11 @@ function App() {
   const [displayValue, setDisplayValue] = useState('');
 
   const [sheetFields, setSheetFields] = useState<SheetField[]>([]);
+  const [headFields, setHeadFields] = useState<SheetField[]>([]);
+  const [entryOptions, setEntryOptions] = useState<EntryOption[]>([]);
+  const [selectedEntryKey, setSelectedEntryKey] = useState('');
+  const [headerFillMode, setHeaderFillMode] = useState<HeaderFillMode>('FIRST_ROW');
+  const [metadataFormId, setMetadataFormId] = useState('');
   const [fieldLoading, setFieldLoading] = useState(false);
   const [toastList, setToastList] = useState<ToastItem[]>([]);
   const [filterConditions, setFilterConditions] = useState<FilterConditionGroup[]>([{ conditions: [{ fieldId: '', operator: '=', value: '' as FilterConditionValue }] }]);
@@ -547,6 +574,10 @@ function App() {
   };
 
   const handleAddConfig = () => {
+    setSelectedEntryKey('');
+    setHeaderFillMode('FIRST_ROW');
+    setEntryOptions([]);
+    setMetadataFormId('');
     setEditingVoucherId(null);
     setSyncMode(false);
     setVoucherName("");
@@ -562,6 +593,9 @@ function App() {
   };
 
   const handleEditConfig = (item: VoucherConfigItem) => {
+    setSelectedEntryKey(item.selectedEntryKey || '');
+    setHeaderFillMode(item.headerFillMode || 'FIRST_ROW');
+    setMetadataFormId(item.selectedFormId || '');
     setEditingVoucherId(item.id || null);
     setSyncMode(false);
     setVoucherName(item.voucherName || item.name || "");
@@ -583,6 +617,9 @@ function App() {
   };
 
   const handleSyncData = async (item: VoucherConfigItem) => {
+    setSelectedEntryKey(item.selectedEntryKey || '');
+    setHeaderFillMode(item.headerFillMode || 'FIRST_ROW');
+    setMetadataFormId(item.selectedFormId || '');
     setEditingVoucherId(item.id || null);
     setSyncMode(true);
     setVoucherName(item.voucherName || item.name || "");
@@ -805,9 +842,22 @@ function App() {
     try {
       const paramsObj = { ...kingdeeConfig, selectedFormId: formId, selectedFormName: formName };
       const requestData = { context: { corpId: 'dingbf492c95f9a6eab9acaaa37764f94726', unionId: 'JXBKf9sL0GzZE9Qr3bJYvQiEiE' }, params: JSON.stringify(paramsObj), requestId: `0b830cc8${Date.now().toString(16)}` };
-      const response = await fetch(API.sheetMeta, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8', Accept: 'application/json' }, body: JSON.stringify(requestData), mode: 'cors', credentials: 'omit' });
+      const response = await fetch(API.formSchema, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8', Accept: 'application/json' }, body: JSON.stringify(requestData), mode: 'cors', credentials: 'omit' });
       const result = await response.json();
+      if (!response.ok || result?.code !== 0) throw new Error(result?.msg || '加载表单字段失败');
       const fields = result?.data?.fields || [];
+      const options: EntryOption[] = result?.data?.entryOptions || [];
+      setHeadFields(fields);
+      setEntryOptions(options);
+      if (formId !== metadataFormId || !options.some(option => option.key === selectedEntryKey && option.supported)) {
+        setSelectedEntryKey('');
+        setHeaderFillMode('FIRST_ROW');
+      }
+      if (formId !== metadataFormId) {
+        setFilterConditions([{ conditions: [{ fieldId: '', operator: '=', value: '' }] }]);
+        setSortConfigs([{ fieldId: '', order: 'asc' }]);
+      }
+      setMetadataFormId(formId);
       setSheetFields([...fields]);
       return fields;
     } catch (error) {
@@ -983,8 +1033,7 @@ function App() {
         conditions: group.conditions.filter(f => f.fieldId.trim())
       })).filter(group => group.conditions.length > 0);
       const validSorts = sortConfigs.filter(s => s.fieldId.trim());
-      const submitData = { ...kingdeeConfig, selectedFormId, selectedFormName, filterConditions: validFilters, sortConfigs: validSorts, sheetFields };
-      console.log('提交数据：', submitData);
+      const submitData = { ...kingdeeConfig, configVersion: 2, selectedFormId, selectedFormName, selectedEntryKey, headerFillMode, filterConditions: validFilters, sortConfigs: validSorts, sheetFields };
       if (window.Dingdocs?.base?.host) {
         await (window.Dingdocs.base.host as any).saveConfigAndGoNext(submitData);
         showMessage('配置提交成功');
@@ -1143,7 +1192,7 @@ function App() {
     ];
 
     return (
-      <div style={styles.upgradePage}>
+      <div className="plugin-page" style={styles.upgradePage}>
         {/* 顶部导航 */}
         <div style={styles.upgradeTopBar}>
           <button style={styles.backBtn} onClick={() => setUpgradeDialogVisible(false)}>
@@ -1155,7 +1204,7 @@ function App() {
         {/* 当前权益 */}
         {currentProduct && (
           <div style={styles.productCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
               <span style={styles.productTitle}>当前产品：{currentProduct.productName}</span>
             </div>
             <div style={styles.productInfo}>
@@ -1327,8 +1376,9 @@ function App() {
               borderRadius: '10px',
               padding: '14px 20px',
               boxShadow: `0 8px 24px ${c.shadow}, 0 2px 8px rgba(0,0,0,0.06)`,
-              minWidth: '320px',
-              maxWidth: '500px',
+              minWidth: 0,
+              width: 'min(500px, calc(100vw - 24px))',
+              maxWidth: '100%',
               pointerEvents: 'auto',
             }}>
               <div style={{
@@ -1359,7 +1409,7 @@ function App() {
   };
 
   const renderVoucherList = () => (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
+    <div style={{ minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#1d2939" }}>配置列表</h3>
         <button style={{ ...styles.button, ...styles.primaryBtn, padding: "6px 16px", fontSize: "14px" }} onClick={handleAddConfig}>+ 新增配置</button>
@@ -1369,12 +1419,12 @@ function App() {
           暂无配置，点击右上角添加
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px" }}>
           {voucherList.map((item) => (
-            <div key={item.id} style={{ padding: "16px", background: "#fff", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <div style={{ fontWeight: 600, fontSize: "15px", color: "#1d2939", marginBottom: "8px" }}>{item.voucherName || item.name}</div>
-              <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "12px" }}>服务器地址：{item.serverUrl}</div>
-              <div style={{ display: "flex", gap: "8px" }}>
+            <div key={item.id} style={{ minWidth: 0, display: "flex", flexDirection: "column", padding: "14px", background: "#fff", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div style={{ fontWeight: 600, fontSize: "15px", color: "#1d2939", minHeight: "46px", marginBottom: "6px" }}>{item.voucherName || item.name}</div>
+              <div style={{ fontSize: "12px", color: "#6b7280", minHeight: "36px", marginBottom: "12px" }}>服务器地址：{item.serverUrl}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "auto" }}>
                 <button style={{ ...styles.button, background: "#f56c6c", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleDeleteConfig(item)}>删除</button>
                 <button style={{ ...styles.button, background: "#e6a23c", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleVerifyConfig(item)}>校验</button>
                 <button style={{ ...styles.button, ...styles.primaryBtn, padding: "4px 12px", fontSize: "12px" }} onClick={() => handleEditConfig(item)}>编辑</button>
@@ -1397,7 +1447,7 @@ function App() {
     // formatFormLimit 已提升至组件级别
     return (
       <div style={styles.productCard}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
           <span style={styles.productTitle}>当前产品：{currentProduct.productName}</span>
           <button style={{ ...styles.button, ...styles.primaryBtn, padding: '4px 12px', fontSize: '12px' }} onClick={handleUpgradeClick}>升级套餐</button>
         </div>
@@ -1419,7 +1469,7 @@ function App() {
       { key: 'APP_SECRET', label: 'APP 密钥',   icon: '🔒', placeholder: '请输入 APP 密钥', type: 'password' },
     ];
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         {!syncMode && (
           <div style={{ marginBottom: '12px' }}>
             <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>← 返回列表</button>
@@ -1476,31 +1526,36 @@ function App() {
   };
 
   const renderStep2 = () => (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+    <div className="form-selection-page" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={styles.formSelectionHeading}>
+        <span style={styles.formSelectionIcon} aria-hidden="true">📋</span>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '17px', color: '#1d2939' }}>选择同步表单</h3>
+          <p className="form-selection-help">选择需要同步的金蝶表单，下一步设置明细范围。</p>
+        </div>
+      </div>
+      <div style={styles.formSelectionPanel}>
       {!isOtherForm ? (
         <>
           <div style={{ ...styles.formItem, position: 'relative' }}>
-            <label style={styles.label}>
+            <label htmlFor="sync-form-search" style={styles.label}>
               <span style={styles.labelIcon}>📋</span>
               选择表单 <span style={styles.required}>*</span>
             </label>
             <div 
               data-form-dropdown="true"
               style={{ ...styles.inputWrapper, padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }} 
-              onClick={(e) => {
-                // 只有点击图标或箭头区域才切换下拉框
-                const target = e.target as HTMLElement;
-                if (target.closest('[style*="inputIconBox"]') || target.closest('[style*="paddingRight"]')) {
-                  setFormDropdownOpen(!formDropdownOpen);
-                }
-              }}
+
             >
-              <div style={styles.inputIconBox}></div>
+              <div style={styles.inputIconBox} aria-hidden="true">🔎</div>
               <input 
+                id="sync-form-search"
+                aria-expanded={formDropdownOpen}
+                aria-controls="sync-form-options"
                 type="text" 
                 style={{ ...styles.input, padding: '10px 12px' }} 
                 value={displayValue}
-                placeholder="-- 请选择或搜索表单 --"
+                placeholder="输入表单名称搜索"
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -1528,23 +1583,23 @@ function App() {
                   }
                 }}
               />
-              <div 
-                style={{ paddingRight: '12px', color: '#bfbfbf', fontSize: '12px', cursor: 'pointer' }}
+              <button type="button" aria-label="展开或收起表单列表"
+                style={{ background: 'transparent', border: 'none', alignSelf: 'stretch', paddingLeft: '12px', paddingRight: '12px', color: '#bfbfbf', fontSize: '12px', cursor: 'pointer' }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setFormDropdownOpen(!formDropdownOpen);
                 }}
               >
                 {formDropdownOpen ? '▲' : '▼'}
-              </div>
+              </button>
             </div>
             {formDropdownOpen && (
-              <div data-form-dropdown="true" style={{
-                position: 'absolute',
-                top: '100%',
+              <div id="sync-form-options" data-form-dropdown="true" style={{
+                position: 'relative',
+                top: 0,
                 left: 0,
                 right: 0,
-                maxHeight: '240px',
+                maxHeight: '200px',
                 overflowY: 'auto',
                 background: '#fff',
                 border: '1px solid #d9d9d9',
@@ -1559,9 +1614,10 @@ function App() {
                     item.name.toLowerCase().includes(formSearchText.toLowerCase())
                   )
                   .map((item) => (
-                    <div
+                    <button type="button"
                       key={item.id}
                       style={{
+                        width: '100%', textAlign: 'left', border: 'none', color: '#374151',
                         padding: '10px 12px',
                         cursor: 'pointer',
                         fontSize: '14px',
@@ -1587,8 +1643,8 @@ function App() {
                         setFormDropdownOpen(false);
                       }}
                     >
-                      {item.name}
-                    </div>
+                      {item.name}{selectedFormId === item.id && <span style={{ float: 'right', color: '#1677ff' }}>✓</span>}
+                    </button>
                   ))
                 }
                 {formList.filter(item => 
@@ -1602,7 +1658,8 @@ function App() {
               </div>
             )}
           </div>
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div className="form-selection-alternative">
+            <span className="form-selection-help">列表中没有需要的表单？</span>
             <button 
               style={{ 
                 background: 'none', 
@@ -1610,8 +1667,8 @@ function App() {
                 color: '#1677ff', 
                 fontSize: '14px', 
                 cursor: 'pointer',
-                textDecoration: 'underline',
-                padding: '8px 16px'
+                fontWeight: 600,
+                padding: '6px 0'
               }} 
               onClick={(e) => {
                 e.stopPropagation();
@@ -1649,7 +1706,7 @@ function App() {
               返回选择列表
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0' }}>
             <div style={styles.formItem}>
               <label style={styles.label}><span style={styles.labelIcon}>📝</span>表单名称 <span style={styles.required}>*</span></label>
               <div style={styles.inputWrapper}>
@@ -1667,6 +1724,7 @@ function App() {
           </div>
         </>
       )}
+      </div>
       <div style={styles.btnGroup}>
         <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>返回列表</button>
         <button 
@@ -1676,6 +1734,74 @@ function App() {
         >
           {loading ? '处理中...' : '下一步'}
         </button>
+      </div>
+    </div>
+  );
+
+  const handleEntryNext = () => {
+    const entry = entryOptions.find(option => option.key === selectedEntryKey);
+    if (selectedEntryKey && (!entry || !entry.supported)) {
+      showMessage('请选择可同步的明细表', 'warning');
+      return;
+    }
+    const fields = entry
+      ? [...headFields.map(field => ({ ...field, isPrimary: false })), ...entry.fields]
+      : headFields;
+    const ids = new Set(fields.map(field => field.id));
+    if (ids.size !== fields.length) {
+      showMessage('表头与明细字段标识冲突，该表单需要适配', 'error');
+      return;
+    }
+    const filters = filterConditions.map(group => ({ conditions: group.conditions.filter(filter => !filter.fieldId || ids.has(filter.fieldId)) }));
+    const sorts = sortConfigs.filter(sort => !sort.fieldId || ids.has(sort.fieldId));
+    const removed = filters.some((group, index) => group.conditions.length !== filterConditions[index].conditions.length)
+      || sorts.length !== sortConfigs.length;
+    setFilterConditions(filters.some(group => group.conditions.length)
+      ? filters.filter(group => group.conditions.length)
+      : [{ conditions: [{ fieldId: '', operator: '=', value: '' }] }]);
+    setSortConfigs(sorts.length ? sorts : [{ fieldId: '', order: 'asc' }]);
+    setSheetFields(fields);
+    if (removed) showMessage('已清除不属于当前明细表的筛选和排序条件', 'warning');
+    setCurrentStep(3);
+  };
+
+  const renderEntryStep = () => (
+    <div className="entry-step">
+      <h3>📋 选择明细表</h3>
+      <p className="entry-help">{selectedFormName} · 每次只能选择一个明细表</p>
+      <fieldset className="entry-options">
+        <legend>同步数据范围</legend>
+        <label className={`entry-option ${!selectedEntryKey ? 'is-selected' : ''}`}>
+          <input type="radio" name="entryKey" checked={!selectedEntryKey} onChange={() => setSelectedEntryKey('')} />
+          <span>不同步明细，仅同步表头</span>
+        </label>
+        {entryOptions.map(entry => (
+          <label key={entry.key} className={`entry-option ${selectedEntryKey === entry.key ? 'is-selected' : ''}`}>
+            <input type="radio" name="entryKey" value={entry.key} checked={selectedEntryKey === entry.key}
+              disabled={!entry.supported} onChange={() => setSelectedEntryKey(entry.key)} />
+            <span>{entry.name}<small>{entry.supported ? `${Math.max(0, entry.fields.length - 1)} 个明细字段` : entry.reason}</small></span>
+          </label>
+        ))}
+      </fieldset>
+      {entryOptions.length === 0 && <p className="entry-help">该表单没有可同步的明细表，将仅同步表头。</p>}
+      {selectedEntryKey && (
+        <fieldset className="entry-options">
+          <legend>🔄 同步方式</legend>
+          <label className={`entry-option ${headerFillMode === 'FIRST_ROW' ? 'is-selected' : ''}`}>
+            <input type="radio" name="headerFillMode" checked={headerFillMode === 'FIRST_ROW'} onChange={() => setHeaderFillMode('FIRST_ROW')} />
+            <span>只有第一行包含表头数据<small>每张单据筛选后的第一条明细显示表头，其余行留空。</small></span>
+          </label>
+          <label className={`entry-option ${headerFillMode === 'ALL_ROWS' ? 'is-selected' : ''}`}>
+            <input type="radio" name="headerFillMode" checked={headerFillMode === 'ALL_ROWS'} onChange={() => setHeaderFillMode('ALL_ROWS')} />
+            <span>所有行都包含表头数据<small>每条明细都显示所属单据的表头，便于逐行筛选。</small></span>
+          </label>
+          <p className="entry-help">明细按单据分组，明细排序在单据内生效。同步数量按明细行计算。</p>
+          <p className="entry-help">{headerFillMode === 'FIRST_ROW' ? '留空不是合并单元格，在钉钉中重新排序可能使明细与表头分开。' : '单据汇总金额会重复显示，请勿直接按明细行求和。'}</p>
+        </fieldset>
+      )}
+      <div style={styles.btnGroup}>
+        <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={() => setCurrentStep(1)}>上一步</button>
+        <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handleEntryNext}>下一步</button>
       </div>
     </div>
   );
@@ -1706,7 +1832,7 @@ function App() {
         const isQuickSelect = typeof filter.value === 'string' && DATE_QUICK_SELECTS.some(qs => qs.value === filter.value);
         
         return (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="plugin-date-value" style={{ display: 'flex', flexWrap: 'wrap', minWidth: 0, gap: '8px', alignItems: 'center' }}>
             {!isQuickSelect && (
               <input 
                 type="date" 
@@ -1741,7 +1867,7 @@ function App() {
       return <input type="text" style={{ ...styles.input, width: '150px', border: '1px solid #d9d9d9', borderRadius: '8px' }} value={filter.value as string} onChange={(e) => updateFilter(groupIndex, conditionIndex, 'value', e.target.value)} placeholder="筛选值" />;
     };
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', paddingRight: '2px' }}>
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', paddingRight: '2px' }}>
         <div style={styles.filterSection}>
           <div style={styles.filterHeader}>
             <h4 style={styles.sectionTitle}>🔍 筛选条件</h4>
@@ -1758,7 +1884,7 @@ function App() {
               {/* 当前组内的所有条件(AND关系) */}
               {group.conditions.map((filter, conditionIndex) => (
                 <div key={conditionIndex} style={{ marginBottom: '12px' }}>
-                  <div style={styles.conditionRow}>
+                  <div className="plugin-condition" style={styles.conditionRow}>
                     <select style={{ ...styles.select, width: '200px' }} value={filter.fieldId} onChange={(e) => { 
                       updateFilter(groupIndex, conditionIndex, 'fieldId', e.target.value); 
                       updateFilter(groupIndex, conditionIndex, 'operator', '=');
@@ -1835,7 +1961,7 @@ function App() {
             <button style={{ ...styles.button, ...styles.defaultBtn, padding: '4px 12px', fontSize: '12px' }} onClick={addSort} disabled={sheetFields.length === 0}>+ 添加排序</button>
           </div>
           {sortConfigs.length === 0 ? <div style={{ textAlign: 'center', color: '#b0b8c1', padding: '12px', fontSize: '13px', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #e5e7eb' }}>暂无排序条件，点击右侧按钮添加</div> : sortConfigs.map((sort, index) => (
-            <div key={index} style={styles.conditionRow}>
+            <div key={index} className="plugin-condition" style={styles.conditionRow}>
               <select style={{ ...styles.select, width: '200px' }} value={sort.fieldId} onChange={(e) => updateSort(index, 'fieldId', e.target.value)}>
                 <option value="">-- 选择字段 --</option>
                 {sheetFields.map((field) => (<option key={field.id} value={field.id}>{field.name}</option>))}
@@ -1850,7 +1976,7 @@ function App() {
         </div>
         <hr style={{ ...styles.hr, margin: '12px 0' }} />
         <div style={styles.btnGroup}>
-          <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={() => setCurrentStep(1)}>返回</button>
+          <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={() => setCurrentStep(2)}>返回</button>
           <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handleSubmit} disabled={loading}>{loading ? '提交中...' : '提交配置'}</button>
         </div>
       </div>
@@ -1859,36 +1985,37 @@ function App() {
 
   if (viewMode === "list") {
     return (
-      <div style={styles.container}>
+      <div className="plugin-shell" style={styles.container}>
         {renderPayDialog()}
         {renderChannelDialog()}
         {renderToast()}
         {upgradeDialogVisible ? (
           renderUpgradeDialog()
         ) : (
-          <div style={styles.card}>
+          <main className="plugin-page" style={styles.card}>
             {renderProductInfo()}
             {renderVoucherList()}
-          </div>
+          </main>
         )}
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
+    <div className="plugin-shell" style={styles.container}>
       {renderPayDialog()}
       {renderChannelDialog()}
       {renderToast()}
       {upgradeDialogVisible ? (
         renderUpgradeDialog()
       ) : (
-        <div style={styles.card}>
+        <main className="plugin-page" style={styles.card}>
           {renderProductInfo()}
           {currentStep === 0 && renderStep1()}
           {currentStep === 1 && renderStep2()}
-          {currentStep === 2 && renderStep3()}
-        </div>
+          {currentStep === 2 && renderEntryStep()}
+          {currentStep === 3 && renderStep3()}
+        </main>
       )}
     </div>
   );

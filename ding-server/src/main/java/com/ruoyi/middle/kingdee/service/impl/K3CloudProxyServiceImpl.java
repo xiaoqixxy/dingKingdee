@@ -1,5 +1,7 @@
 package com.ruoyi.middle.kingdee.service.impl;
 
+import com.ruoyi.middle.kingdee.util.DetailSyncSupport;
+
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.kingdee.bos.webapi.entity.DataCenter;
@@ -226,7 +228,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
             JSONObject jsonObject = util.queryBusinessInfo(TABLE_NAME);
             JSONObject NeedReturnData = jsonObject.getJSONObject("Result").getJSONObject("NeedReturnData");
             
-            JSONObject resultObject = ContoryUtil.kingdeeToDing(NeedReturnData);
+            JSONObject resultObject = DetailSyncSupport.schema(NeedReturnData, params);
             log.info("sheetMeta查询成功: {}", resultObject);
             return resultObject;
         } catch (Exception e) {
@@ -263,7 +265,22 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
             KingdeeK3CloudUtil util = new KingdeeK3CloudUtil(SERVER_URL, CID, USER_NAME, APP_ID, APP_SECRET);
             JSONObject jsonObject = util.queryBusinessInfo(TABLE_NAME);
             JSONObject NeedReturnData = jsonObject.getJSONObject("Result").getJSONObject("NeedReturnData");
-            JSONObject dingFieldData = ContoryUtil.kingdeeToDing(NeedReturnData);
+            JSONObject dingFieldData = DetailSyncSupport.schema(NeedReturnData, params);
+
+            if (dingFieldData.containsKey("selectedEntryKey")) {
+                if (nextToken == null || nextToken < 0 || maxResults == null || maxResults <= 0)
+                    throw new IllegalArgumentException("无效的分页参数");
+                int syncLimit = singleSyncLimit == null ? 0 : singleSyncLimit;
+                int pageSize = Math.min(Math.min(maxResults, 300), Math.max(0, syncLimit - nextToken));
+                if (pageSize == 0)
+                    return DetailSyncSupport.result(dingFieldData, params, java.util.Collections.emptyList(), nextToken, 0, syncLimit);
+                // Include the preceding row to suppress headers across pages, plus one lookahead row.
+                int start = Math.max(0, nextToken - 1);
+                int count = pageSize + (nextToken > 0 ? 1 : 0) + 1;
+                JSONObject detailQuery = DetailSyncSupport.query(dingFieldData, params, start, count);
+                return DetailSyncSupport.result(dingFieldData, params, util.query(detailQuery),
+                        nextToken, pageSize, syncLimit);
+            }
             
             JSONObject queryJson = ContoryUtil.kingdeeToKingdeeQuery(dingFieldData, nextToken, maxResults, filterConditions, sortConfigs);
             List<List<Object>> query = util.query(queryJson);

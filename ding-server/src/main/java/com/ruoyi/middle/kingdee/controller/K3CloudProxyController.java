@@ -50,7 +50,7 @@ public class K3CloudProxyController {
     /**
      * 获取表结构接口（钉钉格式）
      */
-    @PostMapping("/sheetMeta")
+    @PostMapping({"/sheetMeta", "/formSchema"})
     public JSONObject sheetMeta(@RequestBody String rawBody, HttpServletRequest request) {
 //        String timestamp = request.getHeader("Ding-Docs-Timestamp");
 //        String signature = request.getHeader("Ding-Docs-Signature");
@@ -77,6 +77,15 @@ public class K3CloudProxyController {
             log.info("查询表单: {}", selectedFormId);
             
             JSONObject sheetMetaResult = k3CloudProxyService.sheetMetaWithFormId(selectedFormId, paramsJson);
+            if (!request.getRequestURI().endsWith("/formSchema")) {
+                sheetMetaResult.remove("entryOptions");
+                sheetMetaResult.remove("headFields");
+                sheetMetaResult.remove("headerFieldCount");
+                sheetMetaResult.remove("selectedEntryKey");
+                sheetMetaResult.remove("sequenceKey");
+                com.alibaba.fastjson2.JSONArray fields = sheetMetaResult.getJSONArray("fields");
+                for (int i = 0; i < fields.size(); i++) fields.getJSONObject(i).remove("queryKey");
+            }
             
             JSONObject result = new JSONObject();
             result.put("code", 0);

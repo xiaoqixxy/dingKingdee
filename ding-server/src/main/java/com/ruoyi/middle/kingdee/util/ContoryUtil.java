@@ -53,6 +53,11 @@ public class ContoryUtil {
      * @return 钉钉格式的字段定义JSON对象
      */
     public static JSONObject kingdeeToDing(JSONObject needReturnData) {
+        return kingdeeToDing(needReturnData, null);
+    }
+
+    /** Shared conversion for a metadata-selected head or entry entity. */
+    static JSONObject kingdeeToDing(JSONObject needReturnData, String selectedEntityKey) {
         JSONObject resultJson = new JSONObject();
         resultJson.put("Id", needReturnData.getString("Id"));
         resultJson.put("sheetName", getName(needReturnData));
@@ -74,8 +79,8 @@ public class ContoryUtil {
         JSONArray jsonArray = needReturnData.getJSONArray("Entrys");
         for (int i = 0; i < jsonArray.size(); i++) {
             JSONObject groupFieldJson = jsonArray.getJSONObject(i);
-            // 只处理单据头（FBillHead）
-            if ("FBillHead".equals(groupFieldJson.getString("Key"))) {
+            if (selectedEntityKey == null ? "HeadEntity".equals(groupFieldJson.getString("EntityType"))
+                    : selectedEntityKey.equals(groupFieldJson.getString("Key"))) {
                 JSONArray fieldsKingdee = groupFieldJson.getJSONArray("Fields");
                 for (int j = 0; j < fieldsKingdee.size(); j++) {
                     JSONObject rowFieldJson = fieldsKingdee.getJSONObject(j);
@@ -399,7 +404,7 @@ public class ContoryUtil {
      * @return 格式化后的值
      * @throws ParseException 日期解析异常
      */
-    private static Object getKingdeeFieldValue(JSONObject fieldJson, Object fieldValue) throws ParseException {
+    static Object getKingdeeFieldValue(JSONObject fieldJson, Object fieldValue) throws ParseException {
         if (fieldValue == null) {
             return "";
         }
@@ -411,7 +416,7 @@ public class ContoryUtil {
             JSONArray choices = fieldJson.getJSONObject("property").getJSONArray("choices");
             for (int i = 0; i < choices.size(); i++) {
                 JSONObject choice = choices.getJSONObject(i);
-                if (fieldValue.equals(choice.getString("value"))) {
+                if (String.valueOf(fieldValue).equals(choice.getString("value"))) {
                     return choice.getString("name");
                 }
             }

@@ -1,11 +1,12 @@
-// const API_BASE = 'https://web.xiexinyang.com/prod-api';
-const API_BASE = 'http://localhost:1007';//本地
+const API_BASE = process.env.REACT_APP_API_BASE ?? 'https://web.jxdingjiang.com/prod-api';
+// const API_BASE = 'http://localhost:1009';//本地
 
 export const API = {
   // 登录
   login: `${API_BASE}/api/login`,
   // 表单元数据
   sheetMeta: `${API_BASE}/api/sheetMeta`,
+  formSchema: `${API_BASE}/api/formSchema`,
   // 表单配置
   tableConfig: {
     options: `${API_BASE}/kingdee/tableConfig/options`,

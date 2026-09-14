@@ -30,6 +30,17 @@
   --shadow-lg:  0 8px 32px rgba(22, 119, 255, 0.16);
 }
 
+.entry-step h3 { margin-bottom: 8px; color: var(--text-primary); }
+.entry-options { border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 16px; margin: 16px 0; min-width: 0; }
+.entry-options legend { padding: 0 6px; font-weight: 600; color: var(--text-primary); }
+.entry-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-subtle); cursor: pointer; }
+.entry-option:last-of-type { margin-bottom: 0; }
+.entry-option.is-selected { border-color: var(--primary-border); background: var(--primary-bg); }
+.entry-option input { margin-top: 4px; accent-color: var(--primary); flex-shrink: 0; }
+.entry-option:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.entry-option small { display: block; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+.entry-help { color: var(--text-secondary); font-size: 13px; line-height: 1.6; margin-top: 8px; }
+
 /* ===== 全局重置 ===== */
 * {
   margin: 0;
@@ -566,3 +577,31 @@ select option[disabled][value=''] {
     padding: 12px 16px;
   }
 }
+
+/* 插件内部布局：保留外层尺寸，内容独立滚动。 */
+:root { --plugin-padding: 16px; }
+.plugin-shell { color: var(--text-primary); background: var(--bg-card); font-size: 14px; line-height: 1.5; }
+.plugin-page { overscroll-behavior: contain; scrollbar-gutter: stable; overflow-wrap: anywhere; }
+.plugin-page > * { min-width: 0; }
+.plugin-shell button { flex-shrink: 0; }
+.plugin-shell button:disabled { cursor: not-allowed; opacity: .55; }
+.plugin-shell button:focus-visible, .plugin-shell select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.plugin-shell input:focus-visible { box-shadow: inset 0 -2px var(--primary); }
+.plugin-condition > input, .plugin-condition > select { flex: 1 1 140px !important; }
+.plugin-condition > div { flex: 1 1 180px; min-width: 0; max-width: 100%; }
+.plugin-date-value > input, .plugin-date-value > select { flex: 1 1 130px !important; }
+.plugin-shell .entry-options { padding: 12px; margin: 12px 0; }
+.plugin-shell .entry-option { padding: 10px; }
+@media (max-width: 480px) {
+  :root { --plugin-padding: 12px; }
+  .plugin-page { border-radius: 0 !important; box-shadow: none !important; }
+  .plugin-condition > input, .plugin-condition > select, .plugin-condition > div { width: 100% !important; flex-basis: 100% !important; }
+}
+@media (max-height: 480px) {
+  :root { --plugin-padding: 10px 12px; }
+}
+
+/* 表单选择页 */
+.form-selection-help { margin: 4px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+.form-selection-alternative { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; padding-top: 10px; border-top: 1px solid var(--border-light); }
+.form-selection-page [data-form-dropdown]:focus-within { border-color: var(--primary-border) !important; }
