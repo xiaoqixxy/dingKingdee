@@ -75,6 +75,7 @@ public class FieldTypeConstant {
      * 用于 ContoryUtil 中的类型判断
      */
     public static final int FieldType_DATE = 61;
+    public static final int FieldType_NUMBER = 106;
 
     /**
      * 关联表单类型

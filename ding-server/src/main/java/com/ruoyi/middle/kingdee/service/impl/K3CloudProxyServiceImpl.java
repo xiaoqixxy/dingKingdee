@@ -145,8 +145,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
         JSONObject NeedReturnData = jsonObject.getJSONObject("Result").getJSONObject("NeedReturnData");
         
         // 转换为钉钉格式
-        JSONObject resultObject = ContoryUtil.kingdeeToDing(NeedReturnData);
-        return resultObject;
+        return ContoryUtil.kingdeeToDing(NeedReturnData);
     }
 
     /**

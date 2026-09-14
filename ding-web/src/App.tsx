@@ -171,6 +171,12 @@ interface VoucherConfigItem {
   createTime?: string;
 }
 
+interface ToastItem {
+  id: number;
+  message: string;
+  type: 'success' | 'warning' | 'error';
+}
+
 interface ProductInfo {
   id: number;
   productName: string;
@@ -507,6 +513,7 @@ function App() {
 
   const [sheetFields, setSheetFields] = useState<SheetField[]>([]);
   const [fieldLoading, setFieldLoading] = useState(false);
+  const [toastList, setToastList] = useState<ToastItem[]>([]);
   const [filterConditions, setFilterConditions] = useState<FilterConditionGroup[]>([{ conditions: [{ fieldId: '', operator: '=', value: '' as FilterConditionValue }] }]);
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ fieldId: '', order: 'asc' }]);
 
@@ -607,11 +614,15 @@ function App() {
   };
 
   const showMessage = (msg: string, type: 'success' | 'warning' | 'error' = 'success') => {
-    const msgDiv = document.createElement('div');
-    msgDiv.textContent = msg;
-    msgDiv.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 20px; border-radius: 4px; z-index: 9999; background: ${type === 'success' ? '#67c23a' : type === 'warning' ? '#e6a23c' : '#f56c6c'}; color: #fff; font-size: 14px;`;
-    document.body.appendChild(msgDiv);
-    setTimeout(() => msgDiv.remove(), 3000);
+    const id = Date.now() + Math.random();
+    setToastList(prev => [...prev, { id, message: msg, type }]);
+    setTimeout(() => {
+      setToastList(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  };
+
+  const removeToast = (id: number) => {
+    setToastList(prev => prev.filter(t => t.id !== id));
   };
 
   const fetchCurrentProduct = async (corpId: string) => {
@@ -789,7 +800,7 @@ function App() {
     throw new Error(result?.msg || '金蝶登录请求失败');
   };
 
-  const loadSheetMetaWithForm = async (formId: string, formName: string) => {
+  const loadSheetMetaWithForm = async (formId: string, formName: string): Promise<SheetField[]> => {
     setFieldLoading(true);
     try {
       const paramsObj = { ...kingdeeConfig, selectedFormId: formId, selectedFormName: formName };
@@ -798,9 +809,11 @@ function App() {
       const result = await response.json();
       const fields = result?.data?.fields || [];
       setSheetFields([...fields]);
+      return fields;
     } catch (error) {
       showMessage('加载表单字段失败', 'error');
       setSheetFields([]);
+      return [];
     } finally {
       setFieldLoading(false);
     }
@@ -943,7 +956,12 @@ function App() {
     }
     try {
       setLoading(true);
-      await loadSheetMetaWithForm(formId, formName);
+      const fields = await loadSheetMetaWithForm(formId, formName);
+      // 未获取到表单元数据字段信息，阻止进入下一步
+      if (!fields || fields.length === 0) {
+        showMessage('未能获取到表单元数据字段信息，请检查表单配置或网络后重试', 'error');
+        return;
+      }
       setSelectedFormId(formId);
       setSelectedFormName(formName);
       setIsOtherForm(false);
@@ -1287,6 +1305,58 @@ function App() {
     );
   };
 
+
+  const renderToast = () => {
+    if (toastList.length === 0) return null;
+    const config = {
+      success: { bg: '#f0fdf4', border: '#bbf7d0', icon: '✓', iconColor: '#22c55e', textColor: '#15803d', shadow: 'rgba(34,197,94,0.18)' },
+      warning: { bg: '#fffbeb', border: '#fde68a', icon: '!', iconColor: '#f59e0b', textColor: '#b45309', shadow: 'rgba(245,158,11,0.18)' },
+      error: { bg: '#fef2f2', border: '#fecaca', icon: '✕', iconColor: '#ef4444', textColor: '#b91c1c', shadow: 'rgba(239,68,68,0.18)' },
+    };
+    return (
+      <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 10000, display: 'flex', flexDirection: 'column', gap: '8px', pointerEvents: 'none' }}>
+        {toastList.map(t => {
+          const c = config[t.type];
+          return (
+            <div key={t.id} className="toast-slide-down" style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: c.bg,
+              border: `1px solid ${c.border}`,
+              borderRadius: '10px',
+              padding: '14px 20px',
+              boxShadow: `0 8px 24px ${c.shadow}, 0 2px 8px rgba(0,0,0,0.06)`,
+              minWidth: '320px',
+              maxWidth: '500px',
+              pointerEvents: 'auto',
+            }}>
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: c.iconColor,
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '15px',
+                fontWeight: 700,
+                flexShrink: 0,
+              }}>{c.icon}</div>
+              <span style={{ fontSize: '14px', color: c.textColor, fontWeight: 500, flex: 1, lineHeight: 1.4 }}>{t.message}</span>
+              <button
+                style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '18px', cursor: 'pointer', padding: '0', lineHeight: 1, flexShrink: 0, width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', transition: 'all 0.2s' }}
+                onClick={() => removeToast(t.id)}
+                onMouseEnter={(e) => { e.currentTarget.style.color = c.textColor; e.currentTarget.style.background = c.border; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'none'; }}
+              >×</button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const renderVoucherList = () => (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
@@ -1792,6 +1862,7 @@ function App() {
       <div style={styles.container}>
         {renderPayDialog()}
         {renderChannelDialog()}
+        {renderToast()}
         {upgradeDialogVisible ? (
           renderUpgradeDialog()
         ) : (
@@ -1808,6 +1879,7 @@ function App() {
     <div style={styles.container}>
       {renderPayDialog()}
       {renderChannelDialog()}
+      {renderToast()}
       {upgradeDialogVisible ? (
         renderUpgradeDialog()
       ) : (

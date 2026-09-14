@@ -139,6 +139,14 @@ public class ContoryUtil {
                         property.put("formatter", DING_DATE_FORMATTER);
                         rowFieldResult.put("property", property);
                     }
+                    // 处理数字类型
+                    else if (FieldTypeConstant.FieldType_NUMBER == rowFieldJson.getInteger("FieldType")) {
+                        rowFieldResult.put("id", rowFieldJson.getString("Key"));
+                        rowFieldResult.put("type", "number");
+                        JSONObject property = new JSONObject();
+                        property.put("formatter", "FLOAT_2");
+                        rowFieldResult.put("property", property);
+                    }
                     // 其他类型统一处理为文本
                     else {
                         rowFieldResult.put("id", rowFieldJson.getString("Key"));
@@ -354,6 +362,10 @@ public class ContoryUtil {
         if (!records.isEmpty() && records.size() >= maxResult) {
             //数量达到权益上线，截断接口
             if (singleSyncLimit <= nextToken + maxResult) {
+                JSONObject record = new JSONObject();
+                record.put("id", "当前数据已达到同步上限，可升级权益以同步更多数据");
+                record.put("fields", new JSONObject());
+                records.add(record);
                 resultJson.put("nextToken", "");
                 resultJson.put("hasMore", false);
                 resultJson.put("records", records);
