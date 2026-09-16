@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { initView } from 'dingtalk-docs-cool-app';
 import { API } from './config/api';
+import { APP_VERSION } from './config/version';
 import './App.css';
 
 interface MultiSelectProps {
@@ -176,11 +177,19 @@ interface VoucherConfigItem {
   selectedFormName?: string;
   selectedEntryKey?: string;
   headerFillMode?: HeaderFillMode;
-  filterConditions?: FilterCondition[];
+  filterConditions?: (FilterCondition | FilterConditionGroup)[];
   sortConfigs?: SortConfig[];
   sheetFields?: SheetField[];
   createTime?: string;
 }
+
+// getSyncConfig is supplied by the DingTalk iframe runtime. SDK 0.3.2 lacks
+// its declarations; the official 0.3.16 types expose both API locations.
+interface DataSourceHost {
+  getSyncConfig?: () => Promise<unknown>;
+  saveConfigAndGoNext?: (config: Record<string, unknown>) => Promise<void>;
+}
+type SavedSyncConfig = Partial<KingdeeBaseParams> & VoucherConfigItem & Record<string, unknown>;
 
 interface ToastItem {
   id: number;
@@ -510,6 +519,11 @@ const styles: Record<string, any> = {
 function App() {
   const [kingdeeConfig, setKingdeeConfig] = useState<KingdeeBaseParams>(DEFAULT_CONFIG);
   const [currentStep, setCurrentStep] = useState(0);
+  const [syncConfigLoading, setSyncConfigLoading] = useState(true);
+  const [syncConfigError, setSyncConfigError] = useState('');
+  const savedSyncConfigRef = useRef<SavedSyncConfig | null>(null);
+  const mountedRef = useRef(false);
+  const initStartedRef = useRef(false);
   const [loading, setLoading] = useState(false);
 
   const [currentProduct, setCurrentProduct] = useState<ProductInfo | null>(null);
@@ -582,6 +596,13 @@ function App() {
     setSyncMode(false);
     setVoucherName("");
     setOrderNo(undefined);
+    setDisplayValue('');
+    setFormSearchText('');
+    setFormDropdownOpen(false);
+    setIsOtherForm(false);
+    setOtherFormKey('');
+    setOtherFormName('');
+    setHeadFields([]);
     setKingdeeConfig(DEFAULT_CONFIG);
     setSelectedFormId("");
     setSelectedFormName("");
@@ -592,56 +613,63 @@ function App() {
     setViewMode("config");
   };
 
-  const handleEditConfig = (item: VoucherConfigItem) => {
+  // 兼容早期平铺条件和当前按 OR 分组保存的条件。
+  const restoreSyncSelection = (item: VoucherConfigItem) => {
     setSelectedEntryKey(item.selectedEntryKey || '');
     setHeaderFillMode(item.headerFillMode || 'FIRST_ROW');
     setMetadataFormId(item.selectedFormId || '');
+    setEntryOptions([]);
+    setHeadFields([]);
+    setSelectedFormId(item.selectedFormId || '');
+    setSelectedFormName(item.selectedFormName || '');
+    setDisplayValue(item.selectedFormName || '');
+    setFormSearchText('');
+    setFormDropdownOpen(false);
+    setIsOtherForm(false);
+    setOtherFormKey('');
+    setOtherFormName('');
+    setSheetFields(item.sheetFields || []);
+    const groups = (item.filterConditions || []).map(condition =>
+      'conditions' in condition ? condition : { conditions: [condition] });
+    const legacy = item.filterConditions?.every(condition => !('conditions' in condition));
+    setFilterConditions(groups.length
+      ? legacy ? [{ conditions: item.filterConditions as FilterCondition[] }] : groups
+      : [{ conditions: [{ fieldId: '', operator: '=', value: '' }] }]);
+    setSortConfigs(item.sortConfigs || [{ fieldId: '', order: 'asc' }]);
+  };
+
+  const handleEditConfig = (item: VoucherConfigItem, open = true) => {
+    restoreSyncSelection(item);
     setEditingVoucherId(item.id || null);
     setSyncMode(false);
-    setVoucherName(item.voucherName || item.name || "");
+    setVoucherName(item.voucherName || item.name || '');
     setOrderNo(item.orderNo);
     setKingdeeConfig({
-      SERVER_URL: item.serverUrl || "",
-      CID: item.cid || item.cId || "",
-      USER_NAME: item.userName || "",
-      APP_ID: item.appId || "",
-      APP_SECRET: item.appSecret || "",
+      SERVER_URL: item.serverUrl || '', CID: item.cid || item.cId || '',
+      USER_NAME: item.userName || '', APP_ID: item.appId || '', APP_SECRET: item.appSecret || '',
     });
-    setSelectedFormId(item.selectedFormId || "");
-    setSelectedFormName(item.selectedFormName || "");
-    setSheetFields(item.sheetFields || []);
-    setFilterConditions(item.filterConditions ? [{ conditions: item.filterConditions }] : [{ conditions: [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }] }]);
-    setSortConfigs(item.sortConfigs || [{ fieldId: "", order: "asc" }]);
     setCurrentStep(0);
-    setViewMode("config");
+    if (open) setViewMode('config');
   };
 
   const handleSyncData = async (item: VoucherConfigItem) => {
-    setSelectedEntryKey(item.selectedEntryKey || '');
-    setHeaderFillMode(item.headerFillMode || 'FIRST_ROW');
-    setMetadataFormId(item.selectedFormId || '');
-    setEditingVoucherId(item.id || null);
+    handleEditConfig(item, false);
+    // Changing the connection of an existing sync must retain this sheet's settings.
+    const selection = savedSyncConfigRef.current || item;
+    restoreSyncSelection(selection);
     setSyncMode(true);
-    setVoucherName(item.voucherName || item.name || "");
-    setOrderNo(item.orderNo);
-    setKingdeeConfig({
-      SERVER_URL: item.serverUrl || "",
-      CID: item.cid || item.cId || "",
-      USER_NAME: item.userName || "",
-      APP_ID: item.appId || "",
-      APP_SECRET: item.appSecret || "",
-    });
-    setSelectedFormId(item.selectedFormId || "");
-    setSelectedFormName(item.selectedFormName || "");
-    setSheetFields(item.sheetFields || []);
-    setFilterConditions(item.filterConditions ? [{ conditions: item.filterConditions }] : [{ conditions: [{ fieldId: "", operator: "=", value: "" as FilterConditionValue }] }]);
-    setSortConfigs(item.sortConfigs || [{ fieldId: "", order: "asc" }]);
-    await fetchFormList();
+    await fetchFormList(selection.selectedFormId || '', selection.selectedFormName || '');
     setCurrentStep(1);
-    setViewMode("config");
+    setViewMode('config');
   };
 
   const handleBackToList = () => {
+    if (syncMode && savedSyncConfigRef.current) {
+      savedSyncConfigRef.current = {
+        ...savedSyncConfigRef.current, selectedFormId, selectedFormName,
+        selectedEntryKey, headerFillMode, filterConditions, sortConfigs, sheetFields,
+      };
+    }
     setViewMode("list");
     fetchVoucherList();
   };
@@ -787,8 +815,63 @@ function App() {
     if (corpId) fetchCurrentProduct(corpId);
   }, []);
 
+  const getDataSourceHost = (): DataSourceHost | undefined => {
+    const host = window.Dingdocs?.base?.host as (DataSourceHost & { dataSource?: DataSourceHost }) | undefined;
+    return host?.dataSource?.getSyncConfig ? host.dataSource : host;
+  };
+
+  const restoreSavedSyncConfig = async (isActive = () => mountedRef.current) => {
+    setSyncConfigLoading(true);
+    setSyncConfigError('');
+    try {
+      const host = getDataSourceHost();
+      if (!host?.getSyncConfig) throw new Error('当前钉钉版本不支持读取同步设置，请更新钉钉后重试');
+      const result = await host.getSyncConfig();
+      if (!isActive()) return;
+      const config = typeof result === 'string' && result.trim() ? JSON.parse(result) : result;
+      // A new data source has no saved configuration.
+      if (config == null || config === '' || (typeof config === 'object' && !Array.isArray(config) && Object.keys(config).length === 0)) return;
+      if (typeof config !== 'object' || Array.isArray(config) || typeof config.selectedFormId !== 'string' || !config.selectedFormId) {
+        throw new Error('原同步设置格式异常，请重试或联系管理员');
+      }
+      const saved = config as SavedSyncConfig;
+      savedSyncConfigRef.current = saved;
+      handleEditConfig({
+        ...saved,
+        serverUrl: saved.SERVER_URL ?? saved.serverUrl,
+        cid: saved.CID ?? saved.cid ?? saved.cId,
+        userName: saved.USER_NAME ?? saved.userName,
+        appId: saved.APP_ID ?? saved.appId,
+        appSecret: saved.APP_SECRET ?? saved.appSecret,
+      }, false);
+      setSyncMode(true);
+      await fetchFormList(saved.selectedFormId, saved.selectedFormName || '');
+      if (!isActive()) return;
+      setCurrentStep(1);
+      setViewMode('config');
+    } catch (error) {
+      if (isActive()) setSyncConfigError('读取原同步设置失败，请重新读取；若仍失败，请更新钉钉后重新打开');
+    } finally {
+      if (isActive()) setSyncConfigLoading(false);
+    }
+  };
+
   useEffect(() => {
-    initView({ onReady: () => {}, onError: (e) => console.log('钉钉初始化失败：', e) });
+    mountedRef.current = true;
+    // initView only initializes once; StrictMode replays effects in development.
+    if (!initStartedRef.current) {
+      initStartedRef.current = true;
+      initView({
+        onReady: () => { if (mountedRef.current) void restoreSavedSyncConfig(); },
+        onError: () => {
+          if (!mountedRef.current) return;
+          setSyncConfigLoading(false);
+          // The standalone connection management page does not have a DingTalk host.
+          if (window.self !== window.top) setSyncConfigError('钉钉初始化失败，请重新打开同步设置');
+        },
+      });
+    }
+    return () => { mountedRef.current = false; };
   }, []);
 
   useEffect(() => {
@@ -812,16 +895,21 @@ function App() {
     }
   }, [viewMode]);
 
-  const fetchFormList = async () => {
+  const fetchFormList = async (savedFormId = selectedFormId, savedFormName = selectedFormName) => {
     try {
       const response = await fetch(API.tableConfig.options, { method: 'GET', headers: { 'Content-Type': 'application/json' }, mode: 'cors' });
       const result = await response.json();
       if (result.code === 200 && result.data) {
         const list = result.data.map((item: any) => ({ id: item.formKey, name: item.formName }));
         setFormList(list);
-        if (list.length > 0 && !selectedFormId) {
+        if (list.length > 0 && !savedFormId) {
           setSelectedFormId(list[0].id);
           setSelectedFormName(list[0].name);
+          setDisplayValue(list[0].name);
+        } else if (savedFormId && !list.some((form: FormItemType) => form.id === savedFormId)) {
+          setIsOtherForm(true);
+          setOtherFormKey(savedFormId);
+          setOtherFormName(savedFormName);
         }
       }
     } catch (error) {
@@ -903,6 +991,8 @@ function App() {
         appSecret: kingdeeConfig.APP_SECRET.trim(),
         selectedFormId,
         selectedFormName,
+        selectedEntryKey,
+        headerFillMode,
         filterConditions: validFilters,
         sortConfigs: validSorts,
         sheetFields,
@@ -1014,9 +1104,7 @@ function App() {
       }
       setSelectedFormId(formId);
       setSelectedFormName(formName);
-      setIsOtherForm(false);
-      setOtherFormName('');
-      setOtherFormKey('');
+      setDisplayValue(formName);
       setCurrentStep(2);
     } catch (error) {
       showMessage(error instanceof Error ? error.message : '操作失败', 'error');
@@ -1033,9 +1121,10 @@ function App() {
         conditions: group.conditions.filter(f => f.fieldId.trim())
       })).filter(group => group.conditions.length > 0);
       const validSorts = sortConfigs.filter(s => s.fieldId.trim());
-      const submitData = { ...kingdeeConfig, configVersion: 2, selectedFormId, selectedFormName, selectedEntryKey, headerFillMode, filterConditions: validFilters, sortConfigs: validSorts, sheetFields };
-      if (window.Dingdocs?.base?.host) {
-        await (window.Dingdocs.base.host as any).saveConfigAndGoNext(submitData);
+      const submitData = { ...savedSyncConfigRef.current, ...kingdeeConfig, configVersion: 2, selectedFormId, selectedFormName, selectedEntryKey, headerFillMode, filterConditions: validFilters, sortConfigs: validSorts, sheetFields };
+      const host = getDataSourceHost();
+      if (host?.saveConfigAndGoNext) {
+        await host.saveConfigAndGoNext(submitData);
         showMessage('配置提交成功');
       } else {
         showMessage('钉钉环境未初始化', 'error');
@@ -1099,7 +1188,7 @@ function App() {
     setFilterConditions(prev => {
       const newGroups = [...prev];
       const newConditions = [...newGroups[groupIndex].conditions];
-      (newConditions[conditionIndex] as any)[key] = value;
+      newConditions[conditionIndex] = { ...newConditions[conditionIndex], [key]: value } as FilterCondition;
       newGroups[groupIndex] = { ...newGroups[groupIndex], conditions: newConditions };
       return newGroups;
     });
@@ -1117,7 +1206,7 @@ function App() {
 
   const updateSort = (index: number, key: keyof SortConfig, value: string) => {
     const newSorts = [...sortConfigs];
-    (newSorts[index] as any)[key] = value as 'asc' | 'desc';
+    newSorts[index] = { ...newSorts[index], [key]: value } as SortConfig;
     setSortConfigs(newSorts);
   };
 
@@ -1726,7 +1815,7 @@ function App() {
       )}
       </div>
       <div style={styles.btnGroup}>
-        <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>返回列表</button>
+        {!savedSyncConfigRef.current && <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>返回列表</button>}
         <button 
           style={{ ...styles.button, ...styles.primaryBtn }} 
           onClick={handleStep2Next} 
@@ -1983,9 +2072,22 @@ function App() {
     );
   };
 
+  if (syncConfigLoading || syncConfigError) {
+    return <div className="plugin-shell" style={styles.container}>
+      <div className="plugin-version" aria-label="前端版本">版本 v{APP_VERSION}</div>
+      <main className="plugin-page" style={styles.card}>
+        {syncConfigLoading ? <p role="status">正在读取同步设置...</p> : <>
+          <p role="alert">{syncConfigError}</p>
+          <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={() => void restoreSavedSyncConfig()}>重新读取</button>
+        </>}
+      </main>
+    </div>;
+  }
+
   if (viewMode === "list") {
     return (
       <div className="plugin-shell" style={styles.container}>
+      <div className="plugin-version" aria-label="前端版本">版本 v{APP_VERSION}</div>
         {renderPayDialog()}
         {renderChannelDialog()}
         {renderToast()}
@@ -2003,6 +2105,7 @@ function App() {
 
   return (
     <div className="plugin-shell" style={styles.container}>
+      <div className="plugin-version" aria-label="前端版本">版本 v{APP_VERSION}</div>
       {renderPayDialog()}
       {renderChannelDialog()}
       {renderToast()}

@@ -605,3 +605,19 @@ select option[disabled][value=''] {
 .form-selection-help { margin: 4px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
 .form-selection-alternative { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; padding-top: 10px; border-top: 1px solid var(--border-light); }
 .form-selection-page [data-form-dropdown]:focus-within { border-color: var(--primary-border) !important; }
+
+/* 顶部与钉钉标题留出间距，底部保留版本栏，不增加整体高度。 */
+.plugin-shell { position: relative; padding-top: 24px; padding-bottom: 24px; }
+.plugin-version {
+  position: absolute;
+  bottom: 2px;
+  right: 12px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 20px;
+  user-select: text;
+}
+
+@media (max-height: 480px) {
+  .plugin-shell { padding-top: 16px; }
+}
