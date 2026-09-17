@@ -79,7 +79,7 @@ public class DateConverterUtil {
     /**
      * 将ISO格式日期字符串转换为java.util.Date
      * <p>
-     * 兼容旧版Date类型的使用场景。
+     * 保留时分秒及毫秒；无时区的金蝶时间沿用服务器默认时区。
      *
      * @param dateStr ISO格式日期字符串
      * @return java.util.Date对象
@@ -87,8 +87,8 @@ public class DateConverterUtil {
      */
     public static java.util.Date stringToDate(String dateStr) {
         try {
-            LocalDate localDate = stringToLocalDate(dateStr);
-            return java.sql.Date.valueOf(localDate);
+            LocalDateTime dateTime = stringToLocalDateTime(dateStr);
+            return java.util.Date.from(dateTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
         } catch (Exception e) {
             throw new IllegalArgumentException("日期解析失败：" + e.getMessage(), e);
         }
