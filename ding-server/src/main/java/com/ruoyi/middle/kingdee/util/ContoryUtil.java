@@ -71,6 +71,7 @@ public class ContoryUtil {
         PkField.put("id", PkFieldName);
         PkField.put("name", PkFieldName);
         PkField.put("type", "text");
+        PkField.put("filterType", "number");
         PkField.put("isPrimary", true);
         PkField.put("description", "字段主键");
         fields.add(PkField);
@@ -106,6 +107,7 @@ public class ContoryUtil {
                     }
                     // 处理布尔类型
                     else if (FieldTypeConstant.FieldType_BOOLEN == rowFieldJson.getInteger("ElementType")) {
+                        rowFieldResult.put("filterType", "boolean");
                         rowFieldResult.put("id", rowFieldJson.getString("Key"));
                         rowFieldResult.put("type", "singleSelect");
                         JSONObject property = new JSONObject();
@@ -158,6 +160,8 @@ public class ContoryUtil {
                         rowFieldResult.put("type", "text");
                     }
 
+                    if (Integer.valueOf(FieldTypeConstant.FieldType_BOOLEN).equals(rowFieldJson.getInteger("ElementType")))
+                        rowFieldResult.put("filterType", "boolean");
                     rowFieldResult.put("isPrimary", false);
                     rowFieldResult.put("description", "");
                     fields.add(rowFieldResult);
@@ -223,7 +227,7 @@ public class ContoryUtil {
         // 构建金蝶查询参数
         queryJson.put("FormId", needReturnData.getString("Id"));
         queryJson.put("FieldKeys", ListToString(FieldKeys));
-        queryJson.put("FilterString", buildFilterString(filterConditions));
+        queryJson.put("FilterString", buildFilterString(filterConditions, fields));
         queryJson.put("OrderString", buildOrderString(sortConfigs));
         queryJson.put("StartRow", nextToken);
         queryJson.put("Limit", maxResult);
@@ -259,7 +263,7 @@ public class ContoryUtil {
      * // 输出：FBillNo = 'PUR00001'
      * </pre>
      */
-//    private static String buildFilterString(JSONArray filterConditions) {
+//    private static String buildFilterString(JSONArray filterConditions, JSONArray fields) {
 //        if (filterConditions == null || filterConditions.isEmpty()) {
 //            return "";
 //        }
@@ -464,7 +468,7 @@ public class ContoryUtil {
      * // 输出: (FBillNo = 'PUR00001') or (FSupplierId = 'SUP001')
      * </pre>
      */
-    private static String buildFilterString(JSONArray filterConditions) {
+    private static String buildFilterString(JSONArray filterConditions, JSONArray fields) {
         // 空值检查
         if (filterConditions == null || filterConditions.isEmpty()) {
             return "";
@@ -491,14 +495,11 @@ public class ContoryUtil {
                     continue;
                 }
 
-                // 组间添加 OR 分隔符
-                if (groupIndex > 0) {
-                    result.append(" or ");
-                }
 
                 // 构建组内条件(AND连接)
-                String groupFilter = buildGroupFilterString(conditions);
+                String groupFilter = buildGroupFilterString(conditions, fields);
                 if (!groupFilter.isEmpty()) {
+                    if (result.length() > 0) result.append(" or ");
                     // 多条件组需要用括号包裹
                     if (conditions.size() > 1) {
                         result.append("(").append(groupFilter).append(")");
@@ -508,15 +509,7 @@ public class ContoryUtil {
                 }
             }
         } else {
-            // ===== 处理扁平结构(向后兼容) =====
-            // 遍历所有条件,条件间用 AND 连接
-            for (int i = 0; i < filterConditions.size(); i++) {
-                if (i != 0) {
-                    result.append(" and ");
-                }
-                JSONObject filterCondition = filterConditions.getJSONObject(i);
-                result.append(buildSingleCondition(filterCondition));
-            }
+            result.append(buildGroupFilterString(filterConditions, fields));
         }
 
         return result.toString();
@@ -528,18 +521,13 @@ public class ContoryUtil {
      * @param conditions 条件数组
      * @return 组内条件的过滤字符串
      */
-    private static String buildGroupFilterString(JSONArray conditions) {
-        StringBuilder groupResult = new StringBuilder();
-
+    private static String buildGroupFilterString(JSONArray conditions, JSONArray fields) {
+        List<String> parts = new ArrayList<>();
         for (int i = 0; i < conditions.size(); i++) {
-            if (i != 0) {
-                groupResult.append(" and ");
-            }
-            JSONObject condition = conditions.getJSONObject(i);
-            groupResult.append(buildSingleCondition(condition));
+            String part = buildSingleCondition(conditions.getJSONObject(i), fields);
+            if (!part.isEmpty()) parts.add(part);
         }
-
-        return groupResult.toString();
+        return String.join(" and ", parts);
     }
 
     /**
@@ -552,10 +540,55 @@ public class ContoryUtil {
      * @param condition 单个条件对象
      * @return 单条件的过滤字符串
      */
-    private static String buildSingleCondition(JSONObject condition) {
+    private static String buildSingleCondition(JSONObject condition, JSONArray fields) {
         String fieldId = condition.getString("fieldId");
         String operator = condition.getString("operator");
         Object value = condition.get("value");
+        JSONObject queryField = null;
+        for (int i = 0; i < fields.size(); i++) {
+            if (java.util.Objects.equals(fieldId, fields.getJSONObject(i).getString("id"))) { queryField = fields.getJSONObject(i); break; }
+        }
+        String fieldType = queryField == null ? "" : queryField.getString("filterType");
+        if (fieldType == null || fieldType.isEmpty()) fieldType = queryField == null ? "" : queryField.getString("type");
+
+        if (fieldId == null || !fieldId.matches("[A-Za-z_][A-Za-z0-9_.]*"))
+            throw new IllegalArgumentException("无效的筛选字段");
+        if (!java.util.Set.of("=", "!=", "<>", ">", ">=", "<", "<=", "包含于", "包含", "不包含", "为空", "不为空").contains(operator == null ? "" : operator))
+            throw new IllegalArgumentException("不支持的筛选操作符");
+        if ("为空".equals(operator) || "不为空".equals(operator)) {
+            boolean text = java.util.Set.of("text", "singleSelect", "url", "email", "phone").contains(fieldType == null ? "" : fieldType);
+            boolean empty = "为空".equals(operator);
+            String nullCheck = fieldId + (empty ? " is null" : " is not null");
+            return text ? "(" + nullCheck + (empty ? " or " : " and ") + fieldId + (empty ? " = ''" : " <> ''") + ")" : nullCheck;
+        }
+        if (!"包含于".equals(operator) && value instanceof List) {
+            List<?> values = (List<?>) value;
+            if (values.size() != 1) throw new IllegalArgumentException("此操作符需要单个筛选值，请重新配置");
+            value = values.get(0);
+        }
+        if (value == null || (!(value instanceof List) && value.toString().trim().isEmpty()))
+            throw new IllegalArgumentException("请填写筛选值");
+        if ("number".equals(fieldType) && !(value instanceof List)) {
+            try { new java.math.BigDecimal(value.toString()); }
+            catch (NumberFormatException e) { throw new IllegalArgumentException("请输入有效数字"); }
+        }
+        if (queryField != null && "singleSelect".equals(queryField.getString("type"))) {
+            JSONObject property = queryField.getJSONObject("property");
+            JSONArray choices = property == null ? null : property.getJSONArray("choices");
+            if (choices != null) {
+                java.util.Set<String> allowed = new java.util.HashSet<>();
+                for (int i = 0; i < choices.size(); i++) allowed.add(choices.getJSONObject(i).getString("value"));
+                List<?> values = value instanceof List ? (List<?>) value : List.of(value);
+                for (Object item : values) if (!allowed.contains(String.valueOf(item))) throw new IllegalArgumentException("筛选选项已失效，请重新选择");
+            }
+        }
+        if ("包含".equals(operator) || "不包含".equals(operator)) {
+            if (!(value instanceof String) || ((String) value).isEmpty())
+                throw new IllegalArgumentException("包含或不包含需要填写文本");
+            String pattern = escapeFilterValue(value).replace("[", "[[]").replace("%", "[%]").replace("_", "[_]");
+            return fieldId + ("包含".equals(operator) ? " like '%" : " not like '%") + pattern + "%'";
+        }
+
 
         // 处理"包含于"操作符(多选匹配)
         if ("包含于".equals(operator)) {
@@ -563,7 +596,7 @@ public class ContoryUtil {
         }
 
         // 处理日期占位符(仅当操作符为 "=" 且值为占位符字符串时)
-        if ("=".equals(operator) && value instanceof String) {
+        if ("date".equals(fieldType) && "=".equals(operator) && value instanceof String) {
             String datePlaceholder = (String) value;
             String resolvedDateFilter = resolveDatePlaceholder(fieldId, datePlaceholder);
             if (resolvedDateFilter != null) {
@@ -571,11 +604,22 @@ public class ContoryUtil {
             }
         }
 
+        if ("date".equals(fieldType) && value instanceof String && ((String) value).matches("\\d{4}-\\d{2}-\\d{2}")) {
+            LocalDate date = LocalDate.parse((String) value);
+            String next = date.plusDays(1).toString();
+            switch (operator) {
+                case "=": return "(" + fieldId + " >= '" + value + "' and " + fieldId + " < '" + next + "')";
+                case "!=": case "<>": return "(" + fieldId + " < '" + value + "' or " + fieldId + " >= '" + next + "')";
+                case "<=": return fieldId + " < '" + next + "'";
+                case ">": return fieldId + " >= '" + next + "'";
+                default: break;
+            }
+        }
         // 处理普通操作符
         StringBuilder singleResult = new StringBuilder();
         singleResult.append(fieldId).append(" ");
         singleResult.append(operator).append(" ");
-        singleResult.append("'").append(value).append("'");
+        singleResult.append("'").append(escapeFilterValue(value)).append("'");
 
         return singleResult.toString();
     }
@@ -587,12 +631,14 @@ public class ContoryUtil {
      * @param value   值(应为 List<String>)
      * @return IN 子句字符串
      */
+    private static String escapeFilterValue(Object value) {
+        return value == null ? "" : value.toString().replace("'", "''");
+    }
+
     private static String buildInClause(String fieldId, Object value) {
         if (value instanceof List) {
             List<String> values = (List<String>) value;
-            if (values.isEmpty()) {
-                return "";
-            }
+            if (values.isEmpty()) throw new IllegalArgumentException("请至少选择一个选项");
 
             StringBuilder inClause = new StringBuilder();
             inClause.append(fieldId).append(" in (");
@@ -601,7 +647,7 @@ public class ContoryUtil {
                 if (i > 0) {
                     inClause.append(", ");
                 }
-                inClause.append("'").append(values.get(i)).append("'");
+                inClause.append("'").append(escapeFilterValue(values.get(i))).append("'");
             }
 
             inClause.append(")");
@@ -633,7 +679,7 @@ public class ContoryUtil {
      * </pre>
      */
     private static String resolveDatePlaceholder(String fieldId, String datePlaceholder) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
 
         LocalDate startDate;
         LocalDate endDate;
@@ -676,8 +722,8 @@ public class ContoryUtil {
 
         // 构建日期范围过滤表达式: FIELD >= 'startDate' and FIELD <= 'endDate'
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        return String.format("%s >= '%s' and %s <= '%s'",
+        return String.format("(%s >= '%s' and %s < '%s')",
                 fieldId, startDate.format(formatter),
-                fieldId, endDate.format(formatter));
+                fieldId, endDate.plusDays(1).format(formatter));
     }
 }
