@@ -6,7 +6,7 @@
 
 ```
 ding-server/
-├── src/main/java/com/ruoyi/
+├── src/main/java/com/dj/
 │   ├── middle/
 │   │   ├── common/
 │   │   │   └── SaveParamNotVerify.java          # 保存参数包装类
@@ -168,10 +168,10 @@ POST /middle/kingdee/records
 ```
 
 ### 2. 引入 ding-server 模块
-在 `ruoyi-admin/pom.xml` 中添加依赖：
+在 `dj-admin/pom.xml` 中添加依赖：
 ```xml
 <dependency>
-    <groupId>com.ruoyi</groupId>
+    <groupId>com.dj</groupId>
     <artifactId>ding-server</artifactId>
 </dependency>
 ```

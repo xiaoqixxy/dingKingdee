@@ -53,17 +53,19 @@
 
 ```text
 ding-kingdee/
-├── ruoyi-admin           # 【启动模块】后台管理入口，包含 Controller 层与配置文件
-├── ruoyi-common          # 【通用模块】核心工具类、注解、常量、异常处理
-├── ruoyi-framework       # 【框架模块】安全配置、数据源配置、AOP 切面
-├── ruoyi-system          # 【系统模块】用户、角色、菜单、部门等基础管理
-├── ruoyi-quartz          # 【任务模块】定时任务调度与管理
-├── ruoyi-generator       # 【生成模块】代码生成器，支持 CRUD 一键生成
+├── dj-admin           # 【启动模块】后台管理入口，包含 Controller 层与配置文件
+├── dj-common          # 【通用模块】核心工具类、注解、常量、异常处理
+├── dj-framework       # 【框架模块】安全配置、数据源配置、AOP 切面
+├── dj-system          # 【系统模块】用户、角色、菜单、部门等基础管理
+├── dj-quartz          # 【任务模块】定时任务调度与管理
+├── dj-generator       # 【生成模块】代码生成器，支持 CRUD 一键生成
 ├── ding-server           # 【核心业务】钉钉与金蝶集成逻辑
 │   ├── middle/ding       # 钉钉集成：租户、订阅、订单、同步配置
 │   ├── middle/kingdee    # 金蝶集成：K3 Cloud API 代理、表单元数据
 │   └── middle/payment    # 支付中心：支付宝、微信、钉钉支付实现
 ├── ruoyi-ui              # 【前端项目】Vue 3 管理后台源码
+├── ding-web              # 【钉钉插件】React 数据源配置前端（独立安装依赖、构建）
+├── docs                  # 【维护文档】迁移、同步与项目维护说明
 ├── sql                   # 【数据库脚本】初始化 SQL 文件
 └── pom.xml               # Maven 父工程依赖管理
 ```
@@ -112,11 +114,11 @@ ding-kingdee/
 5.  `sql/ding_menu.sql` (菜单权限数据)
 
 ### 3. 后端启动
-1.  修改 `ruoyi-admin/src/main/resources/application.yml`，配置数据库、Redis 及钉钉/金蝶密钥。
-2.  使用 Maven 编译并启动 `ruoyi-admin` 模块：
+1.  修改 `dj-admin/src/main/resources/application.yml`，配置数据库、Redis 及钉钉/金蝶密钥。
+2.  使用 Maven 编译并启动 `dj-admin` 模块：
     ```bash
     mvn clean install
-    cd ruoyi-admin
+    cd dj-admin
     mvn spring-boot:run
     ```
 3.  启动成功后，访问 `http://localhost:1007/swagger-ui.html` 查看 API 文档。

@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.middle.ding.mapper.DingPaymentLogMapper">
+<mapper namespace="com.dj.middle.ding.mapper.DingPaymentLogMapper">
 
-	<resultMap type="com.ruoyi.middle.ding.domain.DingPaymentLog" id="DingPaymentLogResult">
+    <resultMap type="com.dj.middle.ding.domain.DingPaymentLog" id="DingPaymentLogResult">
 		<id     property="id"    column="id"    />
 		<result property="orderNo"    column="order_no"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
@@ -16,22 +16,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext1"    column="ext1"    />
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
+	<result property="createTime" column="create_time" />
 	</resultMap>
 	
 	<sql id="selectDingPaymentLogVo">
         select id, order_no, ding_corp_id, pay_channel, transaction_id, pay_amount, status, raw_data, 
-               ext1, ext2, ext3 
+               ext1, ext2, ext3, create_time
 		from ding_payment_log
     </sql>
 
-	<select id="selectDingPaymentLogList" parameterType="com.ruoyi.middle.ding.domain.DingPaymentLog" resultMap="DingPaymentLogResult">
+    <select id="selectDingPaymentLogList" parameterType="com.dj.middle.ding.domain.DingPaymentLog" resultMap="DingPaymentLogResult">
 	    <include refid="selectDingPaymentLogVo"/>
 		<where>
 		    <if test="orderNo != null and orderNo != ''">
 				AND order_no like concat('%', #{orderNo}, '%')
 			</if>
 			<if test="dingCorpId != null and dingCorpId != ''">
-				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+				AND ding_corp_id = #{dingCorpId}
 			</if>
 			<if test="payChannel != null and payChannel != ''">
 				AND pay_channel = #{payChannel}
@@ -65,7 +66,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
-  	<update id="updateDingPaymentLog" parameterType="com.ruoyi.middle.ding.domain.DingPaymentLog">
+    <update id="updateDingPaymentLog" parameterType="com.dj.middle.ding.domain.DingPaymentLog">
   		update ding_payment_log
   		<set>
   			<if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
@@ -82,8 +83,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
-  	<insert id="insertDingPaymentLog" parameterType="com.ruoyi.middle.ding.domain.DingPaymentLog" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertDingPaymentLog" parameterType="com.dj.middle.ding.domain.DingPaymentLog" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_payment_log(
+            create_time,
   			order_no,
   			ding_corp_id,
   			pay_channel,
@@ -95,6 +97,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   			<if test="ext2 != null">,ext2</if>
   			<if test="ext3 != null">,ext3</if>
   		)values(
+            COALESCE(#{createTime}, CURRENT_TIMESTAMP(3)),
   			#{orderNo},
   			#{dingCorpId},
   			#{payChannel},

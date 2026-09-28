@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.middle.ding.mapper.DingInvoiceMapper">
+<mapper namespace="com.dj.middle.ding.mapper.DingInvoiceMapper">
 
-	<resultMap type="com.ruoyi.middle.ding.domain.DingInvoice" id="DingInvoiceResult">
+    <resultMap type="com.dj.middle.ding.domain.DingInvoice" id="DingInvoiceResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
 		<result property="orderNo"    column="order_no"    />
@@ -16,19 +16,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext1"    column="ext1"    />
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
+	<result property="createTime" column="create_time" />
+	<result property="updateTime" column="update_time" />
 	</resultMap>
 	
 	<sql id="selectDingInvoiceVo">
         select id, ding_corp_id, order_no, invoice_type, invoice_title, tax_no, amount, status, 
-               ext1, ext2, ext3 
+               ext1, ext2, ext3, create_time, update_time
 		from ding_invoice
     </sql>
 
-	<select id="selectDingInvoiceList" parameterType="com.ruoyi.middle.ding.domain.DingInvoice" resultMap="DingInvoiceResult">
+    <select id="selectDingInvoiceList" parameterType="com.dj.middle.ding.domain.DingInvoice" resultMap="DingInvoiceResult">
 	    <include refid="selectDingInvoiceVo"/>
 		<where>
 		    <if test="dingCorpId != null and dingCorpId != ''">
-				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+				AND ding_corp_id = #{dingCorpId}
 			</if>
 			<if test="orderNo != null and orderNo != ''">
 				AND order_no like concat('%', #{orderNo}, '%')
@@ -68,9 +70,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
-  	<update id="updateDingInvoice" parameterType="com.ruoyi.middle.ding.domain.DingInvoice">
+    <update id="updateDingInvoice" parameterType="com.dj.middle.ding.domain.DingInvoice">
   		update ding_invoice
   		<set>
+            update_time = CURRENT_TIMESTAMP(3),
   			<if test="dingCorpId != null and dingCorpId != ''">ding_corp_id = #{dingCorpId},</if>
   			<if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
   			<if test="invoiceType != null">invoice_type = #{invoiceType},</if>
@@ -85,8 +88,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
-  	<insert id="insertDingInvoice" parameterType="com.ruoyi.middle.ding.domain.DingInvoice" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertDingInvoice" parameterType="com.dj.middle.ding.domain.DingInvoice" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_invoice(
+            create_time,
   			ding_corp_id,
   			order_no,
   			invoice_type,
@@ -98,6 +102,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   			<if test="ext2 != null">,ext2</if>
   			<if test="ext3 != null">,ext3</if>
   		)values(
+            COALESCE(#{createTime}, CURRENT_TIMESTAMP(3)),
   			#{dingCorpId},
   			#{orderNo},
   			#{invoiceType},

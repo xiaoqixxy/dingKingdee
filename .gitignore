@@ -43,6 +43,14 @@ nbdist/
 *.log
 *.xml.versionsBackup
 *.swp
+*.backup
+
+# Local build output and temporary workspace files
+/output/
+/temp_check/
+/.rewind_webfetch/
+/.memory_split_v1.done
+/memory/
 
 !*/build/*.java
 !*/build/*.html

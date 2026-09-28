@@ -85,9 +85,9 @@ function resolvePath(routePath, routeQuery) {
   }
   if (routeQuery) {
     let query = JSON.parse(routeQuery)
-    return { path: getNormalPath(props.basePath + '/' + routePath), query: query }
+    return { path: routePath.startsWith('/') ? getNormalPath(routePath) : getNormalPath(props.basePath + '/' + routePath), query: query }
   }
-  return getNormalPath(props.basePath + '/' + routePath)
+  return routePath.startsWith('/') ? getNormalPath(routePath) : getNormalPath(props.basePath + '/' + routePath)
 }
 
 function hasTitle(title){

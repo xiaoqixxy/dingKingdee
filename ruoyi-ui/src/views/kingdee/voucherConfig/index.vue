@@ -1,5 +1,7 @@
 <template>
-  <div class="app-container">
+  <div class="app-container business-page">
+    <div class="business-heading"><span class="business-eyebrow">业务工作空间</span><h1>🔑 企业连接配置</h1><p>维护企业的金蝶连接与账套配置。</p></div>
+    <h2 class="business-filter-title">🔎 筛选条件</h2>
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="配置名称" prop="name">
         <el-input

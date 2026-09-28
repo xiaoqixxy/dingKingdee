@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.middle.ding.mapper.DingProductMapper">
+<mapper namespace="com.dj.middle.ding.mapper.DingProductMapper">
 
-	<resultMap type="com.ruoyi.middle.ding.domain.DingProduct" id="DingProductResult">
+    <resultMap type="com.dj.middle.ding.domain.DingProduct" id="DingProductResult">
 		<id     property="id"    column="id"    />
 		<result property="productName"    column="product_name"    />
 		<result property="productType"    column="product_type"    />
@@ -28,7 +28,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		from ding_product
     </sql>
 
-	<select id="selectDingProductList" parameterType="com.ruoyi.middle.ding.domain.DingProduct" resultMap="DingProductResult">
+    <select id="selectDingProductList" parameterType="com.dj.middle.ding.domain.DingProduct" resultMap="DingProductResult">
 	    <include refid="selectDingProductVo"/>
 		<where>
 		    <if test="productName != null and productName != ''">
@@ -76,7 +76,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
    	</delete>
 
-   	<update id="updateDingProduct" parameterType="com.ruoyi.middle.ding.domain.DingProduct">
+    <update id="updateDingProduct" parameterType="com.dj.middle.ding.domain.DingProduct">
    		update ding_product
    		<set>
    			<if test="productName != null and productName != ''">product_name = #{productName},</if>
@@ -97,7 +97,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
    		where id = #{id}
    	</update>
    	
-   	<insert id="insertDingProduct" parameterType="com.ruoyi.middle.ding.domain.DingProduct" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertDingProduct" parameterType="com.dj.middle.ding.domain.DingProduct" useGeneratedKeys="true" keyProperty="id">
    		insert into ding_product(
    			product_name,
    			product_type,

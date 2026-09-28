@@ -24,6 +24,8 @@ CREATE TABLE `ding_product` (
 -- 2. 租户企业表（ding_tenant）
 CREATE TABLE `ding_tenant` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `create_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  `update_time` datetime(3) DEFAULT NULL COMMENT '更新时间',
   `ding_corp_id` varchar(64) NOT NULL COMMENT '钉钉企业ID（唯一标识）',
   `corp_name` varchar(100) NOT NULL COMMENT '企业名称',
   `industry` varchar(64) DEFAULT NULL COMMENT '企业所属行业',

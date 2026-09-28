@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.middle.ding.mapper.DingSyncLogMapper">
+<mapper namespace="com.dj.middle.ding.mapper.DingSyncLogMapper">
 
-	<resultMap type="com.ruoyi.middle.ding.domain.DingSyncLog" id="DingSyncLogResult">
+    <resultMap type="com.dj.middle.ding.domain.DingSyncLog" id="DingSyncLogResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
 		<result property="dingFormId"    column="ding_form_id"    />
@@ -14,30 +14,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext1"    column="ext1"    />
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
+	<result property="createTime" column="create_time" />
 	</resultMap>
 	
 	<sql id="selectDingSyncLogVo">
-        select id, ding_corp_id, ding_form_id, sync_count, status, error_msg, ext1, ext2, ext3 
+        select id, ding_corp_id, ding_form_id, sync_count, status, error_msg, ext1, ext2, ext3, create_time
 		from ding_sync_log
     </sql>
 
-	<select id="selectDingSyncLogList" parameterType="com.ruoyi.middle.ding.domain.DingSyncLog" resultMap="DingSyncLogResult">
+    <select id="selectDingSyncLogList" parameterType="com.dj.middle.ding.domain.DingSyncLog" resultMap="DingSyncLogResult">
 	    <include refid="selectDingSyncLogVo"/>
 		<where>
 		    <if test="dingCorpId != null and dingCorpId != ''">
-				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+				AND ding_corp_id = #{dingCorpId}
 			</if>
 			<if test="dingFormId != null and dingFormId != ''">
-				AND ding_form_id like concat('%', #{dingFormId}, '%')
+				AND ding_form_id = #{dingFormId}
 			</if>
 			<if test="status != null">
 				AND status = #{status}
 			</if>
 			<if test="params.beginTime != null and params.beginTime != ''">
-				and date_format(create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+				and create_time &gt;= CAST(#{params.beginTime} AS DATE)
 			</if>
 			<if test="params.endTime != null and params.endTime != ''">
-				and date_format(create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+				and create_time &lt; DATE_ADD(CAST(#{params.endTime} AS DATE), INTERVAL 1 DAY)
 			</if>
 	    </where>
 	    order by id desc
@@ -58,7 +59,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		select ifnull(sum(sync_count), 0) from ding_sync_log 
 		where ding_corp_id = #{dingCorpId} 
 		and status = 1 
-		and date_format(create_time, '%Y%m') = #{month}
+		and create_time &gt;= STR_TO_DATE(CONCAT(#{month}, '01'), '%Y%m%d')
+        and create_time &lt; DATE_ADD(STR_TO_DATE(CONCAT(#{month}, '01'), '%Y%m%d'), INTERVAL 1 MONTH)
 	</select>
 	
 	<delete id="deleteDingSyncLogById" parameterType="Long">
@@ -72,8 +74,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
-  	<insert id="insertDingSyncLog" parameterType="com.ruoyi.middle.ding.domain.DingSyncLog" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertDingSyncLog" parameterType="com.dj.middle.ding.domain.DingSyncLog" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_sync_log(
+            create_time,
   			ding_corp_id,
   			ding_form_id,
   			sync_count,
@@ -83,6 +86,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   			<if test="ext2 != null">,ext2</if>
   			<if test="ext3 != null">,ext3</if>
   		)values(
+            COALESCE(#{createTime}, CURRENT_TIMESTAMP(3)),
   			#{dingCorpId},
   			#{dingFormId},
   			#{syncCount},

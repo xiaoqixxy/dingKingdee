@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.middle.ding.mapper.DingTenantMapper">
+<mapper namespace="com.dj.middle.ding.mapper.DingTenantMapper">
 
-	<resultMap type="com.ruoyi.middle.ding.domain.DingTenant" id="DingTenantResult">
+    <resultMap type="com.dj.middle.ding.domain.DingTenant" id="DingTenantResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
 		<result property="corpName"    column="corp_name"    />
@@ -14,18 +14,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext1"    column="ext1"    />
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
+	<result property="createTime" column="create_time" />
+	<result property="updateTime" column="update_time" />
 	</resultMap>
 	
 	<sql id="selectDingTenantVo">
-        select id, ding_corp_id, corp_name, contact_user, contact_phone, status, ext1, ext2, ext3 
+        select id, ding_corp_id, corp_name, contact_user, contact_phone, status, ext1, ext2, ext3, create_time, update_time
 		from ding_tenant
     </sql>
 
-	<select id="selectDingTenantList" parameterType="com.ruoyi.middle.ding.domain.DingTenant" resultMap="DingTenantResult">
+    <select id="selectDingTenantList" parameterType="com.dj.middle.ding.domain.DingTenant" resultMap="DingTenantResult">
 	    <include refid="selectDingTenantVo"/>
 		<where>
 		    <if test="dingCorpId != null and dingCorpId != ''">
-				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+				AND ding_corp_id = #{dingCorpId}
 			</if>
 			<if test="corpName != null and corpName != ''">
 				AND corp_name like concat('%', #{corpName}, '%')
@@ -66,9 +68,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
-  	<update id="updateDingTenant" parameterType="com.ruoyi.middle.ding.domain.DingTenant">
+    <update id="updateDingTenant" parameterType="com.dj.middle.ding.domain.DingTenant">
   		update ding_tenant
   		<set>
+            update_time = CURRENT_TIMESTAMP(3),
   			<if test="dingCorpId != null and dingCorpId != ''">ding_corp_id = #{dingCorpId},</if>
   			<if test="corpName != null and corpName != ''">corp_name = #{corpName},</if>
   			<if test="contactUser != null">contact_user = #{contactUser},</if>
@@ -81,8 +84,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
-  	<insert id="insertDingTenant" parameterType="com.ruoyi.middle.ding.domain.DingTenant" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertDingTenant" parameterType="com.dj.middle.ding.domain.DingTenant" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_tenant(
+            create_time,
   			ding_corp_id,
   			corp_name,
   			contact_user,
@@ -92,6 +96,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   			<if test="ext2 != null">,ext2</if>
   			<if test="ext3 != null">,ext3</if>
   		)values(
+            COALESCE(#{createTime}, CURRENT_TIMESTAMP(3)),
   			#{dingCorpId},
   			#{corpName},
   			#{contactUser},

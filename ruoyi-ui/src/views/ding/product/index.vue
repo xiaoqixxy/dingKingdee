@@ -1,5 +1,7 @@
 <template>
-  <div class="app-container">
+  <div class="app-container business-page">
+    <div class="business-heading"><span class="business-eyebrow">业务工作空间</span><h1>💎 产品与套餐</h1><p>配置套餐价格、周期与同步权益。</p></div>
+    <h2 class="business-filter-title">🔎 筛选条件</h2>
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
       <el-form-item label="产品名称" prop="productName">
         <el-input

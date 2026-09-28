@@ -1,3 +1,4 @@
+import '@/assets/styles/admin-workspace.scss'
 import { createApp } from 'vue'
 
 import Cookies from 'js-cookie'

@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.middle.ding.mapper.DingOrderMapper">
+<mapper namespace="com.dj.middle.ding.mapper.DingOrderMapper">
 
-	<resultMap type="com.ruoyi.middle.ding.domain.DingOrder" id="DingOrderResult">
+    <resultMap type="com.dj.middle.ding.domain.DingOrder" id="DingOrderResult">
 		<id     property="id"    column="id"    />
 		<result property="orderNo"    column="order_no"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
@@ -21,22 +21,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext1"    column="ext1"    />
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
+	<result property="createTime" column="create_time" />
+	<result property="updateTime" column="update_time" />
 	</resultMap>
 	
 	<sql id="selectDingOrderVo">
         select id, order_no, ding_corp_id, product_id, order_type, total_amount, pay_amount, 
-               pay_status, pay_time, expire_time, pay_channel, transaction_id, remark, ext1, ext2, ext3 
+               pay_status, pay_time, expire_time, pay_channel, transaction_id, remark, ext1, ext2, ext3, create_time, update_time
 		from ding_order
     </sql>
 
-	<select id="selectDingOrderList" parameterType="com.ruoyi.middle.ding.domain.DingOrder" resultMap="DingOrderResult">
+    <select id="selectDingOrderList" parameterType="com.dj.middle.ding.domain.DingOrder" resultMap="DingOrderResult">
 	    <include refid="selectDingOrderVo"/>
 		<where>
 		    <if test="orderNo != null and orderNo != ''">
 				AND order_no like concat('%', #{orderNo}, '%')
 			</if>
 			<if test="dingCorpId != null and dingCorpId != ''">
-				AND ding_corp_id like concat('%', #{dingCorpId}, '%')
+				AND ding_corp_id = #{dingCorpId}
 			</if>
 			<if test="productId != null">
 				AND product_id = #{productId}
@@ -83,9 +85,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
-  	<update id="updateDingOrder" parameterType="com.ruoyi.middle.ding.domain.DingOrder">
+    <update id="updateDingOrder" parameterType="com.dj.middle.ding.domain.DingOrder">
   		update ding_order
   		<set>
+            update_time = CURRENT_TIMESTAMP(3),
   			<if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
   			<if test="dingCorpId != null and dingCorpId != ''">ding_corp_id = #{dingCorpId},</if>
   			<if test="productId != null">product_id = #{productId},</if>
@@ -105,8 +108,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
-  	<insert id="insertDingOrder" parameterType="com.ruoyi.middle.ding.domain.DingOrder" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertDingOrder" parameterType="com.dj.middle.ding.domain.DingOrder" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_order(
+            create_time,
   			order_no,
   			ding_corp_id,
   			product_id,
@@ -123,6 +127,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   			<if test="ext2 != null">,ext2</if>
   			<if test="ext3 != null">,ext3</if>
   		)values(
+            COALESCE(#{createTime}, CURRENT_TIMESTAMP(3)),
   			#{orderNo},
   			#{dingCorpId},
   			#{productId},

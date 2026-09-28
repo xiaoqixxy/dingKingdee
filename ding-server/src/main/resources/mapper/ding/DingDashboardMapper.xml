@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dj.middle.ding.mapper.DingDashboardMapper">
+
+    <!-- 顶部 KPI 概览：单次查询返回所有汇总指标 -->
+    <select id="selectOverview" resultType="java.util.Map">
+        select
+            (select count(*) from ding_tenant) as totalTenants,
+            (select count(*) from ding_order) as totalOrders,
+            (select count(*) from ding_subscription where status = 1 and start_time &lt;= now() and end_time > now()) as activeSubscriptions,
+            (select count(*) from ding_order where pay_status = 0) as pendingPayments,
+            (select count(*) from ding_order where pay_status = 1) as paidOrders,
+            (select coalesce(sum(pay_amount), 0) from ding_order where pay_status = 1) as totalRevenue,
+            (select count(*) from ding_order where create_time >= curdate() and create_time &lt; date_add(curdate(), interval 1 day)) as todayOrders,
+            (select coalesce(sum(pay_amount), 0) from ding_order where pay_status = 1 and pay_time >= curdate() and pay_time &lt; date_add(curdate(), interval 1 day)) as todayRevenue,
+            (select count(*) from ding_sync_log where create_time >= curdate() and create_time &lt; date_add(curdate(), interval 1 day)) as todaySyncCount,
+            (select count(*) from ding_sync_log where status = 1 and create_time >= curdate() and create_time &lt; date_add(curdate(), interval 1 day)) as todaySyncSuccess
+    </select>
+
+    <!-- 订单与营收趋势（按支付时间日聚合） -->
+    <select id="selectOrderTrend" resultType="java.util.Map">
+        select date_format(pay_time, '%Y-%m-%d') as date,
+               count(*) as orderCount,
+               coalesce(sum(pay_amount), 0) as revenue
+        from ding_order
+        where pay_status = 1
+          and pay_time &gt;= #{startDate}
+        group by date_format(pay_time, '%Y-%m-%d')
+        order by date
+    </select>
+
+    <!-- 订单类型分布 -->
+    <select id="selectOrderTypeDist" resultType="java.util.Map">
+        select order_type as type, count(*) as count
+        from ding_order
+        group by order_type
+    </select>
+
+    <!-- 订单支付状态分布 -->
+    <select id="selectPayStatusDist" resultType="java.util.Map">
+        select pay_status as status, count(*) as count
+        from ding_order
+        group by pay_status
+    </select>
+
+    <!-- 支付渠道分布（仅已支付订单） -->
+    <select id="selectPayChannelDist" resultType="java.util.Map">
+        select case when pay_channel is null or pay_channel = '' then '未知' else pay_channel end as channel,
+               count(*) as count,
+               coalesce(sum(pay_amount), 0) as amount
+        from ding_order
+        where pay_status = 1
+        group by case when pay_channel is null or pay_channel = '' then '未知' else pay_channel end
+        order by count desc
+    </select>
+
+    <!-- 企业行业分布 -->
+    <select id="selectIndustryDist" resultType="java.util.Map">
+        select case when industry is null or industry = '' then '未知' else industry end as industry,
+               count(*) as count
+        from ding_tenant
+        group by case when industry is null or industry = '' then '未知' else industry end
+        order by count desc
+    </select>
+
+    <!-- 同步日志趋势（按创建时间日聚合，区分成功/失败/拦截） -->
+    <select id="selectSyncTrend" resultType="java.util.Map">
+        select date_format(create_time, '%Y-%m-%d') as date,
+               count(*) as totalCount,
+               sum(case when status = 1 then 1 else 0 end) as successCount,
+               sum(case when status = 2 then 1 else 0 end) as failCount,
+               sum(case when status = 3 then 1 else 0 end) as blockedCount,
+               coalesce(sum(sync_count), 0) as totalSync
+        from ding_sync_log
+        where create_time &gt;= #{startDate}
+        group by date_format(create_time, '%Y-%m-%d')
+        order by date
+    </select>
+
+    <!-- 企业每日新增（用于累计增长曲线） -->
+    <select id="selectTenantDailyNew" resultType="java.util.Map">
+        select date_format(create_time, '%Y-%m-%d') as date,
+               count(*) as count
+        from ding_tenant
+        where create_time &gt;= #{startDate}
+        group by date_format(create_time, '%Y-%m-%d')
+        order by date
+    </select>
+
+    <!-- 热销产品 Top5（按已支付订单营收排序） -->
+    <select id="selectTopProducts" resultType="java.util.Map">
+        select p.product_name as productName,
+               count(o.id) as orderCount,
+               coalesce(sum(o.pay_amount), 0) as revenue
+        from ding_order o
+        left join ding_product p on o.product_id = p.id
+        where o.pay_status = 1
+        group by o.product_id, p.product_name
+        order by revenue desc
+        limit 5
+    </select>
+
+</mapper>

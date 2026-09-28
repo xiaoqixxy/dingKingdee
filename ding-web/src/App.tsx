@@ -535,7 +535,6 @@ function App() {
   const [payDialogVisible, setPayDialogVisible] = useState(false);
   const [payInfo, setPayInfo] = useState<{ orderNo: string; qrCode: string; channelName: string; expireTime: string }>({ orderNo: '', qrCode: '', channelName: '', expireTime: '' });
   const [payCountdown, setPayCountdown] = useState('');
-  const [selectedPayChannel, setSelectedPayChannel] = useState('alipay');
   const [channelDialogVisible, setChannelDialogVisible] = useState(false);
 
   const [formList, setFormList] = useState<FormItemType[]>([]);
@@ -733,7 +732,6 @@ function App() {
   };
 
   const handleConfirmPay = async (channel: string) => {
-    setSelectedPayChannel(channel);
     setChannelDialogVisible(false);
     if (selectedPackage) {
       await createPayment(selectedPackage, channel);
@@ -918,11 +916,13 @@ function App() {
     }
   };
 
-  const loginToK3Cloud = async () => {
-    const requestData = { SERVER_URL: kingdeeConfig.SERVER_URL.trim(), CID: kingdeeConfig.CID.trim(), USER_NAME: kingdeeConfig.USER_NAME.trim(), APP_ID: kingdeeConfig.APP_ID.trim(), APP_SECRET: kingdeeConfig.APP_SECRET.trim() };
+  const loginToK3Cloud = async (config: Partial<KingdeeBaseParams> = kingdeeConfig) => {
+    const requestData = { SERVER_URL: config.SERVER_URL?.trim() || '', CID: config.CID?.trim() || '', USER_NAME: config.USER_NAME?.trim() || '', APP_ID: config.APP_ID?.trim() || '', APP_SECRET: config.APP_SECRET?.trim() || '' };
+    if (Object.values(requestData).some(value => !value)) throw new Error('请完整填写服务器地址、账套 ID、用户名、APP_ID 和 APP_SECRET');
     const response = await fetch(API.login, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestData), mode: 'cors', credentials: 'omit' });
     const result = await response.json();
-    if (result?.code === 0) return result.data;
+    if (response.ok && result?.code === 0 && result?.data?.verified === true) return result.data;
+    if (response.ok && result?.code === 0) throw new Error('服务端尚未返回身份校验结果，请先更新后端');
     throw new Error(result?.msg || '金蝶登录请求失败');
   };
 
@@ -956,10 +956,6 @@ function App() {
     } finally {
       setFieldLoading(false);
     }
-  };
-
-  const loadSheetMeta = async () => {
-    await loadSheetMetaWithForm(selectedFormId, selectedFormName);
   };
 
   const handleStep1Next = async () => {
@@ -1033,17 +1029,8 @@ function App() {
         APP_ID: item.appId,
         APP_SECRET: item.appSecret,
       };
-      // Temporarily set kingdeeConfig for loginToK3Cloud to use
-      const prevConfig = { ...kingdeeConfig };
-      Object.keys(configForLogin).forEach((key) => {
-        (kingdeeConfig as any)[key] = (configForLogin as any)[key];
-      });
-      await loginToK3Cloud();
-      // Restore original config
-      Object.keys(prevConfig).forEach((key) => {
-        (kingdeeConfig as any)[key] = (prevConfig as any)[key];
-      });
-      showMessage('连接成功', 'success');
+      await loginToK3Cloud(configForLogin);
+      showMessage('身份与授权校验通过', 'success');
     } catch (error) {
       showMessage(error instanceof Error ? error.message : '连接失败', 'error');
     } finally {
@@ -1520,7 +1507,7 @@ function App() {
               <div style={{ fontSize: "12px", color: "#6b7280", minHeight: "36px", marginBottom: "12px" }}>服务器地址：{item.serverUrl}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "auto" }}>
                 <button style={{ ...styles.button, background: "#f56c6c", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleDeleteConfig(item)}>删除</button>
-                <button style={{ ...styles.button, background: "#e6a23c", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleVerifyConfig(item)}>校验</button>
+                <button style={{ ...styles.button, background: "#e6a23c", color: "#fff", padding: "4px 12px", fontSize: "12px" }} disabled={loading} onClick={() => handleVerifyConfig(item)}>{loading ? '校验中...' : '校验'}</button>
                 <button style={{ ...styles.button, ...styles.primaryBtn, padding: "4px 12px", fontSize: "12px" }} onClick={() => handleEditConfig(item)}>编辑</button>
                 <button style={{ ...styles.button, background: "#67c23a", color: "#fff", padding: "4px 12px", fontSize: "12px" }} onClick={() => handleSyncData(item)}>同步数据</button>
               </div>
@@ -1569,6 +1556,16 @@ function App() {
             <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={handleBackToList}>← 返回列表</button>
           </div>
         )}
+        <a
+          className="connection-guide"
+          href="https://alidocs.dingtalk.com/i/p/ZdN0G7l984vWzWYKPDmrgarqqyl0KGxd"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span aria-hidden="true">📖</span>
+          <span><strong>连接参数获取说明</strong><small>不知道如何获取账套 ID、APP ID 和密钥？点击查看说明文档。</small></span>
+          <span aria-hidden="true">↗</span>
+        </a>
         <div style={styles.formItem}>
           <label style={styles.label}>
             <span style={styles.labelIcon}>📝</span>

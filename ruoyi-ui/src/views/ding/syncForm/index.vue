@@ -1,5 +1,7 @@
 <template>
-  <div class="app-container">
+  <div class="app-container business-page">
+    <div class="business-heading"><span class="business-eyebrow">业务工作空间</span><h1>🔗 同步表单配置</h1><p>管理企业表单与数据源的同步关系。</p></div>
+    <h2 class="business-filter-title">🔎 筛选条件</h2>
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
       <el-form-item label="企业ID" prop="dingCorpId">
         <el-input

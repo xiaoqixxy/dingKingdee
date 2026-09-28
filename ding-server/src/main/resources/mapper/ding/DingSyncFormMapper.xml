@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.middle.ding.mapper.DingSyncFormMapper">
+<mapper namespace="com.dj.middle.ding.mapper.DingSyncFormMapper">
 
-	<resultMap type="com.ruoyi.middle.ding.domain.DingSyncForm" id="DingSyncFormResult">
+    <resultMap type="com.dj.middle.ding.domain.DingSyncForm" id="DingSyncFormResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
 		<result property="dingFormId"    column="ding_form_id"    />
@@ -21,7 +21,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		from ding_sync_form
     </sql>
 
-	<select id="selectDingSyncFormList" parameterType="com.ruoyi.middle.ding.domain.DingSyncForm" resultMap="DingSyncFormResult">
+    <select id="selectDingSyncFormList" parameterType="com.dj.middle.ding.domain.DingSyncForm" resultMap="DingSyncFormResult">
 	    <include refid="selectDingSyncFormVo"/>
 		<where>
 		    <if test="dingCorpId != null and dingCorpId != ''">
@@ -74,7 +74,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
-  	<update id="updateDingSyncForm" parameterType="com.ruoyi.middle.ding.domain.DingSyncForm">
+    <update id="updateDingSyncForm" parameterType="com.dj.middle.ding.domain.DingSyncForm">
   		update ding_sync_form
   		<set>
   			<if test="dingCorpId != null and dingCorpId != ''">ding_corp_id = #{dingCorpId},</if>
@@ -89,7 +89,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
-  	<insert id="insertDingSyncForm" parameterType="com.ruoyi.middle.ding.domain.DingSyncForm" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertDingSyncForm" parameterType="com.dj.middle.ding.domain.DingSyncForm" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_sync_form(
   			ding_corp_id,
   			ding_form_id,

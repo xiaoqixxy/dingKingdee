@@ -26,6 +26,14 @@ import Layout from '@/layout'
 
 // 公共路由
 export const constantRoutes = [
+  { path: '/ding/tenant', redirect: '/enterprise/tenant', hidden: true },
+  { path: '/ding/subscription', redirect: '/enterprise/subscription', hidden: true },
+  { path: '/ding/order', redirect: '/orders/order', hidden: true },
+  { path: '/ding/invoice', redirect: '/orders/invoice', hidden: true },
+  { path: '/ding/product', redirect: '/configuration/product', hidden: true },
+  { path: '/ding/syncForm', redirect: '/integration/syncForm', hidden: true },
+  { path: '/ding/syncLog', redirect: '/integration/syncLog', hidden: true },
+
   {
     path: '/redirect',
     component: Layout,
@@ -66,7 +74,7 @@ export const constantRoutes = [
         path: '/index',
         component: () => import('@/views/index'),
         name: 'Index',
-        meta: { title: '首页', icon: 'dashboard', affix: true }
+        meta: { title: '工作台', icon: 'dashboard', affix: true }
       }
     ]
   },

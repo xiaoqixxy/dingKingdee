@@ -4,9 +4,10 @@
     <el-card class="welcome-card" shadow="never">
       <div class="welcome-inner">
         <div class="welcome-text">
-          <h2>欢迎使用金蝶集成系统</h2>
-          <p>钉钉 × 金蝶 数据中台 · 今日 {{ today }}，以下是业务核心指标监控</p>
+          <h2>工作台</h2>
+          <p>钉钉 × 金蝶 · 业务概览 · 今日 {{ today }}，以下是业务核心指标监控</p>
         </div>
+        <el-button v-hasPermi="['ding:execution:list']" type="primary" plain @click="$router.push('/integration/syncReport')">同步执行报表</el-button>
         <el-radio-group v-model="days" size="default" @change="loadAll">
           <el-radio-button :value="7">近7天</el-radio-button>
           <el-radio-button :value="15">近15天</el-radio-button>

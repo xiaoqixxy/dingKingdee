@@ -22,12 +22,12 @@
 
 ```
 ding-kingdee/
-├── ruoyi-admin/           # 后台管理模块（启动入口、Controller层）
-├── ruoyi-common/          # 通用工具模块（注解、工具类、核心类）
-├── ruoyi-framework/       # 框架核心模块（配置、安全、数据源）
-├── ruoyi-system/          # 系统业务模块（用户、角色、菜单、字典等）
-├── ruoyi-quartz/          # 定时任务模块
-├── ruoyi-generator/      # 代码生成器模块
+├── dj-admin/           # 后台管理模块（启动入口、Controller层）
+├── dj-common/          # 通用工具模块（注解、工具类、核心类）
+├── dj-framework/       # 框架核心模块（配置、安全、数据源）
+├── dj-system/          # 系统业务模块（用户、角色、菜单、字典等）
+├── dj-quartz/          # 定时任务模块
+├── dj-generator/      # 代码生成器模块
 ├── ding-server/           # 【核心业务】钉钉-金蝶集成模块
 ├── ruoyi-ui/              # Vue3 前端项目
 ├── sql/                   # 数据库SQL脚本
@@ -38,7 +38,7 @@ ding-kingdee/
 
 ```
 ding-server/
-└── src/main/java/com/ruoyi/middle/
+└── src/main/java/com/dj/middle/
     ├── ding/                    # 钉钉集成模块
     │   ├── config/              # 钉钉配置类
     │   ├── controller/          # 钉钉相关控制器
@@ -203,7 +203,7 @@ POST /payment/handleResult        # 手动处理支付结果（测试用）
 
 ## 配置说明
 
-### 应用配置 (ruoyi-admin/src/main/resources/application.yml)
+### 应用配置 (dj-admin/src/main/resources/application.yml)
 
 | 配置项 | 说明 | 示例 |
 |--------|------|------|
@@ -240,8 +240,8 @@ POST /payment/handleResult        # 手动处理支付结果（测试用）
 
 ### 后端开发
 
-1. **启动项目**：`ruoyi-admin/RuoYiApplication.java`
-2. **代码生成**：使用 `ruoyi-generator` 模块生成CRUD代码
+1. **启动项目**：`dj-admin/DjApplication.java`
+2. **代码生成**：使用 `dj-generator` 模块生成CRUD代码
 3. **业务扩展**：在 `ding-server` 模块添加新的业务逻辑
 
 ### 前端开发
