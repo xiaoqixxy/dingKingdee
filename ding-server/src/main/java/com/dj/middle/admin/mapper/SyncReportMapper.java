@@ -7,7 +7,8 @@ import org.apache.ibatis.annotations.Select;
 
 public interface SyncReportMapper {
     @Select("SELECT DATE_FORMAT(created_at,'%Y-%m-%d') AS day, COUNT(*) AS executions, "
-        + "SUM(status='SUCCESS') AS succeeded, SUM(status IN ('FAILED','PARTIAL')) AS errors, "
+        + "SUM(status='SUCCESS') AS succeeded, SUM(status='FAILED' OR (status='PARTIAL' AND COALESCE(error_code,'')<>'SYNC_LIMIT_REACHED')) AS errors, "
+        + "SUM(status='PARTIAL' AND error_code='SYNC_LIMIT_REACHED') AS limited, "
         + "SUM(status IN ('SUCCESS','FAILED','PARTIAL','CANCELLED')) AS completed, "
         + "SUM(status IN ('PENDING','RUNNING')) AS active, SUM(success_count) AS records, "
         + "SUM(CASE WHEN finished_at IS NOT NULL THEN duration_ms ELSE 0 END) AS duration, "
@@ -24,8 +25,8 @@ public interface SyncReportMapper {
         + "FROM ding_sync_execution WHERE status IN ('PENDING','RUNNING') AND log_scope=#{scope}")
     Map<String,Object> running(@Param("scope") String scope);
 
-    @Select("SELECT id,ding_corp_id,trace_id,status,success_count,error_message,created_at "
+    @Select("SELECT records.*,tenant.corp_name FROM (SELECT id,ding_corp_id,trace_id,status,success_count,error_message,created_at "
         + "FROM ding_sync_execution WHERE created_at >= #{start} AND created_at < #{end} "
-        + "AND log_scope=#{scope} AND status IN ('FAILED','PARTIAL') ORDER BY created_at DESC,id DESC LIMIT 10")
+        + "AND log_scope=#{scope} AND (status='FAILED' OR (status='PARTIAL' AND COALESCE(error_code,'')<>'SYNC_LIMIT_REACHED')) ORDER BY created_at DESC,id DESC LIMIT 10) records LEFT JOIN ding_tenant tenant ON tenant.ding_corp_id=records.ding_corp_id ORDER BY records.created_at DESC,records.id DESC")
     List<Map<String,Object>> errors(@Param("start") String start, @Param("end") String end, @Param("scope") String scope);
 }

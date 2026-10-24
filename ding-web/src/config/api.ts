@@ -1,5 +1,6 @@
-const API_BASE = process.env.REACT_APP_API_BASE ?? 'https://web.jxdingjiang.com/prod-api';
-// const API_BASE = 'http://localhost:1009';//本地
+const API_BASE = process.env.REACT_APP_API_BASE ?? (process.env.NODE_ENV === 'development'
+  ? 'http://localhost:1009'
+  : 'https://web.jxdingjiang.com/prod-api');
 
 export const API = {
   // 登录
@@ -7,6 +8,7 @@ export const API = {
   // 表单元数据
   sheetMeta: `${API_BASE}/api/sheetMeta`,
   formSchema: `${API_BASE}/api/formSchema`,
+  referenceSchema: `${API_BASE}/api/referenceSchema`,
   // 表单配置
   tableConfig: {
     options: `${API_BASE}/kingdee/tableConfig/options`,

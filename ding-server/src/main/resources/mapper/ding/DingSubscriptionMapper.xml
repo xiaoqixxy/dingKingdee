@@ -19,13 +19,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext1"    column="ext1"    />
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
-	</resultMap>
+	    <result property="corpName" column="corp_name" />
+    </resultMap>
 	
 <sql id="selectDingSubscriptionVo">
-        select s.id, s.ding_corp_id, s.product_id, s.product_type, s.start_time, s.end_time, s.auto_renew, 
+        select tenant.corp_name, s.id, s.ding_corp_id, s.product_id, s.product_type, s.start_time, s.end_time, s.auto_renew, 
                s.used_form_count, s.month_used_sync, s.status, p.product_name, s.ext1, s.ext2, s.ext3 
  		from ding_subscription s
  		left join ding_product p on s.product_id = p.id
+        left join ding_tenant tenant on tenant.ding_corp_id = s.ding_corp_id
     </sql>
 
     <select id="selectDingSubscriptionList" parameterType="com.dj.middle.ding.domain.DingSubscription" resultMap="DingSubscriptionResult">
@@ -54,7 +56,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	
 	<select id="selectDingSubscriptionByCorpId" parameterType="String" resultMap="DingSubscriptionResult">
 		<include refid="selectDingSubscriptionVo"/>
-		where ding_corp_id = #{dingCorpId}
+		where s.ding_corp_id = #{dingCorpId}
 	</select>
 	
 	<delete id="deleteDingSubscriptionById" parameterType="Long">

@@ -143,6 +143,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="id" />
       <el-table-column label="配置名称" align="center" prop="name" />
+      <el-table-column label="企业名称" prop="corpName" min-width="180" show-overflow-tooltip><template #default="{row}">{{ row.corpName || "未登记企业" }}</template></el-table-column>
       <el-table-column label="钉钉企业ID" align="center" prop="dingCorpId" />
       <el-table-column label="金蝶服务地址" align="center" prop="serverUrl" />
       <el-table-column label="账套ID" align="center" prop="cId" />

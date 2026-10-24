@@ -23,7 +23,7 @@ class MaterialGroupSyncTest {
         JSONObject schema = DetailSyncSupport.schema(metadata(), new JSONObject());
         JSONObject query = ContoryUtil.kingdeeToKingdeeQuery(schema, 0, 300, null, null);
         assertEquals("FMATERIALID,FMaterialGroup.FNumber,FCreateOrgId.FName", query.getString("FieldKeys"));
-        assertEquals("物料分组（编码）", schema.getJSONArray("fields").getJSONObject(1).getString("name"));
+        assertEquals("物料分组", schema.getJSONArray("fields").getJSONObject(1).getString("name"));
         JSONObject result = ContoryUtil.kingdeeToDingResult(schema, List.of(List.of(1, "G001", "组织")), 0, 300, 1000);
         assertEquals("G001", result.getJSONArray("records").getJSONObject(0).getJSONObject("fields").getString("FMaterialGroup.FNumber"));
     }

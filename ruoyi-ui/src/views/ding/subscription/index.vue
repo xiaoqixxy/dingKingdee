@@ -58,6 +58,7 @@
     <el-table v-loading="loading" :data="subscriptionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="订阅ID" align="center" prop="id" width="80" />
+      <el-table-column label="企业名称" prop="corpName" min-width="180" show-overflow-tooltip><template #default="{row}">{{ row.corpName || "未登记企业" }}</template></el-table-column>
       <el-table-column label="钉钉企业ID" align="center" prop="dingCorpId" :show-overflow-tooltip="true" width="150" />
       <el-table-column label="产品名称" align="center" prop="productName" width="120" />
       <el-table-column label="产品类型" align="center" prop="productType" width="90">

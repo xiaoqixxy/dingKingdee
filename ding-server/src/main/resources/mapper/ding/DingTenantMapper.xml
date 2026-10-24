@@ -16,16 +16,48 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext3"    column="ext3"    />
 	<result property="createTime" column="create_time" />
 	<result property="updateTime" column="update_time" />
-	</resultMap>
+	    <result property="packageName" column="package_name" />
+        <result property="lastUsedTime" column="last_used_time" />
+        <result property="tenantType" column="tenant_type" />
+    </resultMap>
 	
 	<sql id="selectDingTenantVo">
         select id, ding_corp_id, corp_name, contact_user, contact_phone, status, ext1, ext2, ext3, create_time, update_time
 		from ding_tenant
     </sql>
 
+    <sql id="selectDingTenantListVo">
+        select * from (
+            select t.*, p.product_name as package_name, usage_log.last_used_time,
+                case
+                    when s.id is null then 'UNSUBSCRIBED'
+                    when s.status = 3 then 'CANCELLED'
+                    when s.status = 2 then 'RENEWAL_DUE'
+                    when s.start_time &gt; NOW() then 'PENDING'
+                    when s.end_time &lt;= DATE_ADD(NOW(), INTERVAL 7 DAY) then 'RENEWAL_DUE'
+                    when s.start_time &gt;= DATE_SUB(NOW(), INTERVAL 7 DAY) then 'NEW'
+                    else 'ACTIVE'
+                end as tenant_type
+            from ding_tenant t
+            left join ding_subscription s on s.ding_corp_id = t.ding_corp_id
+            left join ding_product p on p.id = s.product_id
+            left join (
+                select ding_corp_id, max(used_at) as last_used_time from (
+                    select ding_corp_id, max(occurred_at) as used_at from ding_api_call_log
+                    where platform = 'DING' and api_name = 'records' group by ding_corp_id
+                    union all
+                    select ding_corp_id, max(started_at) as used_at from ding_sync_execution group by ding_corp_id
+                    union all
+                    select ding_corp_id, max(create_time) as used_at from ding_sync_log group by ding_corp_id
+                ) usage_sources group by ding_corp_id
+            ) usage_log on usage_log.ding_corp_id = t.ding_corp_id
+        ) enterprise
+    </sql>
+
     <select id="selectDingTenantList" parameterType="com.dj.middle.ding.domain.DingTenant" resultMap="DingTenantResult">
-	    <include refid="selectDingTenantVo"/>
+	    <include refid="selectDingTenantListVo"/>
 		<where>
+            <if test="tenantType != null">AND tenant_type = #{tenantType}</if>
 		    <if test="dingCorpId != null and dingCorpId != ''">
 				AND ding_corp_id = #{dingCorpId}
 			</if>

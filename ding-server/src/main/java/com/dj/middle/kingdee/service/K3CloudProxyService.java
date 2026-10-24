@@ -133,6 +133,8 @@ public interface K3CloudProxyService {
      */
     JSONObject sheetMetaWithFormId(String selectedFormId, String paramsJson);
 
+    JSONObject referenceSchema(String formId, String paramsJson);
+
     /**
      * 查询业务数据记录（钉钉格式）
      * <p>

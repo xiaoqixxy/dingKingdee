@@ -213,4 +213,43 @@ class DetailSyncSupportTest {
         meta.getJSONArray("Entrys").remove(1);
         assertTrue(DetailSyncSupport.schema(meta, new JSONObject()).getJSONArray("entryOptions").isEmpty());
     }
+
+    @Test void multipleEntriesIncludeAllFieldsAndStableCombinationIds() throws Exception {
+        JSONObject meta = metadata();
+        JSONObject second = JSONObject.parseObject(meta.getJSONArray("Entrys").getJSONObject(1).toJSONString());
+        second.put("Key", "FSecond");
+        second.put("Fields", new JSONArray());
+        meta.getJSONArray("Entrys").add(second);
+        JSONObject params = params("FIRST_ROW");
+        params.put("selectedEntryKeys", JSONArray.of("FSecond", "FEntity"));
+        JSONObject schema = DetailSyncSupport.schema(meta, params);
+        JSONArray fields = schema.getJSONArray("fields");
+        int last = fields.size() - 1;
+        assertEquals("FSecond_FEntryID", fields.getJSONObject(last).getString("id"));
+        JSONObject query = DetailSyncSupport.query(schema, params, 0, 3);
+        assertTrue(query.getString("FieldKeys").contains("FSecond_FEntryID"));
+        assertTrue(query.getString("FilterString").contains("FEntity_FEntryID > 0 or FSecond_FEntryID > 0"));
+        List<Object> a = row(schema, 1, 11), b = row(schema, 1, 11);
+        a.set(last, 21L); b.set(last, 22L);
+        JSONArray records = DetailSyncSupport.result(schema, params, List.of(a, b), 0, 2, 100).getJSONArray("records");
+        assertNotEquals(records.getJSONObject(0).getString("id"), records.getJSONObject(1).getString("id"));
+        assertEquals("", records.getJSONObject(1).getJSONObject("fields").getString("FBillNo"));
+        params.put("selectedEntryKeys", JSONArray.of("FEntity", "FSecond"));
+        assertEquals(schema, DetailSyncSupport.schema(meta, params));
+        params.put("selectedEntryKeys", new JSONArray());
+        assertFalse(DetailSyncSupport.schema(meta, params).containsKey("selectedEntryKey"));
+    }
+
+    @Test void unitLookupWithEmptyEnumMetadataUsesDisplayName() throws Exception {
+        JSONObject meta = metadata();
+        JSONObject unit = JSONObject.of("Key", "FUnitID", "LookUpObjectFormId", "BD_UNIT", "Extends", new JSONArray(),
+                "Name", JSONArray.of(JSONObject.of("Key", 2052, "Value", "计量单位")));
+        meta.getJSONArray("Entrys").getJSONObject(1).getJSONArray("Fields").add(unit);
+        JSONObject schema = DetailSyncSupport.schema(meta, params("ALL_ROWS"));
+        JSONObject converted = schema.getJSONArray("fields").getJSONObject(schema.getJSONArray("fields").size() - 1);
+        assertEquals("FEntity_FUnitID.FName", converted.getString("id"));
+        assertEquals("text", converted.getString("type"));
+        assertEquals("箱", ContoryUtil.getKingdeeFieldValue(converted, "箱"));
+        assertTrue(DetailSyncSupport.query(schema, params("ALL_ROWS"), 0, 10).getString("FieldKeys").contains("FUnitID.FName"));
+    }
 }

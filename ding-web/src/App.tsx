@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { initView } from 'dingtalk-docs-cool-app';
 import { API } from './config/api';
 import { APP_VERSION } from './config/version';
 import './App.css';
+import FieldConfigurationStep, { FieldConfig, ReferenceField } from './FieldConfigurationStep';
 import { isEmptyOperator, operatorLabels, fieldKind, filterOperators, scalarValue, filterError } from './filterRules';
 
 interface MultiSelectProps {
@@ -135,6 +136,8 @@ interface SheetField {
   id: string;
   type: 'text' | 'singleSelect' | 'date' | string;
   filterType?: string;
+  referenceFormId?: string;
+  referenceKey?: string;
   property?: { choices?: { name: string; value: string }[]; formatter?: string };
 }
 
@@ -178,10 +181,12 @@ interface VoucherConfigItem {
   selectedFormId?: string;
   selectedFormName?: string;
   selectedEntryKey?: string;
+  selectedEntryKeys?: string[];
   headerFillMode?: HeaderFillMode;
   filterConditions?: (FilterCondition | FilterConditionGroup)[];
   sortConfigs?: SortConfig[];
   sheetFields?: SheetField[];
+  fieldConfigs?: FieldConfig[];
   createTime?: string;
 }
 
@@ -517,6 +522,61 @@ const styles: Record<string, any> = {
   },
 };
 
+function SearchableFieldSelect({ id, fields, value, onChange }: {
+  id: string; fields: SheetField[]; value: string; onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [active, setActive] = useState(0);
+  const selected = fields.find(field => field.id === value);
+  const options = [{ id: '', name: '-- 选择字段 --' }, ...fields.filter(field =>
+    `${field.name} ${field.id}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))];
+  const choose = (key: string) => {
+    onChange(key);
+    setOpen(false);
+    setSearch('');
+  };
+  return (
+    <div style={{ position: 'relative', width: '200px', maxWidth: '100%' }} onBlur={event => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node)) { setOpen(false); setSearch(''); }
+    }}>
+      <div style={{ ...styles.inputWrapper, padding: 0 }}>
+        <input role="combobox" aria-label="筛选字段" aria-autocomplete="list"
+          aria-expanded={open} aria-controls={`${id}-options`}
+          aria-activedescendant={open ? `${id}-option-${active}` : undefined}
+          placeholder="输入字段名称或编码搜索" style={{ ...styles.input, minWidth: 0 }}
+          value={open ? search : selected?.name || ''}
+          onFocus={() => { setOpen(true); setSearch(''); setActive(0); }}
+          onClick={() => { if (!open) { setOpen(true); setSearch(''); setActive(0); } }}
+          onChange={event => { setSearch(event.target.value); setOpen(true); setActive(0); }}
+          onKeyDown={event => {
+            if (event.key === 'Escape') { event.preventDefault(); setOpen(false); setSearch(''); }
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+              event.preventDefault(); setOpen(true);
+              setActive(index => Math.max(0, Math.min(options.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1))));
+            }
+            if (event.key === 'Enter' && open) { event.preventDefault(); choose(options[active]?.id || ''); }
+          }} />
+        <button type="button" aria-label="展开或收起字段列表" aria-expanded={open}
+          style={{ background: 'transparent', border: 0, padding: '10px', cursor: 'pointer', color: '#bfbfbf' }}
+          onClick={() => { setOpen(!open); setSearch(''); setActive(0); }}>{open ? '▲' : '▼'}</button>
+      </div>
+      {open && <div id={`${id}-options`} role="listbox" aria-label="筛选字段候选项" style={{
+        position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px', maxHeight: '200px',
+        overflowY: 'auto', background: '#fff', border: '1px solid #d9d9d9', borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 1000,
+      }}>
+        {options.map((field, index) => <div key={field.id} id={`${id}-option-${index}`}
+          role="option" aria-selected={field.id === value}
+          onMouseDown={event => event.preventDefault()} onMouseEnter={() => setActive(index)}
+          onClick={() => choose(field.id)} style={{ padding: '10px 12px', cursor: 'pointer',
+            background: index === active ? '#f3f4f6' : '#fff', fontSize: '13px' }}>{field.name}</div>)}
+        {options.length === 1 && search.trim() && <div role="status" style={{ padding: '10px 12px', color: '#9ca3af' }}>暂无匹配字段</div>}
+      </div>}
+    </div>
+  );
+}
+
 function App() {
   const [kingdeeConfig, setKingdeeConfig] = useState<KingdeeBaseParams>(DEFAULT_CONFIG);
   const [currentStep, setCurrentStep] = useState(0);
@@ -548,9 +608,14 @@ function App() {
   const [displayValue, setDisplayValue] = useState('');
 
   const [sheetFields, setSheetFields] = useState<SheetField[]>([]);
+  const [configurationFields, setConfigurationFields] = useState<SheetField[]>([]);
+  const [fieldConfigs, setFieldConfigs] = useState<FieldConfig[]>([]);
+  const [fieldConfigBusy, setFieldConfigBusy] = useState(false);
+  const referenceMetadataCache = useRef(new Map<string, Promise<ReferenceField[]>>());
   const [headFields, setHeadFields] = useState<SheetField[]>([]);
   const [entryOptions, setEntryOptions] = useState<EntryOption[]>([]);
   const [selectedEntryKey, setSelectedEntryKey] = useState('');
+  const [selectedEntryKeys, setSelectedEntryKeys] = useState<string[]>([]);
   const [headerFillMode, setHeaderFillMode] = useState<HeaderFillMode>('FIRST_ROW');
   const [metadataFormId, setMetadataFormId] = useState('');
   const [fieldLoading, setFieldLoading] = useState(false);
@@ -589,6 +654,7 @@ function App() {
 
   const handleAddConfig = () => {
     setSelectedEntryKey('');
+    setSelectedEntryKeys([]);
     setHeaderFillMode('FIRST_ROW');
     setEntryOptions([]);
     setMetadataFormId('');
@@ -603,6 +669,8 @@ function App() {
     setOtherFormKey('');
     setOtherFormName('');
     setHeadFields([]);
+    setFieldConfigs([]);
+    setConfigurationFields([]);
     setKingdeeConfig(DEFAULT_CONFIG);
     setSelectedFormId("");
     setSelectedFormName("");
@@ -616,6 +684,7 @@ function App() {
   // 兼容早期平铺条件和当前按 OR 分组保存的条件。
   const restoreSyncSelection = (item: VoucherConfigItem) => {
     setSelectedEntryKey(item.selectedEntryKey || '');
+    setSelectedEntryKeys(item.selectedEntryKeys ?? (item.selectedEntryKey ? [item.selectedEntryKey] : []));
     setHeaderFillMode(item.headerFillMode || 'FIRST_ROW');
     setMetadataFormId(item.selectedFormId || '');
     setEntryOptions([]);
@@ -629,6 +698,7 @@ function App() {
     setOtherFormKey('');
     setOtherFormName('');
     setSheetFields(item.sheetFields || []);
+    setFieldConfigs(item.fieldConfigs || []);
     const groups = (item.filterConditions || []).map(condition =>
       'conditions' in condition ? condition : { conditions: [condition] });
     const legacy = item.filterConditions?.every(condition => !('conditions' in condition));
@@ -667,7 +737,7 @@ function App() {
     if (syncMode && savedSyncConfigRef.current) {
       savedSyncConfigRef.current = {
         ...savedSyncConfigRef.current, selectedFormId, selectedFormName,
-        selectedEntryKey, headerFillMode, filterConditions, sortConfigs, sheetFields,
+        selectedEntryKey, selectedEntryKeys, headerFillMode, filterConditions, sortConfigs, sheetFields, fieldConfigs,
       };
     }
     setViewMode("list");
@@ -938,11 +1008,13 @@ function App() {
       const options: EntryOption[] = result?.data?.entryOptions || [];
       setHeadFields(fields);
       setEntryOptions(options);
-      if (formId !== metadataFormId || !options.some(option => option.key === selectedEntryKey && option.supported)) {
+      if (formId !== metadataFormId || selectedEntryKeys.some(key => !options.some(option => option.key === key && option.supported))) {
         setSelectedEntryKey('');
+        setSelectedEntryKeys([]);
         setHeaderFillMode('FIRST_ROW');
       }
       if (formId !== metadataFormId) {
+        setFieldConfigs([]);
         setFilterConditions([{ conditions: [{ fieldId: '', operator: '=', value: '' }] }]);
         setSortConfigs([{ fieldId: '', order: 'asc' }]);
       }
@@ -991,10 +1063,12 @@ function App() {
         selectedFormId,
         selectedFormName,
         selectedEntryKey,
+        selectedEntryKeys,
         headerFillMode,
         filterConditions: validFilters,
         sortConfigs: validSorts,
         sheetFields,
+        fieldConfigs,
       };
       if (editingVoucherId !== null) {
         submitData.id = editingVoucherId;
@@ -1113,7 +1187,7 @@ function App() {
         conditions: group.conditions.filter(f => f.fieldId.trim()).map(f => ({ ...f, value: isEmptyOperator(f.operator) ? '' : f.operator === '包含于' ? f.value : scalarValue(f.value) }))
       })).filter(group => group.conditions.length > 0);
       const validSorts = sortConfigs.filter(s => s.fieldId.trim());
-      const submitData = { ...savedSyncConfigRef.current, ...kingdeeConfig, configVersion: 2, selectedFormId, selectedFormName, selectedEntryKey, headerFillMode, filterConditions: validFilters, sortConfigs: validSorts, sheetFields };
+      const submitData = { ...savedSyncConfigRef.current, ...kingdeeConfig, configVersion: 2, selectedFormId, selectedFormName, selectedEntryKey, selectedEntryKeys, headerFillMode, filterConditions: validFilters, sortConfigs: validSorts, sheetFields, fieldConfigs };
       const host = getDataSourceHost();
       if (host?.saveConfigAndGoNext) {
         await host.saveConfigAndGoNext(submitData);
@@ -1830,19 +1904,20 @@ function App() {
   );
 
   const handleEntryNext = () => {
-    const entry = entryOptions.find(option => option.key === selectedEntryKey);
-    if (selectedEntryKey && (!entry || !entry.supported)) {
+    const entries = entryOptions.filter(entry => selectedEntryKeys.includes(entry.key));
+    if (entries.length !== selectedEntryKeys.length || entries.some(entry => !entry.supported)) {
       showMessage('请选择可同步的明细表', 'warning');
       return;
     }
-    const fields = entry
-      ? [...headFields.map(field => ({ ...field, isPrimary: false })), ...entry.fields]
+    const fields = entries.length
+      ? [...headFields.map(field => ({ ...field, isPrimary: false })), ...entries.flatMap((entry, index) => entry.fields.map(field => ({ ...field, isPrimary: index === 0 && field.isPrimary })))]
       : headFields;
     const ids = new Set(fields.map(field => field.id));
     if (ids.size !== fields.length) {
       showMessage('表头与明细字段标识冲突，该表单需要适配', 'error');
       return;
     }
+    fieldConfigs.forEach(config => { if (ids.has(config.fieldId) && config.outputFieldId) ids.add(config.outputFieldId); });
     const filters = filterConditions.map(group => ({ conditions: group.conditions.filter(filter => !filter.fieldId || ids.has(filter.fieldId)) }));
     const sorts = sortConfigs.filter(sort => !sort.fieldId || ids.has(sort.fieldId));
     const removed = filters.some((group, index) => group.conditions.length !== filterConditions[index].conditions.length)
@@ -1852,32 +1927,77 @@ function App() {
       : [{ conditions: [{ fieldId: '', operator: '=', value: '' }] }]);
     setSortConfigs(sorts.length ? sorts : [{ fieldId: '', order: 'asc' }]);
     setSheetFields(fields);
+    setConfigurationFields(fields);
+    setFieldConfigs(configs => configs.filter(config => ids.has(config.fieldId)));
     if (removed) showMessage('已清除不属于当前明细表的筛选和排序条件', 'warning');
     setCurrentStep(3);
+  };
+
+  const loadReferenceFields = useCallback((formId: string): Promise<ReferenceField[]> => {
+    const key = JSON.stringify([kingdeeConfig, formId]);
+    const existing = referenceMetadataCache.current.get(key);
+    if (existing) return existing;
+    const request = (async () => {
+      const response = await fetch(API.referenceSchema, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId, params: JSON.stringify(kingdeeConfig) }),
+      });
+      const result = await response.json();
+      if (!response.ok || result.code !== 0 || !Array.isArray(result.data?.fields))
+        throw new Error(result.msg || '获取引用对象元数据失败');
+      return result.data.fields as ReferenceField[];
+    })();
+    referenceMetadataCache.current.set(key, request);
+    request.catch(() => referenceMetadataCache.current.delete(key));
+    return request;
+  }, [kingdeeConfig]);
+
+  const applyConfiguredFields = (fields: SheetField[]) => {
+    const ids = new Set(fields.map(field => field.id));
+    setSheetFields(fields);
+    setFilterConditions(groups => groups.map(group => ({ conditions: group.conditions.filter(condition => !condition.fieldId || ids.has(condition.fieldId)) }))
+      .filter(group => group.conditions.length));
+    setSortConfigs(sorts => sorts.filter(sort => !sort.fieldId || ids.has(sort.fieldId)));
+  };
+
+  const handleFieldConfigNext = async () => {
+    if (!fieldConfigs.length) { applyConfiguredFields(configurationFields); setCurrentStep(4); return; }
+    setFieldConfigBusy(true);
+    try {
+      const params = { ...kingdeeConfig, selectedFormId, selectedFormName, selectedEntryKeys, selectedEntryKey, headerFillMode, fieldConfigs };
+      const response = await fetch(API.formSchema, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ params: JSON.stringify(params), context: { corpId: getCorpIdFromUrl() } }) });
+      const result = await response.json();
+      if (!response.ok || result.code !== 0 || !Array.isArray(result.data?.fields)) throw new Error(result.msg || '字段配置校验失败');
+      applyConfiguredFields(result.data.fields);
+      setCurrentStep(4);
+    } catch (reason) { showMessage(reason instanceof Error ? reason.message : '字段配置校验失败', 'error'); }
+    finally { setFieldConfigBusy(false); }
   };
 
   const renderEntryStep = () => (
     <div className="entry-step">
       <h3>📋 选择明细表</h3>
-      <p className="entry-help">{selectedFormName} · 每次只能选择一个明细表</p>
+      <p className="entry-help">{selectedFormName} · 支持同时选择多个明细表</p>
       <fieldset className="entry-options">
         <legend>同步数据范围</legend>
-        <label className={`entry-option ${!selectedEntryKey ? 'is-selected' : ''}`}>
-          <input type="radio" name="entryKey" checked={!selectedEntryKey} onChange={() => setSelectedEntryKey('')} />
+        <label className={`entry-option ${!selectedEntryKeys.length ? 'is-selected' : ''}`}>
+          <input type="checkbox" name="entryKey" checked={!selectedEntryKeys.length} onChange={() => { setSelectedEntryKeys([]); setSelectedEntryKey(''); }} />
           <span>不同步明细，仅同步表头</span>
         </label>
         {entryOptions.map(entry => (
-          <label key={entry.key} className={`entry-option ${selectedEntryKey === entry.key ? 'is-selected' : ''}`}>
-            <input type="radio" name="entryKey" value={entry.key} checked={selectedEntryKey === entry.key}
-              disabled={!entry.supported} onChange={() => setSelectedEntryKey(entry.key)} />
+          <label key={entry.key} className={`entry-option ${selectedEntryKeys.includes(entry.key) ? 'is-selected' : ''}`}>
+            <input type="checkbox" name="entryKey" value={entry.key} checked={selectedEntryKeys.includes(entry.key)}
+              disabled={!entry.supported} onChange={() => { const keys = selectedEntryKeys.includes(entry.key) ? selectedEntryKeys.filter(key => key !== entry.key) : [...selectedEntryKeys, entry.key]; setSelectedEntryKeys(keys); setSelectedEntryKey(keys[0] || ''); }} />
             <span>{entry.name}<small>{entry.supported ? `${Math.max(0, entry.fields.length - 1)} 个明细字段` : entry.reason}</small></span>
           </label>
         ))}
       </fieldset>
       {entryOptions.length === 0 && <p className="entry-help">该表单没有可同步的明细表，将仅同步表头。</p>}
-      {selectedEntryKey && (
+      {selectedEntryKeys.length > 0 && (
         <fieldset className="entry-options">
           <legend>🔄 同步方式</legend>
+          {selectedEntryKeys.length > 1 && <p className="entry-help">多个明细按金蝶联查结果展开，同一单据的明细组合可能重复显示，请勿直接汇总金额。</p>}
           <label className={`entry-option ${headerFillMode === 'FIRST_ROW' ? 'is-selected' : ''}`}>
             <input type="radio" name="headerFillMode" checked={headerFillMode === 'FIRST_ROW'} onChange={() => setHeaderFillMode('FIRST_ROW')} />
             <span>只有第一行包含表头数据<small>每张单据筛选后的第一条明细显示表头，其余行留空。</small></span>
@@ -1983,14 +2103,12 @@ function App() {
                 <div key={conditionIndex}>
                   {conditionIndex > 0 && <div className="filter-and-connector">并且（AND）</div>}
                   <div className="plugin-condition" style={styles.conditionRow}>
-                    <select style={{ ...styles.select, width: '200px' }} value={filter.fieldId} onChange={(e) => { 
-                      updateFilter(groupIndex, conditionIndex, 'fieldId', e.target.value); 
-                      updateFilter(groupIndex, conditionIndex, 'operator', '=');
-                      updateFilter(groupIndex, conditionIndex, 'value', ''); 
-                    }}>
-                      <option value="">-- 选择字段 --</option>
-                      {sheetFields.map((field) => (<option key={field.id} value={field.id}>{field.name}</option>))}
-                    </select>
+                    <SearchableFieldSelect id={`filter-field-${groupIndex}-${conditionIndex}`} fields={sheetFields}
+                      value={filter.fieldId} onChange={value => {
+                        updateFilter(groupIndex, conditionIndex, 'fieldId', value);
+                        updateFilter(groupIndex, conditionIndex, 'operator', '=');
+                        updateFilter(groupIndex, conditionIndex, 'value', '');
+                      }} />
                     {/* 预设日期范围已确定比较逻辑，自定义日期才显示操作符。 */}
                     {!isPresetDateFilter(filter) && <select aria-label="筛选操作符" disabled={!filter.fieldId} style={{ ...styles.select, width: '120px' }} value={filter.operator} onChange={(e) => {
                       const op = e.target.value;
@@ -2048,7 +2166,7 @@ function App() {
         </div>
         <hr style={{ ...styles.hr, margin: '12px 0' }} />
         <div style={styles.btnGroup}>
-          <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={() => setCurrentStep(2)}>返回</button>
+          <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={() => setCurrentStep(3)}>返回</button>
           <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handleSubmit} disabled={loading}>{loading ? '提交中...' : '提交配置'}</button>
         </div>
       </div>
@@ -2095,12 +2213,15 @@ function App() {
       {upgradeDialogVisible ? (
         renderUpgradeDialog()
       ) : (
-        <main className="plugin-page" style={styles.card}>
-          {renderProductInfo()}
+        <main className={`plugin-page${currentStep === 3 ? ' field-config-page' : ''}`} style={styles.card}>
+          {currentStep <= 1 && renderProductInfo()}
           {currentStep === 0 && renderStep1()}
           {currentStep === 1 && renderStep2()}
           {currentStep === 2 && renderEntryStep()}
-          {currentStep === 3 && renderStep3()}
+          {currentStep === 3 && <FieldConfigurationStep fields={configurationFields} configs={fieldConfigs}
+            onChange={setFieldConfigs} loadFields={loadReferenceFields} busy={fieldConfigBusy}
+            onBack={() => setCurrentStep(2)} onNext={handleFieldConfigNext} />}
+          {currentStep === 4 && renderStep3()}
         </main>
       )}
     </div>

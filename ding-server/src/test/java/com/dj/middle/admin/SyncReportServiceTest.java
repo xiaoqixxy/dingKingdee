@@ -6,6 +6,15 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SyncReportServiceTest {
+    @Test void quotaCompletionIsNormalAndRetainsSeparateCount() {
+        var result=SyncReportService.summarize(List.of(Map.of(
+            "day","2026-09-20","executions",5,"completed",4,"succeeded",2,"limited",1,"errors",1
+        )),LocalDate.parse("2026-09-20"),7);
+        var current=(Map<?,?>)result.get("current");
+        assertEquals(75.0,current.get("successRate"));
+        assertEquals(1L,current.get("limited"));
+        assertEquals(1L,current.get("errors"));
+    }
     @Test void fillsDaysAndUsesPreviousDayOutsideRange() {
         var result=SyncReportService.summarize(List.of(
             Map.of("day","2026-09-19","records",100),

@@ -9,7 +9,7 @@
 - BATCH 完整批次、PAGE 历史单页、LEGACY 旧游标续传独立统计，默认 BATCH；提示当前期间各类日志覆盖数量，不混合历史单页与新批次。
 - 同步条数直接汇总执行总日志的 `success_count`，不会连接分页表导致重复累加。该值表示返回给钉钉的条数，不是源数据新增/删除量，也不保证目标已落库。分页与重试会更新执行创建日的统计。
 - 周期增减 = 本周期条数 − 前周期条数；上周期为零时不显示百分比。每日增减包含查询范围前一天作为比较基准。
-- 已结束状态为 SUCCESS、FAILED、PARTIAL、CANCELLED。成功率 = SUCCESS / 已结束；PENDING、RUNNING 不进入分母；无已结束数据时显示“—”。异常统计 FAILED 与 PARTIAL。
+- 已结束状态为 SUCCESS、FAILED、PARTIAL、CANCELLED。正常结束率 = (SUCCESS + PARTIAL 且 error_code 为 SYNC_LIMIT_REACHED) / 已结束；PENDING、RUNNING 不进入分母；无已结束数据时显示“—”。异常统计 FAILED 与非限额原因的 PARTIAL。达到同步上限单独统计，仍保留原始 PARTIAL 状态和未知未读取数量的说明；FAILED 即使携带限额代码仍计入异常。
 - 平均耗时按具有结束时间的记录计算，批次耗时是分页处理耗时累计（包含重试），不是跨回调的自然时间。
 - 未结束任务面板覆盖所选口径全部日期，超过 30 分钟未更新只作为排查提示，不改写任务状态。
 - 节点状态、数据库状态表示本次接口请求及统计查询成功。运行时长及 JVM 堆内存仅属于处理本次请求的节点，不是集群监控。
@@ -22,3 +22,7 @@
 部署需要同时更新 `dj-admin/target/dingKingdee.jar` 与管理端 dist；数据库菜单更新不代表前后端已部署。部署后重新登录刷新菜单。
 
 验证覆盖：缺失日期补零、范围外前一天比较、环比零基数、空数据、未结束任务不进入成功率分母、耗时分母、参数范围限制；全部四条统计 SQL 已在 MySQL 数据库验证。前端生产构建及 Maven verify 已通过。
+
+## 2026-09-28 历史单页清理
+
+仅清理 log_scope=PAGE 的执行及通过 execution_id 关联的接口日志、执行明细、分页明细、旧同步日志。BATCH、LEGACY 与无关联旧日志不在删除范围。删除前已完整备份到 output/historical-page-logs-*.jsonl.gz，结果见 output/historical-page-cleanup-result.json。

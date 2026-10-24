@@ -10,6 +10,11 @@ public class DingSubscription extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
+    @Excel(name = "企业名称")
+    private String corpName;
+    public String getCorpName() { return corpName; }
+    public void setCorpName(String corpName) { this.corpName = corpName; }
+
     private Long id;
 
     @Excel(name = "钉钉企业ID")

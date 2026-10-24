@@ -17,12 +17,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
 	<result property="createTime" column="create_time" />
-	</resultMap>
+	    <result property="corpName" column="corp_name" />
+    </resultMap>
 	
 	<sql id="selectDingPaymentLogVo">
-        select id, order_no, ding_corp_id, pay_channel, transaction_id, pay_amount, status, raw_data, 
+        select corp_name, id, order_no, ding_corp_id, pay_channel, transaction_id, pay_amount, status, raw_data, 
                ext1, ext2, ext3, create_time
-		from ding_payment_log
+		from (select source.*, tenant.corp_name from ding_payment_log source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
     <select id="selectDingPaymentLogList" parameterType="com.dj.middle.ding.domain.DingPaymentLog" resultMap="DingPaymentLogResult">

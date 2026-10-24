@@ -1,6 +1,8 @@
 package com.dj.middle.kingdee.service.impl;
 
 import com.dj.middle.kingdee.util.DetailSyncSupport;
+import com.dj.middle.kingdee.util.FieldConfigurationSupport;
+import com.dj.middle.kingdee.util.ReferenceQuerySupport;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
@@ -213,6 +215,31 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
         return result;
     }
 
+    private JSONObject loadReferenceMetadata(KingdeeK3CloudUtil util, String formId) {
+        if (formId == null || !formId.matches("[A-Za-z0-9_]{1,100}"))
+            throw new IllegalArgumentException("引用对象标识无效");
+        JSONObject response = util.queryBusinessInfo(formId);
+        JSONObject result = response == null ? null : response.getJSONObject("Result");
+        JSONObject metadata = result == null ? null : result.getJSONObject("NeedReturnData");
+        if (metadata == null) throw new IllegalArgumentException("无法读取引用对象元数据: " + formId);
+        return metadata;
+    }
+
+    private JSONObject configuredSchema(JSONObject metadata, JSONObject params, KingdeeK3CloudUtil util) {
+        return FieldConfigurationSupport.apply(DetailSyncSupport.schema(metadata, params), params,
+                formId -> loadReferenceMetadata(util, formId));
+    }
+
+    @Override
+    public JSONObject referenceSchema(String formId, String paramsJson) {
+        if (com.dj.middle.kingdee.util.ExtensionDictionarySupport.contains(formId))
+            return com.dj.middle.kingdee.util.ExtensionDictionarySupport.schema(formId);
+        JSONObject params = JSONObject.parseObject(paramsJson);
+        KingdeeK3CloudUtil util = new KingdeeK3CloudUtil(params.getString("SERVER_URL"), params.getString("CID"),
+                params.getString("USER_NAME"), params.getString("APP_ID"), params.getString("APP_SECRET"));
+        return FieldConfigurationSupport.referenceSchema(loadReferenceMetadata(util, formId));
+    }
+
     /**
      * 查询表单元数据（钉钉格式）
      */
@@ -234,7 +261,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
             JSONObject jsonObject = util.queryBusinessInfo(TABLE_NAME);
             JSONObject NeedReturnData = jsonObject.getJSONObject("Result").getJSONObject("NeedReturnData");
             
-            JSONObject resultObject = DetailSyncSupport.schema(NeedReturnData, params);
+            JSONObject resultObject = configuredSchema(NeedReturnData, params, util);
             log.info("sheetMeta查询成功: {}", resultObject);
             return resultObject;
         } catch (Exception e) {
@@ -277,7 +304,31 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
                 return metadata;
             });
             JSONObject NeedReturnData = jsonObject.getJSONObject("Result").getJSONObject("NeedReturnData");
-            JSONObject dingFieldData = DetailSyncSupport.schema(NeedReturnData, params);
+            JSONObject dingFieldData = configuredSchema(NeedReturnData, params, util);
+
+            if (ReferenceQuerySupport.required(dingFieldData)) {
+                if (nextToken == null || nextToken < 0 || maxResults == null || maxResults <= 0)
+                    throw new IllegalArgumentException("无效的分页参数");
+                int syncLimit = singleSyncLimit == null ? 0 : singleSyncLimit;
+                if (nextToken >= syncLimit) {
+                    syncRecorder.limitReached();
+                    return ReferenceQuerySupport.page(dingFieldData, params, java.util.Collections.emptyList(), nextToken, 0, syncLimit);
+                }
+                java.util.function.Function<JSONObject, List<List<Object>>> executeReferenceQuery = query -> {
+                    try {
+                        if ("QueryGroupInfo".equals(query.getString("queryType")))
+                            return syncRecorder.api("QueryGroupInfo", () -> util.queryGroupInfo(query));
+                        return syncRecorder.api("ExecuteBillQuery", () -> util.query(query));
+                    }
+                    catch (Exception e) { throw new IllegalStateException("引用数据查询失败", e); }
+                };
+                if (ReferenceQuerySupport.canStream(dingFieldData, params))
+                    return ReferenceQuerySupport.streamPage(dingFieldData, params, nextToken, Math.min(maxResults, 300), syncLimit,
+                            executeReferenceQuery, () -> syncRecorder.limitReached());
+                List<List<Object>> resolved = ReferenceQuerySupport.collect(dingFieldData, params, executeReferenceQuery);
+                if (resolved.size() > syncLimit) syncRecorder.limitReached();
+                return ReferenceQuerySupport.page(dingFieldData, params, resolved, nextToken, Math.min(maxResults, 300), syncLimit);
+            }
 
             if (dingFieldData.containsKey("selectedEntryKey")) {
                 if (nextToken == null || nextToken < 0 || maxResults == null || maxResults <= 0)

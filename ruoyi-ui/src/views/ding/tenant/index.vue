@@ -1,6 +1,6 @@
 <template>
   <div class="app-container business-page">
-    <div class="business-heading"><span class="business-eyebrow">业务工作空间</span><h1>🏢 企业列表</h1><p>集中管理企业档案与联系人，名称标记“待完善”的企业需要补齐资料。</p></div>
+    <div class="business-heading"><span class="business-eyebrow">业务工作空间</span><h1>🏢 企业列表</h1><p>查看企业套餐、订阅类型与最近同步使用情况，名称标记“待完善”的企业需要补齐资料。</p></div>
     <h2 class="business-filter-title">🔎 筛选条件</h2>
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
       <el-form-item label="企业ID" prop="dingCorpId">
@@ -21,14 +21,10 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="联系人" prop="contactUser">
-        <el-input
-          v-model="queryParams.contactUser"
-          placeholder="请输入企业联系人"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+      <el-form-item label="类型" prop="tenantType">
+        <el-select v-model="queryParams.tenantType" clearable placeholder="全部类型" style="width:240px">
+          <el-option v-for="(item,key) in tenantTypes" :key="key" :label="item.label" :value="key" />
+        </el-select>
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 240px">
@@ -72,13 +68,15 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <p class="tenant-note">上次使用时间为最近一次同步调用（含失败）；新订阅指近 7 天生效，待续费指 7 天内到期或已到期。</p>
     <el-table v-loading="loading" :data="tenantList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="id" width="80" />
       <el-table-column label="钉钉企业ID" align="center" prop="dingCorpId" :show-overflow-tooltip="true" width="180" />
       <el-table-column label="企业名称" align="center" prop="corpName" :show-overflow-tooltip="true" />
-      <el-table-column label="联系人" align="center" prop="contactUser" width="120" />
-      <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
+      <el-table-column label="企业套餐" prop="packageName" min-width="160" show-overflow-tooltip><template #default="{row}">{{ row.packageName || (row.tenantType === 'UNSUBSCRIBED' ? '未订阅' : '套餐已移除') }}</template></el-table-column>
+      <el-table-column label="上次使用时间" prop="lastUsedTime" width="170"><template #default="{row}">{{ parseTime(row.lastUsedTime) || '暂无使用记录' }}</template></el-table-column>
+      <el-table-column label="类型" prop="tenantType" width="115"><template #default="{row}"><el-tag :type="tenantTypes[row.tenantType]?.color || 'info'">{{ tenantTypes[row.tenantType]?.label || '未知' }}</el-tag></template></el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
           <el-tag v-if="scope.row.status === 1" type="success">正常</el-tag>
@@ -166,6 +164,11 @@
 </template>
 
 <script setup name="DingTenant">
+const tenantTypes = {
+  UNSUBSCRIBED: {label:'未订阅',color:'info'}, NEW: {label:'新订阅',color:'success'},
+  ACTIVE: {label:'正常订阅',color:'success'}, RENEWAL_DUE: {label:'待续费',color:'warning'},
+  CANCELLED: {label:'已取消',color:'info'}, PENDING: {label:'待生效',color:'info'}
+}
 import { listTenant, getTenant, addTenant, updateTenant, delTenant } from '@/api/middle/ding'
 
 const { proxy } = getCurrentInstance()
@@ -185,7 +188,7 @@ const queryParams = reactive({
   pageSize: 10,
   dingCorpId: undefined,
   corpName: undefined,
-  contactUser: undefined,
+  tenantType: undefined,
   status: undefined
 })
 
@@ -300,3 +303,7 @@ function handleDelete(row) {
 
 getList()
 </script>
+
+<style scoped>
+.tenant-note { color:#909399; font-size:12px; margin:12px 0; }
+</style>

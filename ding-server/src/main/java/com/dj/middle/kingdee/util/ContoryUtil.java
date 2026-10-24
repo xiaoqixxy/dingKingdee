@@ -88,8 +88,12 @@ public class ContoryUtil {
                     JSONObject rowFieldResult = new JSONObject();
                     rowFieldResult.put("name", getName(rowFieldJson));
                     
-                    // 处理枚举类型字段（从Extends中获取选项）
-                    if (rowFieldJson.containsKey("Extends") && rowFieldJson.get("Extends") instanceof JSONArray) {
+                    // 计量单位是关联资料；部分元数据附带空的枚举选项。
+                    if ("BD_UNIT".equalsIgnoreCase(rowFieldJson.getString("LookUpObjectFormId"))) {
+                        rowFieldResult.put("id", rowFieldJson.getString("Key") + ".FName");
+                        rowFieldResult.put("type", "text");
+                    }
+                    else if (rowFieldJson.get("Extends") instanceof JSONArray && !rowFieldJson.getJSONArray("Extends").isEmpty()) {
                         rowFieldResult.put("id", rowFieldJson.getString("Key"));
                         rowFieldResult.put("type", "singleSelect");
                         JSONObject property = new JSONObject();
@@ -106,7 +110,7 @@ public class ContoryUtil {
                         rowFieldResult.put("property", property);
                     }
                     // 处理布尔类型
-                    else if (FieldTypeConstant.FieldType_BOOLEN == rowFieldJson.getInteger("ElementType")) {
+                    else if (Integer.valueOf(FieldTypeConstant.FieldType_BOOLEN).equals(rowFieldJson.getInteger("ElementType"))) {
                         rowFieldResult.put("filterType", "boolean");
                         rowFieldResult.put("id", rowFieldJson.getString("Key"));
                         rowFieldResult.put("type", "singleSelect");
@@ -124,20 +128,18 @@ public class ContoryUtil {
                         rowFieldResult.put("property", property);
                     }
                     // 证件对象没有 FName；主证件内码应读取关联值本身。
-                    else if (FieldTypeConstant.FieldType_OBJ == rowFieldJson.getInteger("FieldType")
+                    else if (Integer.valueOf(FieldTypeConstant.FieldType_OBJ).equals(rowFieldJson.getInteger("FieldType"))
                             && "HR_HM_Card".equalsIgnoreCase(rowFieldJson.getString("LookUpObjectFormId"))) {
                         rowFieldResult.put("id", rowFieldJson.getString("Key"));
                         rowFieldResult.put("type", "text");
                     }
-                    // BOS_FORMGROUP uses a form-specific group table. Its generic multilingual
-                    // FName join can target the nonexistent FormGroup_L table; FNumber is queryable.
-                    else if ("BOS_FORMGROUP".equalsIgnoreCase(rowFieldJson.getString("LookUpObjectFormId"))) {
-                        rowFieldResult.put("id", rowFieldJson.getString("Key") + ".FNumber");
-                        rowFieldResult.put("name", getName(rowFieldJson) + "（编码）");
+                    // Extended objects declare their default property in the project dictionary.
+                    else if (ExtensionDictionarySupport.contains(rowFieldJson.getString("LookUpObjectFormId"))) {
+                        rowFieldResult.put("id", rowFieldJson.getString("Key") + "." + ExtensionDictionarySupport.defaultField(rowFieldJson.getString("LookUpObjectFormId")));
                         rowFieldResult.put("type", "text");
                     }
                     // 处理关联表单类型
-                    else if (FieldTypeConstant.FieldType_OBJ == rowFieldJson.getInteger("FieldType")) {
+                    else if (Integer.valueOf(FieldTypeConstant.FieldType_OBJ).equals(rowFieldJson.getInteger("FieldType"))) {
                         rowFieldResult.put("id", rowFieldJson.getString("Key") + ".FName");
                         rowFieldResult.put("type", "text");
                     }
@@ -152,7 +154,7 @@ public class ContoryUtil {
                         rowFieldResult.put("type", "text");
                     }
                     // 处理日期类型
-                    else if (FieldTypeConstant.FieldType_DATE == rowFieldJson.getInteger("FieldType")) {
+                    else if (Integer.valueOf(FieldTypeConstant.FieldType_DATE).equals(rowFieldJson.getInteger("FieldType"))) {
                         rowFieldResult.put("id", rowFieldJson.getString("Key"));
                         rowFieldResult.put("type", "date");
                         JSONObject property = new JSONObject();
@@ -160,7 +162,7 @@ public class ContoryUtil {
                         rowFieldResult.put("property", property);
                     }
                     // 处理数字类型
-                    else if (FieldTypeConstant.FieldType_NUMBER == rowFieldJson.getInteger("FieldType")) {
+                    else if (Integer.valueOf(FieldTypeConstant.FieldType_NUMBER).equals(rowFieldJson.getInteger("FieldType"))) {
                         rowFieldResult.put("id", rowFieldJson.getString("Key"));
                         rowFieldResult.put("type", "number");
                         JSONObject property = new JSONObject();
@@ -177,7 +179,18 @@ public class ContoryUtil {
                         rowFieldResult.put("filterType", "boolean");
                     rowFieldResult.put("isPrimary", false);
                     rowFieldResult.put("description", "");
+                    String referenceForm = rowFieldJson.getString("LookUpObjectFormId");
+                    if (referenceForm != null && !referenceForm.isBlank()) {
+                        rowFieldResult.put("referenceKey", rowFieldJson.getString("Key"));
+                        rowFieldResult.put("referenceFormId", referenceForm);
+                        if (ExtensionDictionarySupport.contains(referenceForm)) {
+                            rowFieldResult.put("referenceDictionaryId", referenceForm);
+                            rowFieldResult.put("referenceContext", JSONObject.of("formId", needReturnData.getString("Id"),
+                                    "groupFieldKey", rowFieldJson.getString("Key")));
+                        }
+                    }
                     fields.add(rowFieldResult);
+
                 }
             }
         }
@@ -227,6 +240,19 @@ public class ContoryUtil {
      */
     public static JSONObject kingdeeToKingdeeQuery(JSONObject needReturnData, Integer nextToken,
             Integer maxResult, JSONArray filterConditions, JSONArray sortConfigs) {
+        // Resolve configured display paths for header-only queries too. Never mutate saved filters.
+        needReturnData = JSONObject.parseObject(needReturnData.toJSONString());
+        java.util.Map<String, String> queryKeys = new java.util.HashMap<>();
+        for (Object item : needReturnData.getJSONArray("fields")) {
+            JSONObject field = (JSONObject) item;
+            String id = field.getString("id");
+            String key = field.getString("queryKey");
+            if (key == null) key = id;
+            queryKeys.put(id, key);
+            field.put("id", key);
+        }
+        filterConditions = translateQueryConditions(filterConditions, queryKeys);
+        sortConfigs = translateQueryConditions(sortConfigs, queryKeys);
         JSONObject queryJson = new JSONObject();
         List<String> FieldKeys = new ArrayList<>();
         
@@ -246,6 +272,20 @@ public class ContoryUtil {
         queryJson.put("Limit", maxResult);
 
         return queryJson;
+    }
+
+    private static JSONArray translateQueryConditions(JSONArray conditions, java.util.Map<String, String> keys) {
+        if (conditions == null) return null;
+        JSONArray copy = JSONArray.parseArray(conditions.toJSONString());
+        for (Object item : copy) {
+            JSONObject condition = (JSONObject) item;
+            if (condition.containsKey("conditions")) condition.put("conditions", translateQueryConditions(condition.getJSONArray("conditions"), keys));
+            else {
+                String id = condition.getString("fieldId");
+                condition.put("fieldId", keys.getOrDefault(id, id));
+            }
+        }
+        return copy;
     }
 
     /**

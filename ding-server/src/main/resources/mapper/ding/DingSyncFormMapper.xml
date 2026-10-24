@@ -14,11 +14,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext1"    column="ext1"    />
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
-	</resultMap>
+	    <result property="corpName" column="corp_name" />
+    </resultMap>
 	
 	<sql id="selectDingSyncFormVo">
-        select id, ding_corp_id, ding_form_id, form_name, source_system, status, ext1, ext2, ext3 
-		from ding_sync_form
+        select corp_name, id, ding_corp_id, ding_form_id, form_name, source_system, status, ext1, ext2, ext3 
+		from (select source.*, tenant.corp_name from ding_sync_form source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
     <select id="selectDingSyncFormList" parameterType="com.dj.middle.ding.domain.DingSyncForm" resultMap="DingSyncFormResult">

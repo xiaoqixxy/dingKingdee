@@ -26,7 +26,7 @@ public final class AdminRecordSql {
   return s.toString();
  }
  private static boolean has(String s){return s!=null&&!s.isBlank();}
- public static String list(Map<String,Object> p){Dataset d=dataset((String)p.get("kind"));return "SELECT "+d.columns()+" FROM "+d.table()+where(d,(AdminRecordQuery)p.get("q"))+" ORDER BY "+d.time()+" DESC,id DESC LIMIT #{q.pageSize} OFFSET #{q.offset}";}
+ public static String list(Map<String,Object> p){Dataset d=dataset((String)p.get("kind"));return "SELECT records.*,tenant.corp_name FROM (SELECT "+d.columns()+" FROM "+d.table()+where(d,(AdminRecordQuery)p.get("q"))+" ORDER BY "+d.time()+" DESC,id DESC LIMIT #{q.pageSize} OFFSET #{q.offset}) records LEFT JOIN ding_tenant tenant ON tenant.ding_corp_id=records.ding_corp_id ORDER BY records."+d.time()+" DESC,records.id DESC";}
  public static String count(Map<String,Object> p){Dataset d=dataset((String)p.get("kind"));return "SELECT COUNT(*) FROM "+d.table()+where(d,(AdminRecordQuery)p.get("q"));}
  public static String detail(Map<String,Object> p){Dataset d=dataset((String)p.get("kind"));return "SELECT "+d.columns()+(java.util.Set.of("execution","apiLog").contains((String)p.get("kind"))?",error_stack":"")+" FROM "+d.table()+" WHERE id=#{id}";}
 }

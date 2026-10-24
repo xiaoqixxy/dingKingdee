@@ -157,6 +157,17 @@ public class KingdeeK3CloudUtil {
         }
     }
 
+    /** Read-only group API; unlike ExecuteBillQuery it needs the owning form and group key. */
+    public List<List<Object>> queryGroupInfo(JSONObject request) {
+        try {
+            JSONObject data = JSONObject.of("FormId", request.getString("FormId"), "GroupFieldKey", request.getString("GroupFieldKey"),
+                    "GroupPkIds", request.getString("GroupPkIds"), "Ids", "");
+            JSONObject response = JSONObject.parseObject(api.queryGroupInfo(data.toJSONString()));
+            return com.dj.middle.kingdee.util.ExtensionDictionarySupport.response(response, request.getString("dictionaryId"));
+        } catch (RuntimeException e) { throw e; }
+        catch (Exception e) { throw new IllegalStateException("调用金蝶分组查询接口失败", e); }
+    }
+
     /**
      * 保存业务单据
      * <p>

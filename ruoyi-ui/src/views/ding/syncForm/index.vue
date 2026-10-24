@@ -66,6 +66,7 @@
     <el-table v-loading="loading" :data="syncFormList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="配置ID" align="center" prop="id" width="80" />
+      <el-table-column label="企业名称" prop="corpName" min-width="180" show-overflow-tooltip><template #default="{row}">{{ row.corpName || "未登记企业" }}</template></el-table-column>
       <el-table-column label="钉钉企业ID" align="center" prop="dingCorpId" :show-overflow-tooltip="true" width="150" />
       <el-table-column label="钉钉多维表ID" align="center" prop="dingFormId" :show-overflow-tooltip="true" width="150" />
       <el-table-column label="表单名称" align="center" prop="formName" :show-overflow-tooltip="true" />

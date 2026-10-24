@@ -40,7 +40,7 @@ public class SyncReportService {
         List<Map<String,Object>> daily=new ArrayList<>();
         Map<String,Object> current=new LinkedHashMap<>();
         Map<String,Object> previous=new LinkedHashMap<>();
-        List<String> keys=List.of("executions","succeeded","errors","completed","active","records","duration","timed");
+        List<String> keys=List.of("executions","succeeded","limited","errors","completed","active","records","duration","timed");
         for(int i=-days;i<days;i++) {
             LocalDate date=start.plusDays(i);
             Map<String,Object> source=indexed.getOrDefault(date.toString(),Map.of());
@@ -58,7 +58,7 @@ public class SyncReportService {
         long delta=number(current,"records")-number(previous,"records");
         current.put("change",delta);
         current.put("changePercent",number(previous,"records")==0?null:100.0*delta/number(previous,"records"));
-        current.put("successRate",number(current,"completed")==0?null:100.0*number(current,"succeeded")/number(current,"completed"));
+        current.put("successRate",number(current,"completed")==0?null:100.0*(number(current,"succeeded")+number(current,"limited"))/number(current,"completed"));
         current.put("averageDuration",number(current,"timed")==0?null:1.0*number(current,"duration")/number(current,"timed"));
         Map<String,Object> result=new LinkedHashMap<>();
         result.put("current",current); result.put("previous",previous); result.put("daily",daily);

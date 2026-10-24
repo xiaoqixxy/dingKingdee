@@ -9,6 +9,18 @@ public class DingTenant extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
+    @Excel(name = "企业套餐")
+    private String packageName;
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private java.util.Date lastUsedTime;
+    private TenantType tenantType;
+    public String getPackageName() { return packageName; }
+    public void setPackageName(String value) { packageName = value; }
+    public java.util.Date getLastUsedTime() { return lastUsedTime; }
+    public void setLastUsedTime(java.util.Date value) { lastUsedTime = value; }
+    public TenantType getTenantType() { return tenantType; }
+    public void setTenantType(TenantType value) { tenantType = value; }
+
     private Long id;
 
     @Excel(name = "钉钉企业ID")

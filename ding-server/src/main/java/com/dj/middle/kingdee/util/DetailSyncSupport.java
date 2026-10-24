@@ -6,7 +6,7 @@ import java.text.ParseException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-/** One selected entry entity per sheet. Header suppression is applied after filtering. */
+/** Selected entry entities share a bill query; header suppression is applied after filtering. */
 public final class DetailSyncSupport {
     private DetailSyncSupport() {}
 
@@ -34,8 +34,14 @@ public final class DetailSyncSupport {
         JSONObject result = ContoryUtil.kingdeeToDing(metadata);
         JSONArray headFields = result.getJSONArray("fields");
         JSONArray options = new JSONArray();
-        String selected = params.getString("selectedEntryKey");
-        JSONObject selectedOption = null;
+        JSONArray requested = params.getJSONArray("selectedEntryKeys");
+        Set<String> selectedKeys = new LinkedHashSet<>();
+        if (requested != null) for (int i = 0; i < requested.size(); i++) selectedKeys.add(requested.getString(i));
+        else {
+            String legacy = params.getString("selectedEntryKey");
+            if (legacy != null && !legacy.isBlank()) selectedKeys.add(legacy);
+        }
+        List<JSONObject> selectedOptions = new ArrayList<>();
         JSONArray entities = metadata.getJSONArray("Entrys");
         Set<String> headEntityKeys = new HashSet<>();
         for (int i = 0; i < entities.size(); i++) {
@@ -71,32 +77,42 @@ public final class DetailSyncSupport {
             String seq = entity.getString("SeqFieldKey");
             option.put("sequenceKey", seq == null || seq.isBlank() ? null : key + "_" + seq);
             options.add(option);
-            if (key.equals(selected)) selectedOption = option;
+            if (selectedKeys.contains(key)) selectedOptions.add(option);
         }
         result.put("entryOptions", options);
         result.put("headFields", JSONArray.parseArray(headFields.toJSONString()));
-        if (selected == null || selected.isBlank()) return result;
+        if (selectedKeys.isEmpty()) return result;
         mode(params);
-        if (selectedOption == null) throw new IllegalArgumentException("所选明细表不存在，请重新选择");
-        if (!selectedOption.getBooleanValue("supported"))
-            throw new IllegalArgumentException(selectedOption.getString("reason"));
+        if (selectedOptions.size() != selectedKeys.size()) throw new IllegalArgumentException("所选明细表不存在，请重新选择");
         result.put("headerFieldCount", headFields.size());
-        result.put("selectedEntryKey", selected);
-        result.put("sequenceKey", selectedOption.getString("sequenceKey"));
+        result.put("selectedEntryKey", selectedOptions.get(0).getString("key"));
+        JSONArray keys = new JSONArray();
+        JSONArray primaryIds = new JSONArray();
+        JSONArray sequences = new JSONArray();
         headFields.getJSONObject(0).put("isPrimary", false);
         Set<String> ids = new HashSet<>();
         for (int i = 0; i < headFields.size(); i++) ids.add(headFields.getJSONObject(i).getString("id"));
-        JSONArray entryFields = selectedOption.getJSONArray("fields");
-        for (int i = 0; i < entryFields.size(); i++) {
-            JSONObject field = entryFields.getJSONObject(i);
-            if (!ids.add(field.getString("id")))
-                throw new IllegalArgumentException("表头与明细字段标识冲突: " + field.getString("id"));
-            headFields.add(field);
+        for (JSONObject option : selectedOptions) {
+            if (!option.getBooleanValue("supported")) throw new IllegalArgumentException(option.getString("reason"));
+            keys.add(option.getString("key"));
+            if (option.getString("sequenceKey") != null) sequences.add(option.getString("sequenceKey"));
+            JSONArray entryFields = option.getJSONArray("fields");
+            primaryIds.add(entryFields.getJSONObject(0).getString("id"));
+            for (int i = 0; i < entryFields.size(); i++) {
+                JSONObject field = entryFields.getJSONObject(i);
+                if (!ids.add(field.getString("id"))) throw new IllegalArgumentException("表头与明细字段标识冲突: " + field.getString("id"));
+                if (option != selectedOptions.get(0)) field.put("isPrimary", false);
+                headFields.add(field);
+            }
         }
+        result.put("selectedEntryKeys", keys);
+        result.put("entryPrimaryIds", primaryIds);
+        result.put("sequenceKeys", sequences);
+        result.put("sequenceKey", selectedOptions.get(0).getString("sequenceKey"));
         return result;
     }
 
-    private static JSONObject expandFlexFields(JSONObject metadata) {
+    static JSONObject expandFlexFields(JSONObject metadata) {
         JSONObject copy = JSONObject.parseObject(metadata.toJSONString());
         JSONArray entities = copy.getJSONArray("Entrys");
         for (int i = 0; i < entities.size(); i++) {
@@ -169,11 +185,12 @@ public final class DetailSyncSupport {
             (header.contains(sort.getString("fieldId")) ? headSorts : entrySorts).add(sort);
         }
         String billId = fields.getJSONObject(0).getString("id");
-        String entryId = fields.getJSONObject(headCount).getString("id");
         appendSort(headSorts, billId);
         headSorts.addAll(entrySorts);
-        appendSort(headSorts, schema.getString("sequenceKey"));
-        appendSort(headSorts, entryId);
+        JSONArray sequences = schema.getJSONArray("sequenceKeys");
+        for (int i = 0; i < sequences.size(); i++) appendSort(headSorts, sequences.getString(i));
+        JSONArray primaryIds = schema.getJSONArray("entryPrimaryIds");
+        for (int i = 0; i < primaryIds.size(); i++) appendSort(headSorts, primaryIds.getString(i));
         JSONObject querySchema = JSONObject.parseObject(schema.toJSONString());
         Map<String, String> queryKeys = new HashMap<>();
         JSONArray queryFields = querySchema.getJSONArray("fields");
@@ -196,7 +213,8 @@ public final class DetailSyncSupport {
         String filter = query.getString("FilterString");
         // Exclude header-only documents before pagination, not after it.
         query.put("FilterString", (filter == null || filter.isBlank() ? "" : "(" + filter + ") and ")
-                + entryId + " > 0");
+                + "(" + String.join(" or ", primaryIds.toJavaList(String.class).stream()
+                    .map(id -> id + " > 0").collect(java.util.stream.Collectors.toList())) + ")");
         return query;
     }
 
@@ -222,7 +240,8 @@ public final class DetailSyncSupport {
         JSONArray records = new JSONArray();
         for (int rowIndex = begin; rowIndex < begin + count; rowIndex++) {
             List<Object> row = rows.get(rowIndex);
-            if (row.size() != fields.size() || row.get(0) == null || row.get(headCount) == null)
+            if (row.size() != fields.size() || row.get(0) == null
+                    || (schema.getJSONArray("entryPrimaryIds").size() == 1 && row.get(headCount) == null))
                 throw new IllegalArgumentException("金蝶明细结果缺少主键或字段数量不一致");
             String bill = String.valueOf(row.get(0));
             JSONObject values = new JSONObject();
@@ -237,7 +256,13 @@ public final class DetailSyncSupport {
             identity.add(schema.getString("Id"));
             identity.add(schema.getString("selectedEntryKey"));
             identity.add(bill);
-            identity.add(String.valueOf(row.get(headCount)));
+            JSONArray primaryIds = schema.getJSONArray("entryPrimaryIds");
+            if (primaryIds.size() == 1) identity.add(String.valueOf(row.get(headCount)));
+            else for (int i = 0; i < fields.size(); i++)
+                if (primaryIds.contains(fields.getJSONObject(i).getString("id"))) {
+                    identity.add(fields.getJSONObject(i).getString("id"));
+                    identity.add(row.get(i));
+                }
             JSONObject record = new JSONObject();
             record.put("id", UUID.nameUUIDFromBytes(identity.toJSONString().getBytes(StandardCharsets.UTF_8)).toString());
             record.put("fields", values);

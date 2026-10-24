@@ -15,11 +15,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext2"    column="ext2"    />
 		<result property="ext3"    column="ext3"    />
 	<result property="createTime" column="create_time" />
-	</resultMap>
+	    <result property="corpName" column="corp_name" />
+    </resultMap>
 	
 	<sql id="selectDingSyncLogVo">
-        select id, ding_corp_id, ding_form_id, sync_count, status, error_msg, ext1, ext2, ext3, create_time
-		from ding_sync_log
+        select corp_name, id, ding_corp_id, ding_form_id, sync_count, status, error_msg, ext1, ext2, ext3, create_time
+		from (select source.*, tenant.corp_name from ding_sync_log source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
     <select id="selectDingSyncLogList" parameterType="com.dj.middle.ding.domain.DingSyncLog" resultMap="DingSyncLogResult">

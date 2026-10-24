@@ -1,0 +1,19 @@
+{
+  "BOS_FORMGROUP": {
+    "version": 1,
+    "api": "QueryGroupInfo",
+    "primaryKey": "FID",
+    "defaultField": "FNumber",
+    "fields": [
+      { "key": "FNumber", "name": "编码", "type": "text", "responseKey": "FNUMBER" },
+      { "key": "FName", "name": "名称", "type": "text", "responseKey": "FNAME" },
+      { "key": "FID", "name": "内码", "type": "text", "filterType": "number", "responseKey": "FID" },
+      { "key": "FDescription", "name": "描述", "type": "text", "responseKey": "FDESCRIPTION" },
+      { "key": "FGroupId", "name": "分组标识", "type": "text", "responseKey": "FGROUPID" },
+      { "key": "FParentId", "name": "父级分组", "type": "text", "responseKey": "FPARENTID", "referenceFormId": "BOS_FORMGROUP" },
+      { "key": "FFullParentId", "name": "完整父级路径", "type": "text", "responseKey": "FFULLPARENTID" },
+      { "key": "FLeft", "name": "左值", "type": "number", "responseKey": "FLEFT" },
+      { "key": "FRight", "name": "右值", "type": "number", "responseKey": "FRIGHT" }
+    ]
+  }
+}

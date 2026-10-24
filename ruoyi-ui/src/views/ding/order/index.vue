@@ -106,6 +106,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="订单ID" align="center" prop="id" width="80" />
       <el-table-column label="订单号" align="center" prop="orderNo" :show-overflow-tooltip="true" width="180" />
+      <el-table-column label="企业名称" prop="corpName" min-width="180" show-overflow-tooltip><template #default="{row}">{{ row.corpName || "未登记企业" }}</template></el-table-column>
       <el-table-column label="钉钉企业ID" align="center" prop="dingCorpId" :show-overflow-tooltip="true" width="150" />
       <el-table-column label="订单类型" align="center" prop="orderType" width="80">
         <template #default="scope">

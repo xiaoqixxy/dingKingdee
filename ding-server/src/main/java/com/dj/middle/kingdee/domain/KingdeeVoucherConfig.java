@@ -13,6 +13,11 @@ import com.dj.common.core.domain.BaseEntity;
  */
 public class KingdeeVoucherConfig extends BaseEntity
 {
+    @Excel(name = "企业名称")
+    private String corpName;
+    public String getCorpName() { return corpName; }
+    public void setCorpName(String corpName) { this.corpName = corpName; }
+
     private static final long serialVersionUID = 1L;
 
     /** 主键ID */

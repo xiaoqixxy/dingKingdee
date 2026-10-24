@@ -84,8 +84,17 @@ public class K3CloudProxyController {
                 sheetMetaResult.remove("headerFieldCount");
                 sheetMetaResult.remove("selectedEntryKey");
                 sheetMetaResult.remove("sequenceKey");
+                sheetMetaResult.remove("selectedEntryKeys");
+                sheetMetaResult.remove("entryPrimaryIds");
+                sheetMetaResult.remove("sequenceKeys");
                 com.alibaba.fastjson2.JSONArray fields = sheetMetaResult.getJSONArray("fields");
-                for (int i = 0; i < fields.size(); i++) fields.getJSONObject(i).remove("queryKey");
+                for (int i = 0; i < fields.size(); i++) {
+                    fields.getJSONObject(i).remove("queryKey");
+                    fields.getJSONObject(i).remove("referencePlan");
+                    fields.getJSONObject(i).remove("sourceFieldId");
+                    fields.getJSONObject(i).remove("referenceFormId");
+                    fields.getJSONObject(i).remove("referenceKey");
+                }
             }
             
             JSONObject result = new JSONObject();
@@ -101,6 +110,17 @@ public class K3CloudProxyController {
             result.put("code", 10005);
             result.put("msg", "三方系统异常: " + syncRecorder.clientMessage(e, rawBody));
             return result;
+        }
+    }
+
+    @PostMapping("/referenceSchema")
+    public JSONObject referenceSchema(@RequestBody String rawBody) {
+        try {
+            JSONObject request = JSONObject.parseObject(rawBody);
+            return JSONObject.of("code", 0, "data", k3CloudProxyService.referenceSchema(
+                    request.getString("formId"), request.getString("params")));
+        } catch (Exception e) {
+            return JSONObject.of("code", 10005, "msg", syncRecorder.clientMessage(e, rawBody));
         }
     }
 
