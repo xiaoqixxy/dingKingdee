@@ -68,7 +68,7 @@ public final class ReferenceQuerySupport {
     }
 
     private static String id(Object value) {
-        if (value == null) return "";
+        if (ContoryUtil.isEmptyValue(value)) return "";
         String text = value.toString();
         try { return new BigDecimal(text).stripTrailingZeros().toPlainString(); }
         catch (NumberFormatException ignored) { return text; }
@@ -130,7 +130,7 @@ public final class ReferenceQuerySupport {
 
     private static boolean matches(JSONObject field, Object actual, JSONObject condition) {
         String op = condition.getString("operator");
-        boolean empty = actual == null || actual.toString().isEmpty();
+        boolean empty = ContoryUtil.isEmptyValue(actual);
         if ("为空".equals(op)) return empty;
         if ("不为空".equals(op)) return !empty;
         if (empty) return false;
@@ -176,6 +176,8 @@ public final class ReferenceQuerySupport {
     }
 
     private static int compare(JSONObject field, Object a, Object b) {
+        if (ContoryUtil.isEmptyValue(a)) a = null;
+        if (ContoryUtil.isEmptyValue(b)) b = null;
         if (a == b) return 0;
         if (a == null) return -1;
         if (b == null) return 1;

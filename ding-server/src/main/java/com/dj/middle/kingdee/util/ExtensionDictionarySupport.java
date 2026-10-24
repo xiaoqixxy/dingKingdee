@@ -65,7 +65,7 @@ public final class ExtensionDictionarySupport {
     }
 
     public static String identity(Object value) {
-        if (value == null) return "";
+        if (ContoryUtil.isEmptyValue(value)) return "";
         try { return new BigDecimal(value.toString()).stripTrailingZeros().toPlainString(); }
         catch (NumberFormatException ignored) { return value.toString(); }
     }

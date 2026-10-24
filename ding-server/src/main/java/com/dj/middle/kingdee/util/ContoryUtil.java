@@ -446,6 +446,12 @@ public class ContoryUtil {
         return resultJson;
     }
 
+    /** Only blank strings are empty; meaningful text retains all of its original spaces. */
+    static boolean isEmptyValue(Object value) {
+        return value == null || (value instanceof CharSequence && value.toString().codePoints()
+                .allMatch(ch -> Character.isWhitespace(ch) || Character.isSpaceChar(ch)));
+    }
+
     /**
      * 获取金蝶字段值并转换格式
      * <p>
@@ -462,7 +468,7 @@ public class ContoryUtil {
      * @throws ParseException 日期解析异常
      */
     static Object getKingdeeFieldValue(JSONObject fieldJson, Object fieldValue) throws ParseException {
-        if (fieldValue == null) {
+        if (isEmptyValue(fieldValue)) {
             return "";
         }
         
@@ -474,7 +480,8 @@ public class ContoryUtil {
             for (int i = 0; i < choices.size(); i++) {
                 JSONObject choice = choices.getJSONObject(i);
                 if (String.valueOf(fieldValue).equals(choice.getString("value"))) {
-                    return choice.getString("name");
+                    String name = choice.getString("name");
+                    return isEmptyValue(name) ? "" : name;
                 }
             }
             return "";
