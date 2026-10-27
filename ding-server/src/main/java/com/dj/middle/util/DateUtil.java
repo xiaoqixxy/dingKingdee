@@ -24,10 +24,10 @@ public class DateUtil {
     /** 日期时间格式：yyyy-MM-dd HH:mm:ss */
     public static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
-    /** 日期时间格式化器 */
+    /** 日期时间格式化器。 */
     private static final SimpleDateFormat DATETIME_FORMATTER = new SimpleDateFormat(DATETIME_FORMAT);
 
-    /** 日期格式化器 */
+    /** 日期格式化器。 */
     private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat(DATE_FORMAT);
 
     /**

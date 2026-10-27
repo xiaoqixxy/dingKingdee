@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.ding.mapper.DingInvoiceMapper">
 
+    <!-- DingInvoiceResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingInvoice" id="DingInvoiceResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
@@ -21,12 +22,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    <result property="corpName" column="corp_name" />
     </resultMap>
 	
+	<!-- selectDingInvoiceVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<sql id="selectDingInvoiceVo">
         select corp_name, id, ding_corp_id, order_no, invoice_type, invoice_title, tax_no, amount, status, 
                ext1, ext2, ext3, create_time, update_time
 		from (select source.*, tenant.corp_name from ding_invoice source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
+    <!-- selectDingInvoiceList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingInvoiceList" parameterType="com.dj.middle.ding.domain.DingInvoice" resultMap="DingInvoiceResult">
 	    <include refid="selectDingInvoiceVo"/>
 		<where>
@@ -49,21 +52,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by id desc
 	</select>
 	
+	<!-- selectDingInvoiceById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingInvoiceById" parameterType="Long" resultMap="DingInvoiceResult">
 		<include refid="selectDingInvoiceVo"/>
 		where id = #{id}
 	</select>
 	
+	<!-- selectDingInvoiceByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingInvoiceByCorpId" parameterType="String" resultMap="DingInvoiceResult">
 		<include refid="selectDingInvoiceVo"/>
 		where ding_corp_id = #{dingCorpId}
 		order by id desc
 	</select>
 	
+	<!-- deleteDingInvoiceById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteDingInvoiceById" parameterType="Long">
   		delete from ding_invoice where id = #{id}
   	</delete>
   	
+  	<!-- deleteDingInvoiceByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
   	<delete id="deleteDingInvoiceByIds" parameterType="Long">
   		delete from ding_invoice where id in
   		<foreach collection="array" item="id" open="(" separator="," close=")">
@@ -71,6 +78,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
+    <!-- updateDingInvoice：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateDingInvoice" parameterType="com.dj.middle.ding.domain.DingInvoice">
   		update ding_invoice
   		<set>
@@ -89,6 +97,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
+    <!-- insertDingInvoice：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingInvoice" parameterType="com.dj.middle.ding.domain.DingInvoice" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_invoice(
             create_time,

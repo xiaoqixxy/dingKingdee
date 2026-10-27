@@ -7,7 +7,9 @@ import java.time.Instant;
 import java.util.TimeZone;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** DateSyncTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class DateSyncTest {
+    /** 验证：日期输出保留时分秒和毫秒。 */
     @Test void dateFieldPreservesTimeAndMilliseconds() throws Exception {
         TimeZone original = TimeZone.getDefault();
         try {
@@ -26,6 +28,7 @@ class DateSyncTest {
         }
     }
 
+    /** 验证：非法日期仍然明确报错。 */
     @Test void invalidDatesStillFail() {
         assertThrows(IllegalArgumentException.class, () -> DateConverterUtil.stringToDate("invalid"));
         assertThrows(IllegalArgumentException.class, () -> DateConverterUtil.stringToDate(""));

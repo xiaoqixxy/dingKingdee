@@ -8,14 +8,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** ExtensionDictionarySupportTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class ExtensionDictionarySupportTest {
+    /** 构造带所属分组上下文的字典引用跳转。 */
     private JSONObject hop(String group, String key) {
         return JSONObject.of("dictionaryId", "BOS_FORMGROUP", "fieldKey", key,
                 "context", JSONObject.of("formId", "BD_MATERIAL", "groupFieldKey", group));
     }
+    /** 包装金蝶接口的成功响应结构。 */
     private JSONObject response(Object data) {
         return JSONObject.of("Result", JSONObject.of("ResponseStatus", JSONObject.of("IsSuccess", true), "NeedReturnData", data));
     }
+    /** 验证：扩展字典提供属性及父级引用，不拼接来源名称后缀。 */
     @Test void maintainedSchemaExposesFieldsAndParentReferenceWithNoBusinessNameSuffix() {
         JSONObject schema = ExtensionDictionarySupport.schema("BOS_FORMGROUP");
         assertEquals("FID", schema.getString("primaryKey"));
@@ -27,6 +31,7 @@ class ExtensionDictionarySupportTest {
         schema.getJSONArray("fields").clear();
         assertFalse(ExtensionDictionarySupport.schema("BOS_FORMGROUP").getJSONArray("fields").isEmpty());
     }
+    /** 验证：兼容数组文本及空结果，保留业务和格式错误。 */
     @Test void responseAcceptsArrayStringAndNullButPreservesBusinessAndFormatFailures() {
         JSONArray rows = JSONArray.of(JSONObject.of("FID", 1, "FNAME", "组名"));
         assertEquals(1, ExtensionDictionarySupport.response(response(rows.toJSONString()), "BOS_FORMGROUP").size());
@@ -37,6 +42,7 @@ class ExtensionDictionarySupportTest {
         assertThrows(IllegalArgumentException.class, () -> ExtensionDictionarySupport.response(response(new JSONObject()), "BOS_FORMGROUP"));
         assertThrows(IllegalArgumentException.class, () -> ExtensionDictionarySupport.response(response(JSONArray.of(JSONObject.of("FNUMBER", "A"))), "BOS_FORMGROUP"));
     }
+    /** 验证：同上下文跨列共用缓存而不同分组上下文隔离。 */
     @Test void columnsShareCachedRecordsButDifferentGroupContextsDoNotCollide() {
         Map<String, Map<String, Object>> cache = new HashMap<>(); AtomicInteger calls = new AtomicInteger();
         Function<JSONObject, List<List<Object>>> query = request -> {
@@ -52,6 +58,7 @@ class ExtensionDictionarySupportTest {
         assertEquals(List.of("FSalGroup"), ExtensionDictionarySupport.resolve(hop("FSalGroup", "FName"), List.of(1), query, cache));
         assertEquals(2, calls.get());
     }
+    /** 验证：每批最多200个内码并拒绝格式错误及越界返回。 */
     @Test void batchingUsesAtMost200IdsAndDoesNotSwallowMalformedOrOutOfRangeResults() {
         List<Object> ids = new ArrayList<>(); for (int i = 1; i <= 205; i++) ids.add(i);
         AtomicInteger calls = new AtomicInteger();

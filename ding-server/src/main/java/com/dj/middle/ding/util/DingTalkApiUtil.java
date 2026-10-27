@@ -15,15 +15,20 @@ import com.dingtalk.api.DefaultDingTalkClient;
 import com.dingtalk.api.DingTalkClient;
 import com.dj.middle.ding.config.DingTalkConfig;
 
+/** 钉钉企业授权及接口客户端工具。 */
 @Component
 public class DingTalkApiUtil
 {
+    /** 记录当前业务处理过程及异常的日志对象。 */
     private static final Logger log = LoggerFactory.getLogger(DingTalkApiUtil.class);
 
+    /** 钉钉应用身份与接口访问配置。 */
     @Autowired
     private DingTalkConfig dingTalkConfig;
 
+    /** 钉钉接口访问令牌缓存。 */
     private String accessToken;
+    /** 访问令牌的失效时间戳。 */
     private long tokenExpireTime = 0;
 
     /**
@@ -71,6 +76,7 @@ public class DingTalkApiUtil
     }
 
     // 通过临时授权码获取授权用户的个人信息
+    /** 用钉钉授权码换取用户身份信息。 */
     public OapiV2UserGetuserinfoResponse getUserInfoByCode(String code) throws Exception {
         DingTalkClient client = new DefaultDingTalkClient("https://oapi.dingtalk.com/topapi/v2/user/getuserinfo");
         OapiV2UserGetuserinfoRequest req = new OapiV2UserGetuserinfoRequest();
@@ -79,6 +85,7 @@ public class DingTalkApiUtil
     }
 
     // 根据unionId获取userid
+    /** 按统一用户标识读取钉钉用户信息。 */
     public OapiUserGetbyunionidResponse getUserByUnionId(String unionId) throws Exception {
         DingTalkClient clientDingTalkClient = new DefaultDingTalkClient("https://oapi.dingtalk.com/topapi/user/getbyunionid");
         OapiUserGetbyunionidRequest reqGetbyunionidRequest = new OapiUserGetbyunionidRequest();
@@ -87,6 +94,7 @@ public class DingTalkApiUtil
     }
 
     //根据userId获取用户信息
+    /** 按企业内用户标识读取用户信息。 */
     public OapiV2UserGetResponse getUserByUserId(String userId) throws Exception {
         DingTalkClient clientDingTalkClient2 = new DefaultDingTalkClient(
                 "https://oapi.dingtalk.com/topapi/v2/user/get");
@@ -97,6 +105,7 @@ public class DingTalkApiUtil
     }
 
     //根据corpId获取企业信息
+    /** 读取企业授权及基本资料。 */
     public OapiServiceGetAuthInfoResponse getCorpByCorpId(String corpId) throws Exception {
         DingTalkClient client = new DefaultDingTalkClient("https://oapi.dingtalk.com/service/get_auth_info");
         OapiServiceGetAuthInfoRequest req = new OapiServiceGetAuthInfoRequest();

@@ -7,16 +7,20 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** FieldConfigurationSupportTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class FieldConfigurationSupportTest {
+    /** 构造不含业务凭证的最小元数据测试夹具。 */
     private JSONObject metadata(String id, String fields) {
         return JSONObject.parseObject("{\"Id\":\"" + id + "\",\"Name\":[{\"Key\":2052,\"Value\":\"Test\"}],\"PkFieldName\":\"FID\",\"Entrys\":[{\"Key\":\"Head\",\"EntityType\":\"HeadEntity\",\"Fields\":" + fields + "}]}");
     }
+    /** 构造具有引用字段的来源对象。 */
     private JSONObject source() {
         return metadata("ORDER", """
           [{"Key":"FBillNo","Name":[{"Key":2052,"Value":"单号"}],"FieldType":231,"ElementType":1},
            {"Key":"FMaterial","Name":[{"Key":2052,"Value":"物料"}],"FieldType":127,"ElementType":13,"LookUpObjectFormId":"MATERIAL"}]
           """);
     }
+    /** 按对象标识返回模拟引用元数据。 */
     private JSONObject referenced(String id) {
         return switch (id) {
             case "MATERIAL" -> metadata(id, """
@@ -30,11 +34,14 @@ class FieldConfigurationSupportTest {
             default -> throw new IllegalArgumentException("Unexpected metadata access");
         };
     }
+    /** 生成当前测试使用的字段结构与引用计划。 */
     private JSONObject schema() { return DetailSyncSupport.schema(source(), new JSONObject()); }
+    /** 构造当前场景需要的同步配置参数。 */
     private JSONObject params(String path) {
         return JSONObject.parseObject("{\"fieldConfigs\":[{\"fieldId\":\"FMaterial.FName\",\"alias\":\"规格\",\"referencePath\":" + path + "}]}");
     }
 
+    /** 验证：空配置和仅改别名不触发额外引用请求。 */
     @Test void emptyConfigAndAliasesDoNotLoadReferencesOrChangeQueries() {
         JSONObject original = schema();
         assertSame(original, FieldConfigurationSupport.apply(original, new JSONObject(), key -> { throw new AssertionError(); }));
@@ -45,6 +52,7 @@ class FieldConfigurationSupportTest {
                 ContoryUtil.kingdeeToKingdeeQuery(configured, 0, 10, null, null));
     }
 
+    /** 验证：规格和多层数字引用保留列标识并转换筛选排序。 */
     @Test void specificationAndNestedNumericPathsKeepOutputIdsAndTranslateFiltersAndSorts() throws Exception {
         JSONObject configured = FieldConfigurationSupport.apply(schema(), params("[\"FSpecification\"]"), this::referenced);
         JSONObject field = configured.getJSONArray("fields").getJSONObject(2);
@@ -64,6 +72,7 @@ class FieldConfigurationSupportTest {
         assertEquals("3", result.getJSONArray("records").getJSONObject(0).getJSONObject("fields").getString("FMaterial.FName"));
     }
 
+    /** 验证：引用叶子可沿用默认名称且元数据在请求内复用。 */
     @Test void referenceLeafCanUseItsDefaultNameAndMetadataIsCachedPerRequest() {
         JSONObject params = params("[\"FUnit\"]");
         JSONObject configured = FieldConfigurationSupport.apply(schema(), params, this::referenced);
@@ -78,6 +87,7 @@ class FieldConfigurationSupportTest {
         assertEquals(1, calls.get());
     }
 
+    /** 验证：拒绝无效路径失效字段重复列及穿越普通字段。 */
     @Test void invalidPathsStaleFieldsDuplicatesAndScalarTraversalAreRejected() {
         for (String path : List.of("[\"bad;sql\"]", "[\"FSpecification\",\"FName\"]", "[\"FUnit\",\"Missing\"]"))
             assertThrows(IllegalArgumentException.class, () -> FieldConfigurationSupport.apply(schema(), params(path), this::referenced));
@@ -89,6 +99,7 @@ class FieldConfigurationSupportTest {
         assertThrows(IllegalArgumentException.class, () -> FieldConfigurationSupport.apply(schema(), scalar, this::referenced));
     }
 
+    /** 验证：明细使用已配置路径且记录标识不变。 */
     @Test void detailQueryUsesConfiguredPathAndKeepsRecordIdentity() throws Exception {
         JSONObject raw = source();
         JSONObject entity = raw.getJSONArray("Entrys").getJSONObject(0);
@@ -107,6 +118,7 @@ class FieldConfigurationSupportTest {
         assertEquals(a.getJSONArray("records").getJSONObject(0).getString("id"), b.getJSONArray("records").getJSONObject(0).getString("id"));
     }
 
+    /** 验证：新增引用列可独立输出编码并保留原名称列。 */
     @Test void additionalReferenceColumnPreservesOriginalNameAndOutputsNumberIndependently() throws Exception {
         String outputId = "FMaterial.FName__ref_number";
         JSONObject params = JSONObject.of("fieldConfigs", JSONArray.of(JSONObject.of("fieldId", "FMaterial.FName",
@@ -135,6 +147,7 @@ class FieldConfigurationSupportTest {
         assertEquals(configured, FieldConfigurationSupport.apply(original, params, this::referenced));
     }
 
+    /** 验证：表头新增列同步修正明细边界且记录标识稳定。 */
     @Test void additionalHeaderColumnsShiftDetailBoundaryWithoutChangingRecordIdentity() throws Exception {
         JSONObject metadata = source();
         metadata.getJSONArray("Entrys").add(JSONObject.of("Key", "Entry", "Name", JSONArray.of(JSONObject.of("Key",2052,"Value","明细")),
@@ -150,6 +163,7 @@ class FieldConfigurationSupportTest {
         assertEquals(before.getJSONArray("records").getJSONObject(0).getString("id"), after.getJSONArray("records").getJSONObject(0).getString("id"));
     }
 
+    /** 验证：拒绝重复或非法新增列标识。 */
     @Test void duplicateOrInvalidAdditionalColumnsAreRejected() {
         for (String outputId : List.of("FID", "FMaterial.FName__ref_bad;sql")) {
             JSONObject config = params("[]"); config.getJSONArray("fieldConfigs").getJSONObject(0).put("outputFieldId", outputId);

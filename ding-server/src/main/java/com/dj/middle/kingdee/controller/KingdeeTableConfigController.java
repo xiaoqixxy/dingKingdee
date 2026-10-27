@@ -29,18 +29,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class KingdeeTableConfigController extends BaseController
 {
 
+    /** 处理金蝶表单配置业务的服务组件。 */
     @Autowired
     private IKingdeeTableConfigService kingdeeTableConfigService;
 
+    /** 按条件分页查询金蝶表单配置列表。 */
     @Operation(summary = "查询金蝶表单配置列表")
     @GetMapping("/list")
     public TableDataInfo list(KingdeeTableConfig kingdeeTableConfig)
     {
+        // 查询金蝶表单配置列表。
         startPage();
         List<KingdeeTableConfig> list = kingdeeTableConfigService.selectKingdeeTableConfigList(kingdeeTableConfig);
         return getDataTable(list);
     }
 
+    /** 获取金蝶表单配置详细信息。 */
     @Operation(summary = "获取金蝶表单配置详细信息")
     @GetMapping(value = "/{configId}")
     public AjaxResult getInfo(@PathVariable("configId") Long configId)
@@ -48,6 +52,7 @@ public class KingdeeTableConfigController extends BaseController
         return AjaxResult.success(kingdeeTableConfigService.selectKingdeeTableConfigById(configId));
     }
 
+    /** 新增金蝶表单配置并返回保存结果。 */
     @Operation(summary = "新增金蝶表单配置")
     @PostMapping
     public AjaxResult add(@RequestBody KingdeeTableConfig kingdeeTableConfig)
@@ -60,6 +65,7 @@ public class KingdeeTableConfigController extends BaseController
         return toAjax(kingdeeTableConfigService.insertKingdeeTableConfig(kingdeeTableConfig));
     }
 
+    /** 更新指定金蝶表单配置并返回修改结果。 */
     @Operation(summary = "修改金蝶表单配置")
     @PutMapping
     public AjaxResult edit(@RequestBody KingdeeTableConfig kingdeeTableConfig)
@@ -67,6 +73,7 @@ public class KingdeeTableConfigController extends BaseController
         return toAjax(kingdeeTableConfigService.updateKingdeeTableConfig(kingdeeTableConfig));
     }
 
+    /** 按主键删除金蝶表单配置。 */
     @Operation(summary = "删除金蝶表单配置")
     @DeleteMapping("/{configIds}")
     public AjaxResult remove(@PathVariable Long[] configIds)
@@ -74,6 +81,7 @@ public class KingdeeTableConfigController extends BaseController
         return toAjax(kingdeeTableConfigService.deleteKingdeeTableConfigByIds(configIds));
     }
 
+    /** 返回供下拉选择的金蝶表单配置选项。 */
     @Operation(summary = "获取表单列表（下拉选择用）")
     @GetMapping("/options")
     public AjaxResult options()
@@ -83,6 +91,7 @@ public class KingdeeTableConfigController extends BaseController
         return AjaxResult.success(list);
     }
 
+    /** 按查询条件导出金蝶表单配置数据。 */
     @Operation(summary = "导出金蝶表单配置")
     @PostMapping("/export")
     public void export(HttpServletResponse response, KingdeeTableConfig kingdeeTableConfig)
@@ -92,6 +101,7 @@ public class KingdeeTableConfigController extends BaseController
         util.exportExcel(response, list, "金蝶表单配置数据");
     }
 
+    /** 下载金蝶表单配置导入模板。 */
     @Operation(summary = "导入模板")
     @PostMapping("/importTemplate")
     public void importTemplate(HttpServletResponse response)
@@ -100,6 +110,7 @@ public class KingdeeTableConfigController extends BaseController
         util.importTemplateExcel(response, "金蝶表单配置数据");
     }
 
+    /** 校验并导入金蝶表单配置数据。 */
     @Operation(summary = "导入数据")
     @PostMapping("/importData")
     public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception

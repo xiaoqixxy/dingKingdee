@@ -56,7 +56,7 @@ public class ContoryUtil {
         return kingdeeToDing(needReturnData, null);
     }
 
-    /** Shared conversion for a metadata-selected head or entry entity. */
+    /** 按元数据选择的表头或明细实体共用字段转换逻辑。 将金蝶指定实体的字段定义转换为钉钉字段结构。 */
     static JSONObject kingdeeToDing(JSONObject needReturnData, String selectedEntityKey) {
         JSONObject resultJson = new JSONObject();
         resultJson.put("Id", needReturnData.getString("Id"));
@@ -133,7 +133,7 @@ public class ContoryUtil {
                         rowFieldResult.put("id", rowFieldJson.getString("Key"));
                         rowFieldResult.put("type", "text");
                     }
-                    // Extended objects declare their default property in the project dictionary.
+                    // 扩展对象的默认属性由项目字典统一声明。
                     else if (ExtensionDictionarySupport.contains(rowFieldJson.getString("LookUpObjectFormId"))) {
                         rowFieldResult.put("id", rowFieldJson.getString("Key") + "." + ExtensionDictionarySupport.defaultField(rowFieldJson.getString("LookUpObjectFormId")));
                         rowFieldResult.put("type", "text");
@@ -240,7 +240,7 @@ public class ContoryUtil {
      */
     public static JSONObject kingdeeToKingdeeQuery(JSONObject needReturnData, Integer nextToken,
             Integer maxResult, JSONArray filterConditions, JSONArray sortConfigs) {
-        // Resolve configured display paths for header-only queries too. Never mutate saved filters.
+        // 纯表头同步也应用配置后的显示路径；复制条件后转换，避免修改保存的筛选。
         needReturnData = JSONObject.parseObject(needReturnData.toJSONString());
         java.util.Map<String, String> queryKeys = new java.util.HashMap<>();
         for (Object item : needReturnData.getJSONArray("fields")) {
@@ -274,6 +274,7 @@ public class ContoryUtil {
         return queryJson;
     }
 
+    /** 复制条件后把稳定输出列标识映射为实际查询字段，不修改原配置。 */
     private static JSONArray translateQueryConditions(JSONArray conditions, java.util.Map<String, String> keys) {
         if (conditions == null) return null;
         JSONArray copy = JSONArray.parseArray(conditions.toJSONString());
@@ -410,6 +411,7 @@ public class ContoryUtil {
             for (int i = 0; i < dingFields.size(); i++) {
                 JSONObject rowDingFieldJson = dingFields.getJSONObject(i);
                 fields.put(rowDingFieldJson.getString("id"),
+                    // 按字段类型转换值，纯空白转为空字符串，枚举映射名称，日期转时间戳。
                     getKingdeeFieldValue(rowDingFieldJson, kingdeeDatum.get(i)));
             }
             
@@ -446,7 +448,7 @@ public class ContoryUtil {
         return resultJson;
     }
 
-    /** Only blank strings are empty; meaningful text retains all of its original spaces. */
+    /** Only blank strings are empty; meaningful text retains all of its original spaces. 仅把空值及纯空白文本视为空，保留有内容文本中的原始空格。 */
     static boolean isEmptyValue(Object value) {
         return value == null || (value instanceof CharSequence && value.toString().codePoints()
                 .allMatch(ch -> Character.isWhitespace(ch) || Character.isSpaceChar(ch)));
@@ -528,6 +530,7 @@ public class ContoryUtil {
      * // 输出: (FBillNo = 'PUR00001') or (FSupplierId = 'SUP001')
      * </pre>
      */
+    /** 兼容旧扁平条件及新条件组，组内并且、组间或者地组合筛选表达式。 */
     private static String buildFilterString(JSONArray filterConditions, JSONArray fields) {
         // 空值检查
         if (filterConditions == null || filterConditions.isEmpty()) {
@@ -695,6 +698,7 @@ public class ContoryUtil {
         return value == null ? "" : value.toString().replace("'", "''");
     }
 
+    /** 校验多选条件并生成包含于表达式。 */
     private static String buildInClause(String fieldId, Object value) {
         if (value instanceof List) {
             List<String> values = (List<String>) value;
@@ -738,6 +742,7 @@ public class ContoryUtil {
      *   → "FDATE >= '2026-07-03' and FDATE <= '2026-07-09'"
      * </pre>
      */
+    /** 把相对日期选项转换为当前日期对应的筛选范围。 */
     private static String resolveDatePlaceholder(String fieldId, String datePlaceholder) {
         LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
 

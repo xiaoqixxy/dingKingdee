@@ -1,3 +1,4 @@
+/** 金蝶及钉钉业务接口或展示字典，沿用统一请求封装与服务端字段约定。 */
 const common = [['ding_corp_id','企业ID',230],['trace_id','链路编号',220]]
 export const catalog = {
  syncLog: {title:'历史同步日志',icon:'🕘',subtitle:'查看旧版同步结果，新执行批次请前往同步执行记录。',no:'表单ID',statuses:{1:'成功',2:'失败',3:'超量拦截'},columns:[['id','日志编号',100],['corp_name','企业名称',200],common[0],['ding_form_id','表单ID',200],['sync_count','同步条数',110],['status','状态',100],['error_msg','错误摘要',250],['create_time','发生时间',180]]},

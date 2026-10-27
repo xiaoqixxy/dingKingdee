@@ -13,27 +13,33 @@ import com.dj.middle.ding.mapper.DingProductMapper;
 import com.dj.middle.ding.service.IDingProductService;
 import com.dj.middle.ding.service.IDingSubscriptionService;
 
+/** 产品套餐业务实现。 */
 @Service
 public class DingProductServiceImpl implements IDingProductService
 {
+    /** 提供产品套餐数据访问能力的映射接口。 */
     @Autowired
     private DingProductMapper dingProductMapper;
 
+    /** 处理企业订阅业务的服务组件。 */
     @Autowired
     private IDingSubscriptionService dingSubscriptionService;
 
+    /** 查询指定主键的产品套餐记录。 */
     @Override
     public DingProduct selectDingProductById(Long id)
     {
         return dingProductMapper.selectDingProductById(id);
     }
 
+    /** 查询符合筛选条件的产品套餐列表。 */
     @Override
     public List<DingProduct> selectDingProductList(DingProduct dingProduct)
     {
         return dingProductMapper.selectDingProductList(dingProduct);
     }
 
+    /** 查询所有可选的产品套餐列表。 */
     @Override
     public List<DingProduct> selectDingProductAll()
     {
@@ -42,6 +48,7 @@ public class DingProductServiceImpl implements IDingProductService
         return dingProductMapper.selectDingProductList(product);
     }
 
+    /** 新增产品套餐记录。 */
     @Override
     public int insertDingProduct(DingProduct dingProduct)
     {
@@ -49,6 +56,7 @@ public class DingProductServiceImpl implements IDingProductService
         return dingProductMapper.insertDingProduct(dingProduct);
     }
 
+    /** 更新产品套餐记录。 */
     @Override
     public int updateDingProduct(DingProduct dingProduct)
     {
@@ -56,18 +64,21 @@ public class DingProductServiceImpl implements IDingProductService
         return dingProductMapper.updateDingProduct(dingProduct);
     }
 
+    /** 删除指定主键的产品套餐记录。 */
     @Override
     public int deleteDingProductById(Long id)
     {
         return dingProductMapper.deleteDingProductById(id);
     }
 
+    /** 删除指定主键集合的产品套餐记录。 */
     @Override
     public int deleteDingProductByIds(Long[] ids)
     {
         return dingProductMapper.deleteDingProductByIds(ids);
     }
 
+    /** 校验产品套餐名称是否唯一。 */
     @Override
     public boolean checkProductNameUnique(String productName)
     {
@@ -77,18 +88,21 @@ public class DingProductServiceImpl implements IDingProductService
         return list == null || list.size() == 0;
     }
 
+    /** 读取当前默认产品套餐。 */
     @Override
     public DingProduct selectDefaultProduct()
     {
         return dingProductMapper.selectDefaultProduct();
     }
 
+    /** 根据企业有效订阅读取可用产品，无订阅时沿用默认产品逻辑。 */
     @Override
     public DingProduct getProductByCorpId(String dingCorpId)
     {
         return dingSubscriptionService.getOrRegisterDefaultProduct(dingCorpId);
     }
 
+    /** 把企业当前产品和订阅信息转换为页面所需的权益视图。 */
     @Override
     public DingProductVo getProductVoByCorpId(String dingCorpId)
     {

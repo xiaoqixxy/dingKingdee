@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.ding.mapper.DingTenantMapper">
 
+    <!-- DingTenantResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingTenant" id="DingTenantResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
@@ -21,11 +22,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="tenantType" column="tenant_type" />
     </resultMap>
 	
+	<!-- selectDingTenantVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<sql id="selectDingTenantVo">
         select id, ding_corp_id, corp_name, contact_user, contact_phone, status, ext1, ext2, ext3, create_time, update_time
 		from ding_tenant
     </sql>
 
+    <!-- selectDingTenantListVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
     <sql id="selectDingTenantListVo">
         select * from (
             select t.*, p.product_name as package_name, usage_log.last_used_time,
@@ -54,6 +57,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ) enterprise
     </sql>
 
+    <!-- selectDingTenantList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingTenantList" parameterType="com.dj.middle.ding.domain.DingTenant" resultMap="DingTenantResult">
 	    <include refid="selectDingTenantListVo"/>
 		<where>
@@ -74,25 +78,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by id desc
 	</select>
 	
+	<!-- selectDingTenantById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingTenantById" parameterType="Long" resultMap="DingTenantResult">
 		<include refid="selectDingTenantVo"/>
 		where id = #{id}
 	</select>
 	
+	<!-- selectDingTenantByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingTenantByCorpId" parameterType="String" resultMap="DingTenantResult">
 		<include refid="selectDingTenantVo"/>
 		where ding_corp_id = #{dingCorpId}
 	</select>
 	
+	<!-- checkDingCorpIdUnique：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="checkDingCorpIdUnique" parameterType="String" resultMap="DingTenantResult">
 		<include refid="selectDingTenantVo"/>
 		where ding_corp_id = #{dingCorpId} limit 1
 	</select>
 	
+	<!-- deleteDingTenantById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteDingTenantById" parameterType="Long">
   		delete from ding_tenant where id = #{id}
   	</delete>
   	
+  	<!-- deleteDingTenantByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
   	<delete id="deleteDingTenantByIds" parameterType="Long">
   		delete from ding_tenant where id in
   		<foreach collection="array" item="id" open="(" separator="," close=")">
@@ -100,6 +109,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
+    <!-- updateDingTenant：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateDingTenant" parameterType="com.dj.middle.ding.domain.DingTenant">
   		update ding_tenant
   		<set>
@@ -116,6 +126,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
+    <!-- insertDingTenant：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingTenant" parameterType="com.dj.middle.ding.domain.DingTenant" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_tenant(
             create_time,

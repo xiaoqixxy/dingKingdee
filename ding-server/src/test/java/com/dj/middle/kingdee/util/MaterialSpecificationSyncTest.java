@@ -5,7 +5,9 @@ import com.alibaba.fastjson2.JSONObject;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** MaterialSpecificationSyncTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class MaterialSpecificationSyncTest {
+    /** 构造不含业务凭证的最小元数据测试夹具。 */
     private JSONObject metadata() {
         // Procurement metadata returns the material reference, but no separate specification field.
         return JSONObject.parseObject("""
@@ -18,6 +20,7 @@ class MaterialSpecificationSyncTest {
           """);
     }
 
+    /** 验证：不自动补加元数据未声明的规格型号字段。 */
     @Test void undeclaredSpecificationsAreNeverAddedToDiscoveryOrQueries() {
         JSONObject meta = metadata();
         String original = meta.toJSONString();
@@ -33,6 +36,7 @@ class MaterialSpecificationSyncTest {
         assertEquals(original, meta.toJSONString());
     }
 
+    /** 验证：保留元数据显式声明的规格型号。 */
     @Test void explicitlyDeclaredSpecificationIsPreserved() {
         JSONObject meta = metadata();
         JSONObject entry = meta.getJSONArray("Entrys").getJSONObject(1);
@@ -43,6 +47,7 @@ class MaterialSpecificationSyncTest {
         assertEquals(1, fields.stream().filter(item -> "FMaterialId.FSpecification".equals(((JSONObject)item).getString("id"))).count());
     }
 
+    /** 验证：引用元数据同样不凭空新增字段。 */
     @Test void referenceMetadataDoesNotInventFieldsEither() {
         JSONObject meta = metadata();
         meta.getJSONArray("Entrys").getJSONObject(0).put("Fields", meta.getJSONArray("Entrys").getJSONObject(1).getJSONArray("Fields"));

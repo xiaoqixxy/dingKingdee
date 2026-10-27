@@ -13,24 +13,29 @@ import com.dj.middle.ding.service.IDingInvoiceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+/** 发票接口控制器。 */
 @Tag(name = "发票申请管理")
 @Anonymous
 @RestController
 @RequestMapping("/ding/invoice")
 public class DingInvoiceController extends BaseController
 {
+    /** 处理发票业务的服务组件。 */
     @Autowired
     private IDingInvoiceService dingInvoiceService;
 
+    /** 按条件分页查询发票列表。 */
     @Operation(summary = "查询发票申请列表")
     @GetMapping("/list")
     public TableDataInfo list(DingInvoice dingInvoice)
     {
+        // 查询发票申请列表。
         startPage();
         List<DingInvoice> list = dingInvoiceService.selectDingInvoiceList(dingInvoice);
         return getDataTable(list);
     }
 
+    /** 获取发票申请详细信息。 */
     @Operation(summary = "获取发票申请详细信息")
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") Long id)
@@ -38,6 +43,7 @@ public class DingInvoiceController extends BaseController
         return AjaxResult.success(dingInvoiceService.selectDingInvoiceById(id));
     }
 
+    /** 根据企业ID获取发票申请。 */
     @Operation(summary = "根据企业ID获取发票申请")
     @GetMapping(value = "/corp/{dingCorpId}")
     public AjaxResult getByCorpId(@PathVariable("dingCorpId") String dingCorpId)
@@ -45,6 +51,7 @@ public class DingInvoiceController extends BaseController
         return AjaxResult.success(dingInvoiceService.selectDingInvoiceByCorpId(dingCorpId));
     }
 
+    /** 新增发票并返回保存结果。 */
     @Operation(summary = "新增发票申请")
     @PostMapping
     public AjaxResult add(@RequestBody DingInvoice dingInvoice)
@@ -52,6 +59,7 @@ public class DingInvoiceController extends BaseController
         return toAjax(dingInvoiceService.insertDingInvoice(dingInvoice));
     }
 
+    /** 更新指定发票并返回修改结果。 */
     @Operation(summary = "修改发票申请")
     @PutMapping
     public AjaxResult edit(@RequestBody DingInvoice dingInvoice)
@@ -59,6 +67,7 @@ public class DingInvoiceController extends BaseController
         return toAjax(dingInvoiceService.updateDingInvoice(dingInvoice));
     }
 
+    /** 按主键删除发票。 */
     @Operation(summary = "删除发票申请")
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)

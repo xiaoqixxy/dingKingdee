@@ -43,6 +43,7 @@ import java.util.*;
  * @author ruoyi
  */
 @Slf4j
+/** 金蝶SDK的连接、查询与单据操作封装。 */
 public class KingdeeK3CloudUtil {
 
     /**
@@ -157,7 +158,7 @@ public class KingdeeK3CloudUtil {
         }
     }
 
-    /** Read-only group API; unlike ExecuteBillQuery it needs the owning form and group key. */
+    /** 只读分组接口，需要同时提供所属表单与分组字段，不能只按通用对象查询。 按所属表单和分组字段调用分组接口，将结果适配为引用解析器所需的内码与完整记录。 */
     public List<List<Object>> queryGroupInfo(JSONObject request) {
         try {
             JSONObject data = JSONObject.of("FormId", request.getString("FormId"), "GroupFieldKey", request.getString("GroupFieldKey"),
@@ -387,40 +388,61 @@ public class KingdeeK3CloudUtil {
      * </pre>
      */
     public static class FilterCondition {
+        /** 金蝶查询条件的字段标识。 */
         private String fieldName;
+        /** 金蝶查询条件的比较运算符。 */
         private String compare;
+        /** 金蝶查询条件的目标值。 */
         private String value;
+        /** 条件左侧分组括号。 */
         private String left = "";
+        /** 条件右侧分组括号。 */
         private String right = "";
+        /** 与下一条件的逻辑连接符。 */
         private int logic = 0;
 
+        /** 初始化当前组件并保存构造参数。 */
         public FilterCondition() {}
 
+        /** 初始化当前组件并保存构造参数。 */
         public FilterCondition(String fieldName, String compare, String value) {
             this.fieldName = fieldName;
             this.compare = compare;
-            this.value = value;
+        this.value = value;
         }
 
-        public FilterCondition(String fieldName, String compare, String value, int logic) {
-            this.fieldName = fieldName;
-            this.compare = compare;
-            this.value = value;
-            this.logic = logic;
+/** 初始化当前组件并保存构造参数。 */
+public FilterCondition(String fieldName, String compare, String value, int logic) {
+       this.fieldName = fieldName;
+   this.compare = compare;
+ this.value = value;
+      this.logic = logic;
         }
 
-        // Getter和Setter方法
+      // Getter和Setter方法
+        /** 读取字段名称。 */
         public String getFieldName() { return fieldName; }
+        /** 设置字段名称。 */
         public void setFieldName(String fieldName) { this.fieldName = fieldName; }
+        /** 读取比较操作符。 */
         public String getCompare() { return compare; }
+        /** 设置比较操作符。 */
         public void setCompare(String compare) { this.compare = compare; }
+        /** 读取取值。 */
         public String getValue() { return value; }
+        /** 设置取值。 */
         public void setValue(String value) { this.value = value; }
+        /** 读取左侧边界值。 */
         public String getLeft() { return left; }
+        /** 设置左侧边界值。 */
         public void setLeft(String left) { this.left = left; }
+        /** 读取右侧边界值。 */
         public String getRight() { return right; }
+        /** 设置右侧边界值。 */
         public void setRight(String right) { this.right = right; }
+        /** 读取条件连接逻辑。 */
         public int getLogic() { return logic; }
+        /** 设置条件连接逻辑。 */
         public void setLogic(int logic) { this.logic = logic; }
 
         /**

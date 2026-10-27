@@ -32,6 +32,7 @@ import com.dj.common.core.page.TableDataInfo;
 @RequestMapping("/kingdee/voucherConfig")
 public class KingdeeVoucherConfigController extends BaseController
 {
+    /** 处理金蝶连接配置业务的服务组件。 */
     @Autowired
     private IKingdeeVoucherConfigService kingdeeVoucherConfigService;
 

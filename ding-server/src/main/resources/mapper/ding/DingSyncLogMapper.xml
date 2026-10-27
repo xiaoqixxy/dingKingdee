@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.ding.mapper.DingSyncLogMapper">
 
+    <!-- DingSyncLogResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingSyncLog" id="DingSyncLogResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
@@ -18,11 +19,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    <result property="corpName" column="corp_name" />
     </resultMap>
 	
+	<!-- selectDingSyncLogVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<sql id="selectDingSyncLogVo">
         select corp_name, id, ding_corp_id, ding_form_id, sync_count, status, error_msg, ext1, ext2, ext3, create_time
 		from (select source.*, tenant.corp_name from ding_sync_log source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
+    <!-- selectDingSyncLogList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingSyncLogList" parameterType="com.dj.middle.ding.domain.DingSyncLog" resultMap="DingSyncLogResult">
 	    <include refid="selectDingSyncLogVo"/>
 		<where>
@@ -45,17 +48,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by id desc
 	</select>
 	
+	<!-- selectDingSyncLogById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingSyncLogById" parameterType="Long" resultMap="DingSyncLogResult">
 		<include refid="selectDingSyncLogVo"/>
 		where id = #{id}
 	</select>
 	
+	<!-- selectDingSyncLogByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingSyncLogByCorpId" parameterType="String" resultMap="DingSyncLogResult">
 		<include refid="selectDingSyncLogVo"/>
 		where ding_corp_id = #{dingCorpId}
 		order by id desc
 	</select>
 	
+	<!-- sumSyncCountByCorpIdAndMonth：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="sumSyncCountByCorpIdAndMonth" resultType="int">
 		select ifnull(sum(sync_count), 0) from ding_sync_log 
 		where ding_corp_id = #{dingCorpId} 
@@ -64,10 +70,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         and create_time &lt; DATE_ADD(STR_TO_DATE(CONCAT(#{month}, '01'), '%Y%m%d'), INTERVAL 1 MONTH)
 	</select>
 	
+	<!-- deleteDingSyncLogById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteDingSyncLogById" parameterType="Long">
   		delete from ding_sync_log where id = #{id}
   	</delete>
   	
+  	<!-- deleteDingSyncLogByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
   	<delete id="deleteDingSyncLogByIds" parameterType="Long">
   		delete from ding_sync_log where id in
   		<foreach collection="array" item="id" open="(" separator="," close=")">
@@ -75,6 +83,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
+    <!-- insertDingSyncLog：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingSyncLog" parameterType="com.dj.middle.ding.domain.DingSyncLog" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_sync_log(
             create_time,

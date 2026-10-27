@@ -5,6 +5,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <mapper namespace="com.dj.middle.ding.mapper.DingDashboardMapper">
 
     <!-- 顶部 KPI 概览：单次查询返回所有汇总指标 -->
+    <!-- selectOverview：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectOverview" resultType="java.util.Map">
         select
             (select count(*) from ding_tenant) as totalTenants,
@@ -20,6 +21,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 订单与营收趋势（按支付时间日聚合） -->
+    <!-- selectOrderTrend：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectOrderTrend" resultType="java.util.Map">
         select date_format(pay_time, '%Y-%m-%d') as date,
                count(*) as orderCount,
@@ -32,6 +34,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 订单类型分布 -->
+    <!-- selectOrderTypeDist：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectOrderTypeDist" resultType="java.util.Map">
         select order_type as type, count(*) as count
         from ding_order
@@ -39,6 +42,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 订单支付状态分布 -->
+    <!-- selectPayStatusDist：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectPayStatusDist" resultType="java.util.Map">
         select pay_status as status, count(*) as count
         from ding_order
@@ -46,6 +50,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 支付渠道分布（仅已支付订单） -->
+    <!-- selectPayChannelDist：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectPayChannelDist" resultType="java.util.Map">
         select case when pay_channel is null or pay_channel = '' then '未知' else pay_channel end as channel,
                count(*) as count,
@@ -57,6 +62,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 企业行业分布 -->
+    <!-- selectIndustryDist：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectIndustryDist" resultType="java.util.Map">
         select case when industry is null or industry = '' then '未知' else industry end as industry,
                count(*) as count
@@ -66,6 +72,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 同步日志趋势（按创建时间日聚合，区分成功/失败/拦截） -->
+    <!-- selectSyncTrend：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectSyncTrend" resultType="java.util.Map">
         select date_format(create_time, '%Y-%m-%d') as date,
                count(*) as totalCount,
@@ -80,6 +87,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 企业每日新增（用于累计增长曲线） -->
+    <!-- selectTenantDailyNew：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectTenantDailyNew" resultType="java.util.Map">
         select date_format(create_time, '%Y-%m-%d') as date,
                count(*) as count
@@ -90,6 +98,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 热销产品 Top5（按已支付订单营收排序） -->
+    <!-- selectTopProducts：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectTopProducts" resultType="java.util.Map">
         select p.product_name as productName,
                count(o.id) as orderCount,

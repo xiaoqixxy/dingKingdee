@@ -25,6 +25,7 @@ function chooseReference(label: string, key: string) {
   fireEvent.click(screen.getByRole('option', { name: new RegExp(`（${key}）$`) }));
 }
 
+// 自动读取引用元数据，保留有效默认名称并允许多层选择。
 test('reference dropdown loads from object metadata automatically, defaults to FName and allows nested choices', async () => {
   const load = jest.fn(async id => id === 'MATERIAL' ? material : unit);
   render(<Harness loadFields={load} />);
@@ -44,6 +45,7 @@ test('reference dropdown loads from object metadata automatically, defaults to F
   await waitFor(() => expect(screen.getByLabelText('明细·物料第1级引用字段')).toHaveValue('名称（FName）'));
 });
 
+// 默认属性缺失时各行回退第一项并保存真实配置。
 test.each(['FName', 'FNumber'])('missing default %s selects and persists the first metadata field for every row', async preferred => {
   const fields = ['Bill', 'OtherBill'].map(key => ({ id: `${key}.${preferred}`, name: key, type: 'text', referenceFormId: 'BILL', referenceKey: key }));
   const choices: ReferenceField[] = [{ id: 'FBILLID', key: 'FBILLID', name: '内码', type: 'text' }];
@@ -57,6 +59,7 @@ test.each(['FName', 'FNumber'])('missing default %s selects and persists the fir
   expect(screen.getByRole('button', { name: '下一步' })).toBeInTheDocument();
 });
 
+// 默认属性缺失时各行回退第一项并保存真实配置。
 test('nested missing default selects the first child field and preserves aliases', async () => {
   const choices: ReferenceField[] = [{ id: 'FID', key: 'FID', name: '内码', type: 'text' }];
   render(<Harness initial={[{ fieldId: source[0].id, alias: '单位内码' }]} loadFields={async id => id === 'MATERIAL' ? material : choices} />);
@@ -67,6 +70,7 @@ test('nested missing default selects the first child field and preserves aliases
   expect(screen.getByLabelText('saved-config')).toHaveTextContent('"alias":"单位内码"');
 });
 
+// 空引用元数据不伪造字段，失效历史选择要求修正。
 test('empty reference metadata stays empty and invalid saved choices still require correction', async () => {
   const view = render(<Harness loadFields={async () => []} />);
   expect(await screen.findByText('该引用对象没有可选择的显示字段。')).toBeInTheDocument();
@@ -77,6 +81,7 @@ test('empty reference metadata stays empty and invalid saved choices still requi
   expect(screen.getByLabelText('saved-config')).toHaveTextContent('DeletedField');
 });
 
+// 重新进入恢复多级引用，接口失败后可重试。
 test('reopening restores nested choices and failed metadata can be retried', async () => {
   const load = jest.fn().mockRejectedValueOnce(new Error('元数据不可用'))
     .mockImplementation(async id => id === 'MATERIAL' ? material : unit);
@@ -92,6 +97,7 @@ test('reopening restores nested choices and failed metadata can be retried', asy
 });
 
 
+// 一级引用可直接选择规格等其他属性。
 test('the first dropdown changes FName to another metadata field without requiring a nested reference', async () => {
   const load = jest.fn(async () => material);
   render(<Harness loadFields={load} />);
@@ -104,6 +110,7 @@ test('the first dropdown changes FName to another metadata field without requiri
 });
 
 
+// 名称编码支持模糊搜索，自由输入不作为真实选择提交。
 test('reference search filters partial names and codes and does not commit arbitrary text', async () => {
   render(<Harness loadFields={async () => material} />);
   const input = await screen.findByRole('combobox', { name: '明细·物料第1级引用字段' });
@@ -121,6 +128,7 @@ test('reference search filters partial names and codes and does not commit arbit
   expect(input).toHaveValue('规格型号（FSpecification）');
 });
 
+// 同来源新增列独立保存别名和路径，并可单独移除。
 test('additional rows keep independent aliases and reference paths and can be removed', async () => {
   render(<Harness loadFields={async () => material} />);
   await screen.findByRole('combobox', { name: '明细·物料第1级引用字段' });
@@ -138,6 +146,7 @@ test('additional rows keep independent aliases and reference paths and can be re
   expect(screen.queryByRole('combobox', { name: '明细·物料（新增1）第1级引用字段' })).not.toBeInTheDocument();
 });
 
+// 分组字典支持名称内码及父级的继续选择。
 test('group dictionary choices expose named properties and parent references', async () => {
   const group: ReferenceField = { id: 'FMaterialGroup.FNumber', key: 'FMaterialGroup', name: '物料分组', type: 'text', referenceKey: 'FMaterialGroup', referenceFormId: 'BOS_FORMGROUP' };
   const dictionary: ReferenceField[] = [
@@ -161,6 +170,7 @@ test('group dictionary choices expose named properties and parent references', a
   expect(screen.getByLabelText('saved-config')).toHaveTextContent('"referencePath":["FMaterialGroup","FParentId","FName"]');
 });
 
+// 旧分组合成FID恢复为编码，新版本选择保留真实内码。
 test('legacy synthetic group FID restores codes while new dictionary FID remains the real ID', async () => {
   const group: ReferenceField = { id: 'FMaterialGroup.FNumber', key: 'FMaterialGroup', name: '物料分组', type: 'text', referenceKey: 'FMaterialGroup', referenceFormId: 'BOS_FORMGROUP' };
   const dictionary: ReferenceField[] = [{ id: 'FNumber', key: 'FNumber', name: '编码', type: 'text' }, { id: 'FID', key: 'FID', name: '内码', type: 'text' }];

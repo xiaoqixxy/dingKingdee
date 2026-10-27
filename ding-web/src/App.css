@@ -1,4 +1,5 @@
 /* ===== CSS 变量 / 设计令牌 ===== */
+/* 主题颜色和尺寸变量，与组件内联样式同步维护。 */
 :root {
   --primary:        #1677ff;
   --primary-dark:   #0958d9;
@@ -30,18 +31,29 @@
   --shadow-lg:  0 8px 32px rgba(22, 119, 255, 0.16);
 }
 
+/* 界面规则 .entry-step h3，维护该区域的间距、尺寸与状态样式。 */
 .entry-step h3 { margin-bottom: 8px; color: var(--text-primary); }
+/* 界面规则 .entry-options，维护该区域的间距、尺寸与状态样式。 */
 .entry-options { border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 16px; margin: 16px 0; min-width: 0; }
+/* 界面规则 .entry-options legend，维护该区域的间距、尺寸与状态样式。 */
 .entry-options legend { padding: 0 6px; font-weight: 600; color: var(--text-primary); }
+/* 界面规则 .entry-option，维护该区域的间距、尺寸与状态样式。 */
 .entry-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-subtle); cursor: pointer; }
+/* 界面规则 .entry-option:last-of-type，维护该区域的间距、尺寸与状态样式。 */
 .entry-option:last-of-type { margin-bottom: 0; }
+/* 界面规则 .entry-option.is-selected，维护该区域的间距、尺寸与状态样式。 */
 .entry-option.is-selected { border-color: var(--primary-border); background: var(--primary-bg); }
+/* 界面规则 .entry-option input，维护该区域的间距、尺寸与状态样式。 */
 .entry-option input { margin-top: 4px; accent-color: var(--primary); flex-shrink: 0; }
+/* 界面规则 .entry-option:focus-within，维护该区域的间距、尺寸与状态样式。 */
 .entry-option:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* 界面规则 .entry-option small，维护该区域的间距、尺寸与状态样式。 */
 .entry-option small { display: block; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+/* 界面规则 .entry-help，维护该区域的间距、尺寸与状态样式。 */
 .entry-help { color: var(--text-secondary); font-size: 13px; line-height: 1.6; margin-top: 8px; }
 
 /* ===== 全局重置 ===== */
+/* 界面规则 *，维护该区域的间距、尺寸与状态样式。 */
 * {
   margin: 0;
   padding: 0;
@@ -50,6 +62,7 @@
 }
 
 /* ===== 页面容器 ===== */
+/* 界面规则 .app-container，维护该区域的间距、尺寸与状态样式。 */
 .app-container {
   width: 100%;
   min-height: 100vh;
@@ -64,6 +77,7 @@
 }
 
 /* ===== 配置卡片 ===== */
+/* 界面规则 .config-card，维护该区域的间距、尺寸与状态样式。 */
 .config-card {
   width: 100%;
   max-width: 800px;
@@ -75,6 +89,7 @@
 }
 
 /* ===== 卡片标题 ===== */
+/* 界面规则 .card-title，维护该区域的间距、尺寸与状态样式。 */
 .card-title {
   font-size: 20px;
   color: var(--text-primary);
@@ -86,6 +101,7 @@
 }
 
 /* ===== 步骤条 ===== */
+/* 界面规则 .step-bar，维护该区域的间距、尺寸与状态样式。 */
 .step-bar {
   display: flex;
   justify-content: space-between;
@@ -98,6 +114,7 @@
   position: relative;
 }
 
+/* 界面规则 .step-bar::before，维护该区域的间距、尺寸与状态样式。 */
 .step-bar::before {
   content: '';
   position: absolute;
@@ -110,6 +127,7 @@
   z-index: 0;
 }
 
+/* 界面规则 .step-item，维护该区域的间距、尺寸与状态样式。 */
 .step-item {
   display: flex;
   flex-direction: column;
@@ -119,6 +137,7 @@
   z-index: 1;
 }
 
+/* 界面规则 .step-dot，维护该区域的间距、尺寸与状态样式。 */
 .step-dot {
   width: 28px;
   height: 28px;
@@ -133,15 +152,18 @@
   color: #fff;
 }
 
+/* 界面规则 .step-item.active .step-dot，维护该区域的间距、尺寸与状态样式。 */
 .step-item.active .step-dot {
   background: var(--primary);
   box-shadow: 0 0 0 4px var(--primary-bg);
 }
 
+/* 界面规则 .step-item.done .step-dot，维护该区域的间距、尺寸与状态样式。 */
 .step-item.done .step-dot {
   background: var(--success);
 }
 
+/* 界面规则 .step-label，维护该区域的间距、尺寸与状态样式。 */
 .step-label {
   font-size: 13px;
   color: var(--text-secondary);
@@ -149,17 +171,20 @@
   white-space: nowrap;
 }
 
+/* 界面规则 .step-item.active .step-label，维护该区域的间距、尺寸与状态样式。 */
 .step-item.active .step-label {
   color: var(--primary);
   font-weight: 600;
 }
 
 /* ===== 表单组 ===== */
+/* 界面规则 .form-group，维护该区域的间距、尺寸与状态样式。 */
 .form-group {
   margin-bottom: 20px;
 }
 
 /* ===== 表单标签 ===== */
+/* 界面规则 .form-label，维护该区域的间距、尺寸与状态样式。 */
 .form-label {
   display: block;
   font-size: 14px;
@@ -169,6 +194,8 @@
 }
 
 /* ===== 表单输入框 / 下拉框 ===== */
+/* 界面规则 .form-input,
+.form-select，维护该区域的间距、尺寸与状态样式。 */
 .form-input,
 .form-select {
   width: 100%;
@@ -183,22 +210,28 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+/* 界面规则 .form-input:hover,
+.form-select:hover，维护该区域的间距、尺寸与状态样式。 */
 .form-input:hover,
 .form-select:hover {
   border-color: var(--primary-light);
 }
 
+/* 界面规则 .form-input:focus,
+.form-select:focus，维护该区域的间距、尺寸与状态样式。 */
 .form-input:focus,
 .form-select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12);
 }
 
+/* 界面规则 .form-input::placeholder，维护该区域的间距、尺寸与状态样式。 */
 .form-input::placeholder {
   color: var(--text-placeholder);
 }
 
 /* ===== 按钮基础 ===== */
+/* 界面规则 .submit-btn，维护该区域的间距、尺寸与状态样式。 */
 .submit-btn {
   height: 40px;
   padding: 0 20px;
@@ -213,17 +246,20 @@
   letter-spacing: 0.2px;
 }
 
+/* 界面规则 .submit-btn:hover:not(:disabled)，维护该区域的间距、尺寸与状态样式。 */
 .submit-btn:hover:not(:disabled) {
   background: var(--primary-dark);
   box-shadow: 0 4px 12px rgba(22, 119, 255, 0.35);
   transform: translateY(-1px);
 }
 
+/* 界面规则 .submit-btn:active:not(:disabled)，维护该区域的间距、尺寸与状态样式。 */
 .submit-btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: none;
 }
 
+/* 界面规则 .submit-btn:disabled，维护该区域的间距、尺寸与状态样式。 */
 .submit-btn:disabled {
   background: #c0c4cc;
   cursor: not-allowed;
@@ -232,12 +268,14 @@
 }
 
 /* ===== 取消/默认按钮 ===== */
+/* 界面规则 .cancel-btn，维护该区域的间距、尺寸与状态样式。 */
 .cancel-btn {
   background: #fff;
   color: var(--text-regular);
   border: 1px solid var(--border-color) !important;
 }
 
+/* 界面规则 .cancel-btn:hover:not(:disabled)，维护该区域的间距、尺寸与状态样式。 */
 .cancel-btn:hover:not(:disabled) {
   background: var(--bg-subtle);
   border-color: var(--primary-light) !important;
@@ -245,6 +283,7 @@
 }
 
 /* ===== 按钮组 ===== */
+/* 界面规则 .btn-group，维护该区域的间距、尺寸与状态样式。 */
 .btn-group {
   margin-top: 24px;
   display: flex;
@@ -253,6 +292,8 @@
 }
 
 /* ===== 加载 / 空数据 ===== */
+/* 界面规则 .loading-text,
+.empty-text，维护该区域的间距、尺寸与状态样式。 */
 .loading-text,
 .empty-text {
   font-size: 14px;
@@ -262,18 +303,21 @@
 }
 
 /* ===== 配置区块 ===== */
+/* 界面规则 .config-section，维护该区域的间距、尺寸与状态样式。 */
 .config-section {
   margin-bottom: 28px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--border-light);
 }
 
+/* 界面规则 .config-section:last-child，维护该区域的间距、尺寸与状态样式。 */
 .config-section:last-child {
   border-bottom: none;
   margin-bottom: 16px;
   padding-bottom: 0;
 }
 
+/* 界面规则 .section-title，维护该区域的间距、尺寸与状态样式。 */
 .section-title {
   font-size: 15px;
   color: var(--text-primary);
@@ -284,6 +328,7 @@
   gap: 8px;
 }
 
+/* 界面规则 .section-title::before，维护该区域的间距、尺寸与状态样式。 */
 .section-title::before {
   content: '';
   display: inline-block;
@@ -294,6 +339,7 @@
 }
 
 /* ===== 条件行 ===== */
+/* 界面规则 .condition-item，维护该区域的间距、尺寸与状态样式。 */
 .condition-item {
   display: flex;
   gap: 10px;
@@ -302,26 +348,32 @@
   flex-wrap: wrap;
 }
 
+/* 界面规则 .condition-item .form-select，维护该区域的间距、尺寸与状态样式。 */
 .condition-item .form-select {
   flex: 1;
   min-width: 120px;
 }
 
+/* 界面规则 .operator-select,
+.order-select，维护该区域的间距、尺寸与状态样式。 */
 .operator-select,
 .order-select {
   flex: 0 0 100px !important;
 }
 
+/* 界面规则 .value-input，维护该区域的间距、尺寸与状态样式。 */
 .value-input {
   flex: 1;
   min-width: 150px;
 }
 
+/* 界面规则 .del-btn，维护该区域的间距、尺寸与状态样式。 */
 .del-btn {
   flex: 0 0 80px;
 }
 
 /* ===== 新增按钮 ===== */
+/* 界面规则 .add-btn，维护该区域的间距、尺寸与状态样式。 */
 .add-btn {
   margin-top: 8px;
   background: var(--primary-bg);
@@ -329,6 +381,7 @@
   border: 1px dashed var(--primary-border) !important;
 }
 
+/* 界面规则 .add-btn:hover:not(:disabled)，维护该区域的间距、尺寸与状态样式。 */
 .add-btn:hover:not(:disabled) {
   background: var(--primary);
   color: #fff;
@@ -338,24 +391,28 @@
 }
 
 /* ===== 主提交按钮 ===== */
+/* 界面规则 .submit-main，维护该区域的间距、尺寸与状态样式。 */
 .submit-main {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   flex: 1;
   min-width: 120px;
 }
 
+/* 界面规则 .submit-main:hover:not(:disabled)，维护该区域的间距、尺寸与状态样式。 */
 .submit-main:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
   box-shadow: 0 6px 16px rgba(22, 119, 255, 0.4);
 }
 
 /* ===== 下拉框空选项 ===== */
+/* 界面规则 select option[disabled][value='']，维护该区域的间距、尺寸与状态样式。 */
 select option[disabled][value=''] {
   color: #999;
   font-style: italic;
 }
 
 /* ===== 分割线 ===== */
+/* 界面规则 .divider，维护该区域的间距、尺寸与状态样式。 */
 .divider {
   margin: 24px 0;
   border: none;
@@ -363,6 +420,7 @@ select option[disabled][value=''] {
 }
 
 /* ===== 产品信息卡片 ===== */
+/* 界面规则 .product-card，维护该区域的间距、尺寸与状态样式。 */
 .product-card {
   background: linear-gradient(135deg, #e6f4ff 0%, #f0f8ff 100%);
   border: 1px solid var(--primary-border);
@@ -371,6 +429,7 @@ select option[disabled][value=''] {
   margin-bottom: 24px;
 }
 
+/* 界面规则 .product-card-header，维护该区域的间距、尺寸与状态样式。 */
 .product-card-header {
   display: flex;
   justify-content: space-between;
@@ -378,12 +437,14 @@ select option[disabled][value=''] {
   margin-bottom: 10px;
 }
 
+/* 界面规则 .product-name，维护该区域的间距、尺寸与状态样式。 */
 .product-name {
   font-weight: 700;
   color: var(--text-primary);
   font-size: 15px;
 }
 
+/* 界面规则 .product-meta，维护该区域的间距、尺寸与状态样式。 */
 .product-meta {
   display: flex;
   flex-wrap: wrap;
@@ -392,6 +453,7 @@ select option[disabled][value=''] {
   color: var(--text-secondary);
 }
 
+/* 界面规则 .product-meta span，维护该区域的间距、尺寸与状态样式。 */
 .product-meta span {
   display: flex;
   align-items: center;
@@ -399,6 +461,7 @@ select option[disabled][value=''] {
 }
 
 /* ===== 套餐弹窗卡片 ===== */
+/* 界面规则 .package-item，维护该区域的间距、尺寸与状态样式。 */
 .package-item {
   padding: 14px 16px;
   background: var(--bg-subtle);
@@ -409,6 +472,7 @@ select option[disabled][value=''] {
   transition: all 0.2s;
 }
 
+/* 界面规则 .package-item:hover，维护该区域的间距、尺寸与状态样式。 */
 .package-item:hover {
   border-color: var(--primary);
   background: var(--primary-bg);
@@ -416,6 +480,7 @@ select option[disabled][value=''] {
   transform: translateY(-1px);
 }
 
+/* 界面规则 .package-price，维护该区域的间距、尺寸与状态样式。 */
 .package-price {
   font-size: 20px;
   color: var(--danger);
@@ -424,6 +489,7 @@ select option[disabled][value=''] {
 }
 
 /* ===== 支付渠道 ===== */
+/* 界面规则 .channel-item，维护该区域的间距、尺寸与状态样式。 */
 .channel-item {
   padding: 14px 16px;
   background: var(--bg-subtle);
@@ -438,6 +504,7 @@ select option[disabled][value=''] {
   transition: all 0.2s;
 }
 
+/* 界面规则 .channel-item:hover，维护该区域的间距、尺寸与状态样式。 */
 .channel-item:hover {
   border-color: var(--primary);
   color: var(--primary);
@@ -445,6 +512,7 @@ select option[disabled][value=''] {
 }
 
 /* ===== 弹窗 ===== */
+/* 界面规则 .dialog-overlay，维护该区域的间距、尺寸与状态样式。 */
 .dialog-overlay {
   position: fixed;
   inset: 0;
@@ -456,6 +524,7 @@ select option[disabled][value=''] {
   backdrop-filter: blur(2px);
 }
 
+/* 界面规则 .dialog-content，维护该区域的间距、尺寸与状态样式。 */
 .dialog-content {
   background: #fff;
   border-radius: var(--radius-lg);
@@ -468,6 +537,7 @@ select option[disabled][value=''] {
   box-shadow: 0 20px 60px rgba(22, 119, 255, 0.2);
 }
 
+/* 界面规则 .dialog-header，维护该区域的间距、尺寸与状态样式。 */
 .dialog-header {
   padding: 18px 24px;
   border-bottom: 1px solid var(--border-light);
@@ -477,6 +547,7 @@ select option[disabled][value=''] {
   background: linear-gradient(135deg, #f8faff 0%, #fff 100%);
 }
 
+/* 界面规则 .dialog-header h3，维护该区域的间距、尺寸与状态样式。 */
 .dialog-header h3 {
   font-size: 16px;
   color: var(--text-primary);
@@ -484,6 +555,7 @@ select option[disabled][value=''] {
   margin: 0;
 }
 
+/* 界面规则 .dialog-close，维护该区域的间距、尺寸与状态样式。 */
 .dialog-close {
   background: none;
   border: none;
@@ -500,17 +572,20 @@ select option[disabled][value=''] {
   line-height: 1;
 }
 
+/* 界面规则 .dialog-close:hover，维护该区域的间距、尺寸与状态样式。 */
 .dialog-close:hover {
   background: var(--bg-subtle);
   color: var(--danger);
 }
 
+/* 界面规则 .dialog-body，维护该区域的间距、尺寸与状态样式。 */
 .dialog-body {
   padding: 20px 24px;
   overflow-y: auto;
 }
 
 /* ===== 标签 Badge ===== */
+/* 界面规则 .badge，维护该区域的间距、尺寸与状态样式。 */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -521,93 +596,135 @@ select option[disabled][value=''] {
   color: #fff;
 }
 
+/* 界面规则 .badge-blue，维护该区域的间距、尺寸与状态样式。 */
 .badge-blue   { background: var(--primary); }
+/* 界面规则 .badge-green，维护该区域的间距、尺寸与状态样式。 */
 .badge-green  { background: var(--success); }
+/* 界面规则 .badge-orange，维护该区域的间距、尺寸与状态样式。 */
 .badge-orange { background: var(--warning); color: #fff; }
 
 /* ===== Toast 通知动画 ===== */
+/* 消息提示及不同处理结果的反馈样式。 */
 @keyframes toastSlideDown {
-  from {
+  /* 界面规则 from，维护该区域的间距、尺寸与状态样式。 */
+from {
     opacity: 0;
     transform: translateY(-20px) scale(0.96);
   }
-  to {
+  /* 界面规则 to，维护该区域的间距、尺寸与状态样式。 */
+to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
 
+/* 消息提示及不同处理结果的反馈样式。 */
 .toast-slide-down {
   animation: toastSlideDown 0.3s ease-out;
 }
 
 /* ===== 响应式 ===== */
+/* 按视口尺寸适配布局，保持表单和操作按钮可用。 */
 @media (max-width: 480px) {
-  .config-card {
+  /* 界面规则 .config-card，维护该区域的间距、尺寸与状态样式。 */
+.config-card {
     padding: 20px 16px;
   }
 
-  .card-title {
+  /* 界面规则 .card-title，维护该区域的间距、尺寸与状态样式。 */
+.card-title {
     font-size: 18px;
   }
 
-  .form-input,
+  /* 界面规则 .form-input,
+  .form-select，维护该区域的间距、尺寸与状态样式。 */
+.form-input,
   .form-select {
     height: 40px;
   }
 
-  .submit-btn {
+  /* 界面规则 .submit-btn，维护该区域的间距、尺寸与状态样式。 */
+.submit-btn {
     height: 44px;
     width: 100%;
   }
 
-  .condition-item {
+  /* 界面规则 .condition-item，维护该区域的间距、尺寸与状态样式。 */
+.condition-item {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .operator-select,
+  /* 界面规则 .operator-select,
+  .order-select,
+  .del-btn，维护该区域的间距、尺寸与状态样式。 */
+.operator-select,
   .order-select,
   .del-btn {
     flex: 1 !important;
     min-width: 100%;
   }
 
-  .step-bar {
+  /* 界面规则 .step-bar，维护该区域的间距、尺寸与状态样式。 */
+.step-bar {
     padding: 12px 16px;
   }
 }
 
 /* 插件内部布局：保留外层尺寸，内容独立滚动。 */
+/* 主题颜色和尺寸变量，与组件内联样式同步维护。 */
 :root { --plugin-padding: 16px; }
+/* 界面规则 .plugin-shell，维护该区域的间距、尺寸与状态样式。 */
 .plugin-shell { color: var(--text-primary); background: var(--bg-card); font-size: 14px; line-height: 1.5; }
+/* 界面规则 .plugin-page，维护该区域的间距、尺寸与状态样式。 */
 .plugin-page { overscroll-behavior: contain; scrollbar-gutter: stable; overflow-wrap: anywhere; }
+/* 界面规则 .plugin-page > *，维护该区域的间距、尺寸与状态样式。 */
 .plugin-page > * { min-width: 0; }
+/* 界面规则 .plugin-shell button，维护该区域的间距、尺寸与状态样式。 */
 .plugin-shell button { flex-shrink: 0; }
+/* 界面规则 .plugin-shell button:disabled，维护该区域的间距、尺寸与状态样式。 */
 .plugin-shell button:disabled { cursor: not-allowed; opacity: .55; }
+/* 界面规则 .plugin-shell button:focus-visible, .plugin-shell select:focus-visible，维护该区域的间距、尺寸与状态样式。 */
 .plugin-shell button:focus-visible, .plugin-shell select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* 界面规则 .plugin-shell input:focus-visible，维护该区域的间距、尺寸与状态样式。 */
 .plugin-shell input:focus-visible { box-shadow: inset 0 -2px var(--primary); }
+/* 界面规则 .plugin-condition > input, .plugin-condition > select，维护该区域的间距、尺寸与状态样式。 */
 .plugin-condition > input, .plugin-condition > select { flex: 1 1 140px !important; }
+/* 界面规则 .plugin-condition > div，维护该区域的间距、尺寸与状态样式。 */
 .plugin-condition > div { flex: 1 1 180px; min-width: 0; max-width: 100%; }
+/* 界面规则 .plugin-date-value > input, .plugin-date-value > select，维护该区域的间距、尺寸与状态样式。 */
 .plugin-date-value > input, .plugin-date-value > select { flex: 1 1 130px !important; }
+/* 界面规则 .plugin-shell .entry-options，维护该区域的间距、尺寸与状态样式。 */
 .plugin-shell .entry-options { padding: 12px; margin: 12px 0; }
+/* 界面规则 .plugin-shell .entry-option，维护该区域的间距、尺寸与状态样式。 */
 .plugin-shell .entry-option { padding: 10px; }
+/* 按视口尺寸适配布局，保持表单和操作按钮可用。 */
 @media (max-width: 480px) {
-  :root { --plugin-padding: 12px; }
-  .plugin-page { border-radius: 0 !important; box-shadow: none !important; }
-  .plugin-condition > input, .plugin-condition > select, .plugin-condition > div { width: 100% !important; flex-basis: 100% !important; }
+  /* 主题颜色和尺寸变量，与组件内联样式同步维护。 */
+:root { --plugin-padding: 12px; }
+  /* 界面规则 .plugin-page，维护该区域的间距、尺寸与状态样式。 */
+.plugin-page { border-radius: 0 !important; box-shadow: none !important; }
+  /* 界面规则 .plugin-condition > input, .plugin-condition > select, .plugin-condition > div，维护该区域的间距、尺寸与状态样式。 */
+.plugin-condition > input, .plugin-condition > select, .plugin-condition > div { width: 100% !important; flex-basis: 100% !important; }
 }
+/* 按视口尺寸适配布局，保持表单和操作按钮可用。 */
 @media (max-height: 480px) {
-  :root { --plugin-padding: 10px 12px; }
+  /* 主题颜色和尺寸变量，与组件内联样式同步维护。 */
+:root { --plugin-padding: 10px 12px; }
 }
 
 /* 表单选择页 */
+/* 界面规则 .form-selection-help，维护该区域的间距、尺寸与状态样式。 */
 .form-selection-help { margin: 4px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+/* 界面规则 .form-selection-alternative，维护该区域的间距、尺寸与状态样式。 */
 .form-selection-alternative { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; padding-top: 10px; border-top: 1px solid var(--border-light); }
+/* 界面规则 .form-selection-page [data-form-dropdown]:focus-within，维护该区域的间距、尺寸与状态样式。 */
 .form-selection-page [data-form-dropdown]:focus-within { border-color: var(--primary-border) !important; }
 
 /* 顶部与钉钉标题留出间距，底部保留版本栏，不增加整体高度。 */
+/* 界面规则 .plugin-shell，维护该区域的间距、尺寸与状态样式。 */
 .plugin-shell { position: relative; padding-top: 24px; padding-bottom: 24px; }
+/* 界面规则 .plugin-version，维护该区域的间距、尺寸与状态样式。 */
 .plugin-version {
   position: absolute;
   bottom: 2px;
@@ -618,38 +735,69 @@ select option[disabled][value=''] {
   user-select: text;
 }
 
+/* 按视口尺寸适配布局，保持表单和操作按钮可用。 */
 @media (max-height: 480px) {
-  .plugin-shell { padding-top: 16px; }
+  /* 界面规则 .plugin-shell，维护该区域的间距、尺寸与状态样式。 */
+.plugin-shell { padding-top: 16px; }
 }
 
 /* 筛选逻辑：蓝色组内 AND，橙色组间 OR，并以文字明确关系。 */
+/* 界面规则 .filter-logic-help，维护该区域的间距、尺寸与状态样式。 */
 .filter-logic-help { padding: 10px 12px; margin-bottom: 14px; border-radius: 8px; background: var(--bg-subtle); color: var(--text-regular); font-size: 12px; line-height: 1.8; }
+/* 界面规则 .filter-logic-example，维护该区域的间距、尺寸与状态样式。 */
 .filter-logic-example { color: var(--text-secondary); margin-top: 4px; }
+/* 界面规则 .filter-group-card，维护该区域的间距、尺寸与状态样式。 */
 .filter-group-card { min-width: 0; padding: 12px; border: 1px solid var(--primary-border); border-left: 4px solid var(--primary); border-radius: 8px; background: var(--bg-card); }
+/* 界面规则 .filter-group-heading，维护该区域的间距、尺寸与状态样式。 */
 .filter-group-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+/* 界面规则 .filter-group-heading h5，维护该区域的间距、尺寸与状态样式。 */
 .filter-group-heading h5 { margin: 0; font-size: 14px; color: var(--text-primary); }
+/* 界面规则 .filter-and-badge，维护该区域的间距、尺寸与状态样式。 */
 .filter-and-badge { padding: 3px 8px; border-radius: 5px; font-size: 12px; color: var(--primary-dark); background: var(--primary-bg); }
+/* 界面规则 .filter-group-card .plugin-condition，维护该区域的间距、尺寸与状态样式。 */
 .filter-group-card .plugin-condition { margin-bottom: 0 !important; padding: 10px !important; }
+/* 界面规则 .filter-and-connector，维护该区域的间距、尺寸与状态样式。 */
 .filter-and-connector { margin: 4px 0 4px 12px; padding: 2px 10px; border-left: 2px solid var(--primary-border); color: var(--primary-dark); font-size: 12px; font-weight: 600; }
+/* 界面规则 .filter-or-divider，维护该区域的间距、尺寸与状态样式。 */
 .filter-or-divider { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; color: #9a3412; }
+/* 界面规则 .filter-or-divider::before, .filter-or-divider::after，维护该区域的间距、尺寸与状态样式。 */
 .filter-or-divider::before, .filter-or-divider::after { content: ''; height: 1px; background: #fed7aa; flex: 1; }
+/* 界面规则 .filter-or-divider span，维护该区域的间距、尺寸与状态样式。 */
 .filter-or-divider span { padding: 3px 10px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 20px; font-size: 12px; font-weight: 700; }
+/* 界面规则 .filter-or-divider small，维护该区域的间距、尺寸与状态样式。 */
 .filter-or-divider small { font-size: 12px; }
+/* 界面规则 .filter-add-and, .filter-add-or，维护该区域的间距、尺寸与状态样式。 */
 .filter-add-and, .filter-add-or { min-height: 34px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+/* 界面规则 .filter-add-and，维护该区域的间距、尺寸与状态样式。 */
 .filter-add-and { margin-top: 10px; color: var(--primary-dark); background: var(--primary-bg); border: 1px dashed var(--primary-border); }
+/* 界面规则 .filter-add-or，维护该区域的间距、尺寸与状态样式。 */
 .filter-add-or { color: #9a3412; background: #fff7ed; border: 1px dashed #fdba74; }
+/* 界面规则 .filter-add-and:hover, .filter-add-or:hover，维护该区域的间距、尺寸与状态样式。 */
 .filter-add-and:hover, .filter-add-or:hover { filter: brightness(.97); }
+/* 界面规则 .filter-add-group，维护该区域的间距、尺寸与状态样式。 */
 .filter-add-group { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 14px; }
+/* 界面规则 .filter-add-group > span, .filter-group-empty，维护该区域的间距、尺寸与状态样式。 */
 .filter-add-group > span, .filter-group-empty { font-size: 12px; color: var(--text-secondary); }
-@media (max-width: 480px) { .filter-or-divider small { display: none; } }
+/* 按视口尺寸适配布局，保持表单和操作按钮可用。 */
+@media (max-width: 480px) { /* 界面规则 .filter-or-divider small，维护该区域的间距、尺寸与状态样式。 */
+.filter-or-divider small { display: none; } }
 
+/* 界面规则 .filter-field-help，维护该区域的间距、尺寸与状态样式。 */
 .filter-field-help { display:flex; flex-wrap:wrap; gap:4px 10px; padding:5px 2px 8px; font-size:12px; color:var(--text-secondary); }
+/* 界面规则 .filter-field-help:empty，维护该区域的间距、尺寸与状态样式。 */
 .filter-field-help:empty { display: none; }
+/* 界面规则 .filter-field-help .filter-field-error，维护该区域的间距、尺寸与状态样式。 */
 .filter-field-help .filter-field-error { color:#b42318; }
 
+/* 操作手册入口及阅读窗口的布局。 */
 .connection-guide { display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 16px; border: 1px solid var(--primary-border); border-radius: 8px; background: var(--primary-bg); color: var(--primary-dark); text-decoration: none; }
+/* 操作手册入口及阅读窗口的布局。 */
 .connection-guide > span:nth-child(2) { flex: 1; min-width: 0; }
+/* 操作手册入口及阅读窗口的布局。 */
 .connection-guide strong { display: block; font-size: 14px; }
+/* 操作手册入口及阅读窗口的布局。 */
 .connection-guide small { display: block; margin-top: 3px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+/* 操作手册入口及阅读窗口的布局。 */
 .connection-guide:hover { border-color: var(--primary); }
+/* 操作手册入口及阅读窗口的布局。 */
 .connection-guide:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

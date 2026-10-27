@@ -1,3 +1,4 @@
+// 开发环境默认访问本地后端，生产环境使用部署网关；显式环境变量优先，避免生产包意外指向localhost。
 const API_BASE = process.env.REACT_APP_API_BASE ?? (process.env.NODE_ENV === 'development'
   ? 'http://localhost:1009'
   : 'https://web.jxdingjiang.com/prod-api');
@@ -7,7 +8,9 @@ export const API = {
   login: `${API_BASE}/api/login`,
   // 表单元数据
   sheetMeta: `${API_BASE}/api/sheetMeta`,
+  // 应用字段配置后的最终结构校验接口，提交前由服务端验证别名和引用路径。
   formSchema: `${API_BASE}/api/formSchema`,
+  // 引用元数据入口：普通对象读取元数据，分组等扩展对象返回项目维护的数据字典。
   referenceSchema: `${API_BASE}/api/referenceSchema`,
   // 表单配置
   tableConfig: {

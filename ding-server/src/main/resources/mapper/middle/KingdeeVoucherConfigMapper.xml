@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.kingdee.mapper.KingdeeVoucherConfigMapper">
     
+    <!-- KingdeeVoucherConfigResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="KingdeeVoucherConfig" id="KingdeeVoucherConfigResult">
         <result property="id"    column="id"    />
         <result property="name"    column="name"    />
@@ -20,10 +21,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="corpName" column="corp_name" />
     </resultMap>
 
+    <!-- selectKingdeeVoucherConfigVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
     <sql id="selectKingdeeVoucherConfigVo">
         select corp_name, id, name, ding_corp_id, server_url, c_id, user_name, app_id, app_secret, ext1, ext2, ext3, order_no from (select source.*, tenant.corp_name from kingdee_voucher_config source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
+    <!-- selectKingdeeVoucherConfigList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectKingdeeVoucherConfigList" parameterType="KingdeeVoucherConfig" resultMap="KingdeeVoucherConfigResult">
         <include refid="selectKingdeeVoucherConfigVo"/>
         <where>  
@@ -41,11 +44,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
     
+    <!-- selectKingdeeVoucherConfigById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectKingdeeVoucherConfigById" parameterType="String" resultMap="KingdeeVoucherConfigResult">
         <include refid="selectKingdeeVoucherConfigVo"/>
         where id = #{id}
     </select>
 
+    <!-- insertKingdeeVoucherConfig：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertKingdeeVoucherConfig" parameterType="KingdeeVoucherConfig">
         insert into kingdee_voucher_config
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -78,6 +83,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
+    <!-- updateKingdeeVoucherConfig：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateKingdeeVoucherConfig" parameterType="KingdeeVoucherConfig">
         update kingdee_voucher_config
         <trim prefix="SET" suffixOverrides=",">
@@ -96,10 +102,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where id = #{id}
     </update>
 
+    <!-- deleteKingdeeVoucherConfigById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <delete id="deleteKingdeeVoucherConfigById" parameterType="String">
         delete from kingdee_voucher_config where id = #{id}
     </delete>
 
+    <!-- deleteKingdeeVoucherConfigByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <delete id="deleteKingdeeVoucherConfigByIds" parameterType="String">
         delete from kingdee_voucher_config where id in 
         <foreach item="id" collection="array" open="(" separator="," close=")">
@@ -107,6 +115,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
+    <!-- selectKingdeeVoucherConfigByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectKingdeeVoucherConfigByCorpId" parameterType="String" resultMap="KingdeeVoucherConfigResult">
         <include refid="selectKingdeeVoucherConfigVo"/>
         where ding_corp_id = #{dingCorpId}
@@ -114,12 +123,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         limit 1
     </select>
 
+    <!-- selectKingdeeVoucherConfigByNameAndCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectKingdeeVoucherConfigByNameAndCorpId" resultMap="KingdeeVoucherConfigResult">
         <include refid="selectKingdeeVoucherConfigVo"/>
         where name = #{name} and ding_corp_id = #{dingCorpId}
         limit 1
     </select>
 
+    <!-- selectKingdeeVoucherConfigListByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectKingdeeVoucherConfigListByCorpId" parameterType="String" resultMap="KingdeeVoucherConfigResult">
         <include refid="selectKingdeeVoucherConfigVo"/>
         where ding_corp_id = #{dingCorpId}

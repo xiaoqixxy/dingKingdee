@@ -17,6 +17,7 @@ import com.dj.middle.kingdee.service.IKingdeeTableConfigService;
 public class KingdeeTableConfigServiceImpl implements IKingdeeTableConfigService
 {
 
+    /** 提供金蝶表单配置数据访问能力的映射接口。 */
     @Autowired
     private KingdeeTableConfigMapper kingdeeTableConfigMapper;
 

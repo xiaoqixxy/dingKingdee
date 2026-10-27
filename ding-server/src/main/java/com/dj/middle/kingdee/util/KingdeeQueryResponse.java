@@ -6,9 +6,11 @@ import com.alibaba.fastjson2.JSONArray;
 import java.util.List;
 import java.util.Map;
 
-/** ExecuteBillQuery can return a business error inside a one-cell result row. */
+/** ExecuteBillQuery can return a business error inside a one-cell result row. 识别单据查询结果中嵌套的业务失败响应。 */
 public final class KingdeeQueryResponse {
+    /** 工具类仅提供静态方法，禁止外部实例化。 */
     private KingdeeQueryResponse() {}
+    /** 校验上游响应中的业务成功状态，失败时保留可识别的错误原因。 */
     public static void requireSuccess(List<List<Object>> rows) {
         if (rows == null) throw new IllegalArgumentException("金蝶查询返回空响应");
         for (List<Object> row : rows) {

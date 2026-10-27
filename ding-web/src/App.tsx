@@ -6,6 +6,7 @@ import './App.css';
 import FieldConfigurationStep, { FieldConfig, ReferenceField } from './FieldConfigurationStep';
 import { isEmptyOperator, operatorLabels, fieldKind, filterOperators, scalarValue, filterError } from './filterRules';
 
+/** 多选控件的候选项、当前值与变更回调。 */
 interface MultiSelectProps {
   options: { name: string; value: string }[];
   value: string[];
@@ -13,11 +14,13 @@ interface MultiSelectProps {
   placeholder?: string;
 }
 
+/** 多选控件，显示已选标签并允许逐项移除，点击外部关闭候选列表。 */
 const MultiSelect: React.FC<MultiSelectProps> = ({ options, value, onChange, placeholder = '请选择' }) => {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    /** 点击控件外部时关闭下拉，防止浮层残留。 */
     const handleClickOutside = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -27,6 +30,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ options, value, onChange, pla
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  /** 切换一个选项的选中状态，通过回调更新受控值。 */
   const toggle = (v: string) => {
     if (value.includes(v)) {
       onChange(value.filter(item => item !== v));
@@ -35,6 +39,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ options, value, onChange, pla
     }
   };
 
+  /** 移除标签时阻止冒泡，避免同时切换下拉展开状态。 */
   const removeTag = (e: React.MouseEvent, v: string) => {
     e.stopPropagation();
     onChange(value.filter(item => item !== v));
@@ -105,6 +110,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ options, value, onChange, pla
   );
 };
 
+/** 可购买套餐及对应价格、限制信息。 */
 interface PackageOption {
   id: number;
   productName: string;
@@ -116,6 +122,7 @@ interface PackageOption {
   productTypeName?: string;
 }
 
+/** 金蝶连接与鉴权参数，只通过既有接口传给服务端。 */
 interface KingdeeBaseParams {
   SERVER_URL: string;
   CID: string;
@@ -124,11 +131,13 @@ interface KingdeeBaseParams {
   APP_SECRET: string;
 }
 
+/** 可选金蝶业务表单的标识及名称。 */
 interface FormItemType {
   id: string;
   name: string;
 }
 
+/** 服务端输出字段结构，稳定标识与显示名称分开，引用信息用于逐层配置。 */
 interface SheetField {
   isPrimary: boolean;
   name: string;
@@ -142,6 +151,7 @@ interface SheetField {
 }
 
 type HeaderFillMode = 'FIRST_ROW' | 'ALL_ROWS';
+/** 金蝶明细实体选项，携带字段列表、主键和支持状态。 */
 interface EntryOption {
   key: string;
   name: string;
@@ -152,21 +162,25 @@ interface EntryOption {
 
 type FilterConditionValue = string | string[];
 
+/** 单个字段筛选条件，支持标量与枚举多选值。 */
 interface FilterCondition {
   fieldId: string;
   operator: string;
   value: FilterConditionValue;
 }
 
+/** 同组条件使用并且连接，多个组之间使用或者连接。 */
 interface FilterConditionGroup {
   conditions: FilterCondition[];
 }
 
+/** 按稳定输出字段标识保存排序方向。 */
 interface SortConfig {
   fieldId: string;
   order: 'asc' | 'desc';
 }
 
+/** 服务端保存的连接配置及可恢复的同步选择。 */
 interface VoucherConfigItem {
   id?: number;
   voucherName?: string;
@@ -190,20 +204,23 @@ interface VoucherConfigItem {
   createTime?: string;
 }
 
-// getSyncConfig is supplied by the DingTalk iframe runtime. SDK 0.3.2 lacks
-// its declarations; the official 0.3.16 types expose both API locations.
+// 同步配置恢复接口由钉钉内嵌宿主提供，当前旧版SDK缺少类型声明；
+// 这里兼容宿主接口可能出现的两个层级。
+/** 钉钉宿主同步配置读写接口的兼容声明。 */
 interface DataSourceHost {
   getSyncConfig?: () => Promise<unknown>;
   saveConfigAndGoNext?: (config: Record<string, unknown>) => Promise<void>;
 }
 type SavedSyncConfig = Partial<KingdeeBaseParams> & VoucherConfigItem & Record<string, unknown>;
 
+/** 页面提示消息的标识、内容与显示级别。 */
 interface ToastItem {
   id: number;
   message: string;
   type: 'success' | 'warning' | 'error';
 }
 
+/** 当前企业的产品权益与到期信息。 */
 interface ProductInfo {
   id: number;
   productName: string;
@@ -225,6 +242,7 @@ const DEFAULT_CONFIG: KingdeeBaseParams = {
   APP_SECRET: '',
 };
 
+// 相对日期只保存稳定键，实际日期区间由服务端按执行时的日期计算。
 const DATE_QUICK_SELECTS = [
   { label: '近7天', value: 'last_7_days' },
   { label: '近30天', value: 'last_30_days' },
@@ -233,6 +251,7 @@ const DATE_QUICK_SELECTS = [
   { label: '本年', value: 'this_year' },
 ];
 
+// 组件内联颜色与App.css变量共同定义主题，修改主色时需同步两处，避免不同控件颜色不一致。
 const styles: Record<string, any> = {
   container: { width: '750px', maxWidth: '100%', height: '580px', margin: '0 auto', boxSizing: 'border-box' as const, overflow: 'hidden' },
   card: {
@@ -522,6 +541,7 @@ const styles: Record<string, any> = {
   },
 };
 
+/** 筛选字段搜索控件，输入仅用于过滤，选择候选项才提交字段标识。 */
 function SearchableFieldSelect({ id, fields, value, onChange }: {
   id: string; fields: SheetField[]; value: string; onChange: (value: string) => void;
 }) {
@@ -531,6 +551,7 @@ function SearchableFieldSelect({ id, fields, value, onChange }: {
   const selected = fields.find(field => field.id === value);
   const options = [{ id: '', name: '-- 选择字段 --' }, ...fields.filter(field =>
     `${field.name} ${field.id}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))];
+  /** 确认选择候选项并关闭下拉，清空搜索文本。 */
   const choose = (key: string) => {
     onChange(key);
     setOpen(false);
@@ -577,7 +598,9 @@ function SearchableFieldSelect({ id, fields, value, onChange }: {
   );
 }
 
+/** 管理金蝶连接、同步向导、权益套餐和支付界面的主组件。 */
 function App() {
+  // 连接与向导状态：当前步骤独立于后台连接列表，避免编辑和同步操作混用。
   const [kingdeeConfig, setKingdeeConfig] = useState<KingdeeBaseParams>(DEFAULT_CONFIG);
   const [currentStep, setCurrentStep] = useState(0);
   const [syncConfigLoading, setSyncConfigLoading] = useState(true);
@@ -587,6 +610,7 @@ function App() {
   const initStartedRef = useRef(false);
   const [loading, setLoading] = useState(false);
 
+  // 套餐和支付状态：套餐页替换主内容区，支付临时状态只用于当前购买流程。
   const [currentProduct, setCurrentProduct] = useState<ProductInfo | null>(null);
   const [productLoading, setProductLoading] = useState(false);
   const [packageOptions, setPackageOptions] = useState<PackageOption[]>([]);
@@ -597,6 +621,7 @@ function App() {
   const [payCountdown, setPayCountdown] = useState('');
   const [channelDialogVisible, setChannelDialogVisible] = useState(false);
 
+  // 表单选择状态：搜索词与真正选中的表单标识分开，防止自由输入被误当作有效表单。
   const [formList, setFormList] = useState<FormItemType[]>([]);
   const [selectedFormId, setSelectedFormId] = useState<string>('');
   const [selectedFormName, setSelectedFormName] = useState<string>('');
@@ -607,6 +632,7 @@ function App() {
   const [formDropdownOpen, setFormDropdownOpen] = useState(false);
   const [displayValue, setDisplayValue] = useState('');
 
+  // 字段及引用状态：来源配置字段与最终输出字段分开，新增列不能反过来污染基础元数据。
   const [sheetFields, setSheetFields] = useState<SheetField[]>([]);
   const [configurationFields, setConfigurationFields] = useState<SheetField[]>([]);
   const [fieldConfigs, setFieldConfigs] = useState<FieldConfig[]>([]);
@@ -620,9 +646,11 @@ function App() {
   const [metadataFormId, setMetadataFormId] = useState('');
   const [fieldLoading, setFieldLoading] = useState(false);
   const [toastList, setToastList] = useState<ToastItem[]>([]);
+  // 筛选与排序只保存稳定字段标识，显示别名改变后条件仍能关联原列。
   const [filterConditions, setFilterConditions] = useState<FilterConditionGroup[]>([{ conditions: [{ fieldId: '', operator: '=', value: '' as FilterConditionValue }] }]);
   const [sortConfigs, setSortConfigs] = useState<SortConfig[]>([{ fieldId: '', order: 'asc' }]);
 
+  // 连接列表及编辑上下文：退出向导时可以返回原列表，不直接丢失当前连接信息。
   const [viewMode, setViewMode] = useState<"list" | "config">("list");
   const [voucherList, setVoucherList] = useState<VoucherConfigItem[]>([]);
   const [editingVoucherId, setEditingVoucherId] = useState<number | null>(null);
@@ -630,6 +658,7 @@ function App() {
   const [voucherName, setVoucherName] = useState("");
   const [orderNo, setOrderNo] = useState<number | undefined>(undefined);
 
+  /** 从当前页面路径提取企业标识，独立管理页沿用默认标识。 */
   const getCorpIdFromUrl = (): string => {
     const path = window.location.pathname;
     const parts = path.split('/').filter(Boolean);
@@ -637,6 +666,7 @@ function App() {
     return corpId || 'jxdj';
   };
 
+  /** 按当前企业加载已保存的金蝶连接列表。 */
   const fetchVoucherList = async () => {
     const corpId = getCorpIdFromUrl();
     if (!corpId) return;
@@ -652,6 +682,7 @@ function App() {
     }
   };
 
+  /** 重置连接表单和历史同步选择，进入新增配置流程。 */
   const handleAddConfig = () => {
     setSelectedEntryKey('');
     setSelectedEntryKeys([]);
@@ -682,6 +713,7 @@ function App() {
   };
 
   // 兼容早期平铺条件和当前按 OR 分组保存的条件。
+  /** 从已有配置恢复表单、明细、字段别名、引用路径及筛选排序。 */
   const restoreSyncSelection = (item: VoucherConfigItem) => {
     setSelectedEntryKey(item.selectedEntryKey || '');
     setSelectedEntryKeys(item.selectedEntryKeys ?? (item.selectedEntryKey ? [item.selectedEntryKey] : []));
@@ -708,6 +740,7 @@ function App() {
     setSortConfigs(item.sortConfigs || [{ fieldId: '', order: 'asc' }]);
   };
 
+  /** 把服务端连接字段映射为前端输入状态，按需打开编辑页。 */
   const handleEditConfig = (item: VoucherConfigItem, open = true) => {
     restoreSyncSelection(item);
     setEditingVoucherId(item.id || null);
@@ -722,9 +755,10 @@ function App() {
     if (open) setViewMode('config');
   };
 
+  /** 载入选中连接后进入表单选择，保留当前连接的同步设置。 */
   const handleSyncData = async (item: VoucherConfigItem) => {
     handleEditConfig(item, false);
-    // Changing the connection of an existing sync must retain this sheet's settings.
+    // 修改已有同步连接时保留当前表的同步范围和字段配置。
     const selection = savedSyncConfigRef.current || item;
     restoreSyncSelection(selection);
     setSyncMode(true);
@@ -733,6 +767,7 @@ function App() {
     setViewMode('config');
   };
 
+  /** 退出同步向导并返回连接列表，保留需要的配置状态。 */
   const handleBackToList = () => {
     if (syncMode && savedSyncConfigRef.current) {
       savedSyncConfigRef.current = {
@@ -744,10 +779,12 @@ function App() {
     fetchVoucherList();
   };
 
+  /** 更新连接参数中的单个字段。 */
   const updateConfig = (key: keyof KingdeeBaseParams, value: string) => {
     setKingdeeConfig({ ...kingdeeConfig, [key]: value });
   };
 
+  /** 追加具有唯一标识的提示消息并按类型展示。 */
   const showMessage = (msg: string, type: 'success' | 'warning' | 'error' = 'success') => {
     const id = Date.now() + Math.random();
     setToastList(prev => [...prev, { id, message: msg, type }]);
@@ -756,10 +793,12 @@ function App() {
     }, 3000);
   };
 
+  /** 按提示标识移除已关闭的消息。 */
   const removeToast = (id: number) => {
     setToastList(prev => prev.filter(t => t.id !== id));
   };
 
+  /** 读取企业当前产品权益，用于同步限额与套餐展示。 */
   const fetchCurrentProduct = async (corpId: string) => {
     if (!corpId) return;
     setProductLoading(true);
@@ -776,6 +815,7 @@ function App() {
     }
   };
 
+  /** 加载可购买的套餐列表。 */
   const fetchPackageOptions = async () => {
     try {
       const response = await fetch(API.product.options, { method: 'GET', headers: { 'Content-Type': 'application/json' }, mode: 'cors' });
@@ -788,6 +828,7 @@ function App() {
     }
   };
 
+  /** 切换主内容区到全页套餐选择，不使用叠加弹窗。 */
   const handleUpgradeClick = () => {
     if (packageOptions.length === 0) {
       fetchPackageOptions();
@@ -795,12 +836,14 @@ function App() {
     setUpgradeDialogVisible(true);
   };
 
+  /** 记录选中的套餐并进入支付渠道选择。 */
   const handleSelectPackage = async (pkg: PackageOption) => {
     setSelectedPackage(pkg);
     setUpgradeDialogVisible(false);
     setChannelDialogVisible(true);
   };
 
+  /** 确认渠道后调用支付创建流程。 */
   const handleConfirmPay = async (channel: string) => {
     setChannelDialogVisible(false);
     if (selectedPackage) {
@@ -808,6 +851,7 @@ function App() {
     }
   };
 
+  /** 请求服务端创建订单，并展示二维码及统一到期时间。 */
   const createPayment = async (pkg: PackageOption, channel: string) => {
     const corpId = getCorpIdFromUrl() || 'jxdj';
     const channelMap: Record<string, string> = { alipay: '支付宝', wechat_pay: '微信支付', transfer: '对公付款' };
@@ -823,6 +867,7 @@ function App() {
         setPayInfo({ orderNo: result.data.orderNo, qrCode: result.data.qrCode, channelName: channelMap[channel] || '支付宝', expireTime: result.data.expireTime });
         setPayDialogVisible(true);
         const expireTime = new Date(result.data.expireTime).getTime();
+        /** 定时更新支付倒计时与状态，超时后停止轮询。 */
         const checkPayStatus = () => {
           const now = Date.now();
           if (expireTime - now <= 0) {
@@ -847,6 +892,7 @@ function App() {
     }
   };
 
+  /** 确认支付成功后刷新权益并结束支付展示。 */
   const handlePaySuccess = async () => {
     try {
       await fetch(API.payment.handleResult, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderNo: payInfo.orderNo, action: 'pay' }), mode: 'cors' });
@@ -859,6 +905,7 @@ function App() {
     }
   };
 
+  /** 处理用户关闭支付界面的既有订单交互。 */
   const handlePayClose = async () => {
     try {
       await fetch(API.payment.handleResult, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderNo: payInfo.orderNo, action: 'cancel' }), mode: 'cors' });
@@ -869,6 +916,7 @@ function App() {
     }
   };
 
+  /** 关闭二维码窗口并清理计时器及支付临时状态。 */
   const closePayDialog = () => {
     setPayDialogVisible(false);
     if ((window as any).__payTimer) {
@@ -884,26 +932,30 @@ function App() {
     if (corpId) fetchCurrentProduct(corpId);
   }, []);
 
+  /** 兼容不同钉钉宿主层级，定位支持同步配置读写的接口。 */
   const getDataSourceHost = (): DataSourceHost | undefined => {
     const host = window.Dingdocs?.base?.host as (DataSourceHost & { dataSource?: DataSourceHost }) | undefined;
     return host?.dataSource?.getSyncConfig ? host.dataSource : host;
   };
 
+  /** 从钉钉宿主恢复当前数据源配置，校验格式并防止卸载后更新状态。 */
   const restoreSavedSyncConfig = async (isActive = () => mountedRef.current) => {
     setSyncConfigLoading(true);
     setSyncConfigError('');
     try {
+      // 先检测当前宿主是否支持配置恢复；独立浏览器环境不能伪装为钉钉数据源。
       const host = getDataSourceHost();
       if (!host?.getSyncConfig) throw new Error('当前钉钉版本不支持读取同步设置，请更新钉钉后重试');
       const result = await host.getSyncConfig();
       if (!isActive()) return;
       const config = typeof result === 'string' && result.trim() ? JSON.parse(result) : result;
-      // A new data source has no saved configuration.
+      // 新建数据源尚未保存同步配置，按正常空状态处理。
       if (config == null || config === '' || (typeof config === 'object' && !Array.isArray(config) && Object.keys(config).length === 0)) return;
       if (typeof config !== 'object' || Array.isArray(config) || typeof config.selectedFormId !== 'string' || !config.selectedFormId) {
         throw new Error('原同步设置格式异常，请重试或联系管理员');
       }
       const saved = config as SavedSyncConfig;
+      // 保存原始同步配置，后续提交时合并更新，避免覆盖当前界面未管理的历史参数。
       savedSyncConfigRef.current = saved;
       handleEditConfig({
         ...saved,
@@ -927,7 +979,7 @@ function App() {
 
   useEffect(() => {
     mountedRef.current = true;
-    // initView only initializes once; StrictMode replays effects in development.
+    // 宿主初始化只执行一次；开发模式的严格模式会重复执行副作用。
     if (!initStartedRef.current) {
       initStartedRef.current = true;
       initView({
@@ -935,7 +987,7 @@ function App() {
         onError: () => {
           if (!mountedRef.current) return;
           setSyncConfigLoading(false);
-          // The standalone connection management page does not have a DingTalk host.
+          // 独立连接管理页没有钉钉宿主，不把该环境误报为已有同步设置损坏。
           if (window.self !== window.top) setSyncConfigError('钉钉初始化失败，请重新打开同步设置');
         },
       });
@@ -944,6 +996,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    /** 点击控件外部时关闭下拉，防止浮层残留。 */
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       // 只有当点击的不是下拉框相关元素时才关闭
@@ -964,6 +1017,7 @@ function App() {
     }
   }, [viewMode]);
 
+  /** 读取已配置的金蝶表单选项，并恢复保存的表单选择。 */
   const fetchFormList = async (savedFormId = selectedFormId, savedFormName = selectedFormName) => {
     try {
       const response = await fetch(API.tableConfig.options, { method: 'GET', headers: { 'Content-Type': 'application/json' }, mode: 'cors' });
@@ -986,6 +1040,7 @@ function App() {
     }
   };
 
+  /** 用当前连接参数请求服务端校验金蝶登录。 */
   const loginToK3Cloud = async (config: Partial<KingdeeBaseParams> = kingdeeConfig) => {
     const requestData = { SERVER_URL: config.SERVER_URL?.trim() || '', CID: config.CID?.trim() || '', USER_NAME: config.USER_NAME?.trim() || '', APP_ID: config.APP_ID?.trim() || '', APP_SECRET: config.APP_SECRET?.trim() || '' };
     if (Object.values(requestData).some(value => !value)) throw new Error('请完整填写服务器地址、账套 ID、用户名、APP_ID 和 APP_SECRET');
@@ -996,6 +1051,7 @@ function App() {
     throw new Error(result?.msg || '金蝶登录请求失败');
   };
 
+  /** 读取所选表单的表头、可选明细与字段元数据。 */
   const loadSheetMetaWithForm = async (formId: string, formName: string): Promise<SheetField[]> => {
     setFieldLoading(true);
     try {
@@ -1030,6 +1086,7 @@ function App() {
     }
   };
 
+  /** 校验连接输入并保存当前连接，成功后推进同步向导。 */
   const handleStep1Next = async () => {
     if (!Object.values(kingdeeConfig).every((v) => (v || '').trim())) {
       showMessage('请填写完整的金蝶配置信息', 'warning');
@@ -1093,6 +1150,7 @@ function App() {
     }
   };
 
+  /** 只校验已有连接的登录状态并显示结果。 */
   const handleVerifyConfig = async (item: VoucherConfigItem) => {
     try {
       setLoading(true);
@@ -1112,6 +1170,7 @@ function App() {
     }
   };
 
+  /** 确认后删除指定连接并刷新列表。 */
   const handleDeleteConfig = async (item: VoucherConfigItem) => {
     if (!window.confirm(`确定要删除配置"${item.voucherName || item.name}"吗？此操作不可恢复。`)) return;
     try {
@@ -1131,6 +1190,7 @@ function App() {
     }
   };
 
+  /** 校验表单选择并读取元数据，再进入明细范围选择。 */
   const handleStep2Next = async () => {
     let formId = selectedFormId;
     let formName = selectedFormName;
@@ -1177,6 +1237,7 @@ function App() {
     }
   };
 
+  /** 校验筛选排序后将完整同步配置提交给钉钉宿主。 */
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -1187,6 +1248,7 @@ function App() {
         conditions: group.conditions.filter(f => f.fieldId.trim()).map(f => ({ ...f, value: isEmptyOperator(f.operator) ? '' : f.operator === '包含于' ? f.value : scalarValue(f.value) }))
       })).filter(group => group.conditions.length > 0);
       const validSorts = sortConfigs.filter(s => s.fieldId.trim());
+      // 沿用当前宿主保存的其他配置，只更新本次向导明确修改的同步参数。
       const submitData = { ...savedSyncConfigRef.current, ...kingdeeConfig, configVersion: 2, selectedFormId, selectedFormName, selectedEntryKey, selectedEntryKeys, headerFillMode, filterConditions: validFilters, sortConfigs: validSorts, sheetFields, fieldConfigs };
       const host = getDataSourceHost();
       if (host?.saveConfigAndGoNext) {
@@ -1202,6 +1264,7 @@ function App() {
     }
   };
 
+  /** 把套餐的绑定表单数量限制转为用户可读文字。 */
   const formatFormLimit = (limit: number, name?: string) => {
     if (!limit || limit <= 0 || limit >= 9999) return '不限制';
     if (name && (name.includes('专业') || name.includes('企业'))) return '不限制';
@@ -1209,6 +1272,7 @@ function App() {
   };
 
   // 在指定组添加条件(AND关系)
+  /** 在指定条件组内追加一个并且条件。 */
   const addFilter = (groupIndex?: number) => {
     setFilterConditions(prev => {
       const newGroups = [...prev];
@@ -1222,6 +1286,7 @@ function App() {
   };
 
   // 创建新的条件组(OR关系)
+  /** 添加独立的或者条件组。 */
   const addOr = () => {
     setFilterConditions(prev => [
       ...prev,
@@ -1230,6 +1295,7 @@ function App() {
   };
 
   // 删除条件或整个组
+  /** 移除指定条件并维持可编辑的条件组结构。 */
   const removeFilter = (groupIndex: number, conditionIndex: number) => {
     setFilterConditions(prev => {
       const newGroups = [...prev];
@@ -1250,6 +1316,7 @@ function App() {
   };
 
   // 更新特定条件
+  /** 更新筛选字段、操作符或取值，避免跨类型保留不适用的值。 */
   const updateFilter = (groupIndex: number, conditionIndex: number, key: keyof FilterCondition, value: FilterConditionValue) => {
     setFilterConditions(prev => {
       const newGroups = [...prev];
@@ -1260,22 +1327,26 @@ function App() {
     });
   };
 
+  /** 增加一个排序配置行。 */
   const addSort = () => {
     setSortConfigs([...sortConfigs, { fieldId: '', order: 'asc' }]);
   };
 
+  /** 移除指定排序项。 */
   const removeSort = (index: number) => {
     const newSorts = [...sortConfigs];
     newSorts.splice(index, 1);
     setSortConfigs(newSorts);
   };
 
+  /** 更新排序字段或方向。 */
   const updateSort = (index: number, key: keyof SortConfig, value: string) => {
     const newSorts = [...sortConfigs];
     newSorts[index] = { ...newSorts[index], [key]: value } as SortConfig;
     setSortConfigs(newSorts);
   };
 
+  /** 将套餐名称映射为页面用于比较的权益等级。 */
   const getPlanLevel = (name?: string): number => {
     if (!name) return 0;
     if (name.includes('企业')) return 3;
@@ -1284,6 +1355,7 @@ function App() {
     return 0;
   };
 
+  /** 从套餐选项中寻找指定等级的套餐。 */
   const getPkgByLevel = (level: number): PackageOption | undefined => {
     const keyword = level === 1 ? '基础' : level === 2 ? '专业' : '企业';
     return packageOptions.find(p => p.productName.includes(keyword));
@@ -1291,6 +1363,7 @@ function App() {
 
   const currentLevel = getPlanLevel(currentProduct?.productName);
 
+  /** 渲染套餐功能是否包含的对比条目。 */
   const renderPlanFeature = (check: boolean, text: string) => (
     <div style={styles.planFeatureRow}>
       <span style={{ color: check ? '#22c55e' : '#ef4444', fontSize: '14px', marginRight: '6px', fontWeight: 700 }}>
@@ -1300,8 +1373,10 @@ function App() {
     </div>
   );
 
+  /** 渲染全页套餐选择内容，受升级页面状态控制。 */
   const renderUpgradeDialog = () => {
     if (!upgradeDialogVisible) return null;
+    /** 将套餐或权益到期时间格式化为本地显示文本。 */
     const formatDate = (dateStr?: string) => {
       if (!dateStr) return '长期有效';
       return new Date(dateStr).toLocaleDateString('zh-CN');
@@ -1451,6 +1526,7 @@ function App() {
     );
   };
 
+  /** 渲染二维码支付、倒计时和支付操作区域。 */
   const renderPayDialog = () => {
     if (!payDialogVisible) return null;
     return (
@@ -1476,6 +1552,7 @@ function App() {
     );
   };
 
+  /** 渲染支付渠道选择窗口。 */
   const renderChannelDialog = () => {
     if (!channelDialogVisible) return null;
     const channelOptions = [
@@ -1510,6 +1587,7 @@ function App() {
   };
 
 
+  /** 渲染页面消息提示及关闭操作。 */
   const renderToast = () => {
     if (toastList.length === 0) return null;
     const config = {
@@ -1563,6 +1641,7 @@ function App() {
     );
   };
 
+  /** 渲染连接列表及校验、编辑、删除、同步入口。 */
   const renderVoucherList = () => (
     <div style={{ minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
@@ -1592,9 +1671,11 @@ function App() {
     </div>
   );
 
+  /** 展示当前套餐权益，只在流程前部显示以节省配置空间。 */
   const renderProductInfo = () => {
     if (productLoading) return <div style={styles.loading}>加载产品信息中...</div>;
     if (!currentProduct) return null;
+    /** 将套餐或权益到期时间格式化为本地显示文本。 */
     const formatDate = (dateStr?: string) => {
       if (!dateStr) return '长期有效';
       return new Date(dateStr).toLocaleDateString('zh-CN');
@@ -1615,6 +1696,7 @@ function App() {
     );
   };
 
+  /** 渲染连接参数单列表单，保持标签和输入图标布局一致。 */
   const renderStep1 = () => {
     const fields: { key: keyof KingdeeBaseParams; label: string; icon: string; placeholder: string; type?: string }[] = [
       { key: 'SERVER_URL', label: '服务器地址', icon: '🌐', placeholder: 'https://xxxx/k3cloud' },
@@ -1690,6 +1772,7 @@ function App() {
     );
   };
 
+  /** 渲染表单搜索与自定义表单入口。 */
   const renderStep2 = () => (
     <div className="form-selection-page" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
       <div style={styles.formSelectionHeading}>
@@ -1903,6 +1986,7 @@ function App() {
     </div>
   );
 
+  /** 根据选中明细生成配置字段范围，并移除已失效的筛选排序项。 */
   const handleEntryNext = () => {
     const entries = entryOptions.filter(entry => selectedEntryKeys.includes(entry.key));
     if (entries.length !== selectedEntryKeys.length || entries.some(entry => !entry.supported)) {
@@ -1933,8 +2017,10 @@ function App() {
     setCurrentStep(3);
   };
 
+  /** 按连接与引用对象缓存元数据请求；失败后移除缓存以便重试。 */
   const loadReferenceFields = useCallback((formId: string): Promise<ReferenceField[]> => {
     const key = JSON.stringify([kingdeeConfig, formId]);
+    // 缓存键包含连接参数，切换账套后不能复用另一账套的引用元数据。
     const existing = referenceMetadataCache.current.get(key);
     if (existing) return existing;
     const request = (async () => {
@@ -1948,10 +2034,12 @@ function App() {
       return result.data.fields as ReferenceField[];
     })();
     referenceMetadataCache.current.set(key, request);
+    // 失败请求不长期缓存，用户重试时应重新访问元数据接口。
     request.catch(() => referenceMetadataCache.current.delete(key));
     return request;
   }, [kingdeeConfig]);
 
+  /** 接受服务端校验后的最终输出字段，并清理不再存在的筛选排序列。 */
   const applyConfiguredFields = (fields: SheetField[]) => {
     const ids = new Set(fields.map(field => field.id));
     setSheetFields(fields);
@@ -1960,7 +2048,9 @@ function App() {
     setSortConfigs(sorts => sorts.filter(sort => !sort.fieldId || ids.has(sort.fieldId)));
   };
 
+  /** 无配置时保留默认结构；有配置时交由服务端验证路径与输出类型。 */
   const handleFieldConfigNext = async () => {
+    // 保持默认时直接进入筛选；有配置才请求服务端验证别名、类型和多级路径。
     if (!fieldConfigs.length) { applyConfiguredFields(configurationFields); setCurrentStep(4); return; }
     setFieldConfigBusy(true);
     try {
@@ -1975,6 +2065,7 @@ function App() {
     finally { setFieldConfigBusy(false); }
   };
 
+  /** 渲染明细多选及表头填充方式。 */
   const renderEntryStep = () => (
     <div className="entry-step">
       <h3>📋 选择明细表</h3>
@@ -2017,10 +2108,13 @@ function App() {
     </div>
   );
 
+  /** 按稳定输出列标识查找当前字段定义。 */
   const getFieldById = (fieldId: string) => sheetFields.find((f) => f.id === fieldId);
+  /** 判断日期条件是否使用相对日期快捷项。 */
   const isPresetDateFilter = (filter: FilterCondition) => getFieldById(filter.fieldId)?.type === 'date'
     && filter.operator === '=' && DATE_QUICK_SELECTS.some(item => item.value === filter.value);
     
+    /** 按字段类型及操作符选择文本、数字、日期或枚举输入。 */
     const renderFilterValue = (filter: FilterCondition, groupIndex: number, conditionIndex: number) => {
       const field = getFieldById(filter.fieldId);
       if (isEmptyOperator(filter.operator)) return <span style={{ color: '#6b7280', fontSize: '12px', flex: 1 }}>无需填写筛选值</span>;
@@ -2072,6 +2166,7 @@ function App() {
       }
       return <input type={fieldKind(field) === 'number' ? 'number' : 'text'} step="any" style={{ ...styles.input, width: '150px', border: '1px solid #d9d9d9', borderRadius: '8px' }} value={scalarValue(filter.value)} onChange={(e) => updateFilter(groupIndex, conditionIndex, 'value', e.target.value)} placeholder="筛选值" />;
     };
+  /** 渲染筛选条件组与排序卡片，组内并且、组间或者。 */
   const renderStep3 = () => {
     if (fieldLoading) return <div style={styles.loading}>加载表单字段中...</div>;
     return (

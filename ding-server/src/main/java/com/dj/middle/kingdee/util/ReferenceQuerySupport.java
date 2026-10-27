@@ -9,13 +9,16 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.function.Function;
 
-/** Executes reference hops separately: ExecuteBillQuery does not support arbitrary nested joins. */
+/** 逐层执行引用查询，不能假定金蝶支持任意深度的嵌套联表。 分层批量读取引用值，按需执行后置筛选、排序与分页。 */
 public final class ReferenceQuerySupport {
+    /** 工具类仅提供静态方法，禁止外部实例化。 */
     private ReferenceQuerySupport() {}
+    /** 判断当前字段结构是否包含需要额外解析的引用路径。 */
     public static boolean required(JSONObject schema) {
         return schema.getJSONArray("fields").stream().anyMatch(item -> ((JSONObject) item).containsKey("referencePlan"));
     }
 
+    /** 收集需要后置引用解析的输出列标识。 */
     private static Set<String> configuredIds(JSONObject schema) {
         Set<String> ids = new HashSet<>();
         for (Object item : schema.getJSONArray("fields")) {
@@ -25,7 +28,9 @@ public final class ReferenceQuerySupport {
         return ids;
     }
 
+    /** 判断筛选和排序是否依赖引用值，决定能否仅补查当前页。 */
     public static boolean canStream(JSONObject schema, JSONObject params) {
+        // 只有引用值参与筛选或排序时才需要读取候选集；否则继续按页读取，控制调用量。
         Set<String> ids = configuredIds(schema);
         for (JSONArray group : groups(params.getJSONArray("filterConditions")))
             for (Object item : group) if (ids.contains(((JSONObject) item).getString("fieldId"))) return false;
@@ -34,6 +39,7 @@ public final class ReferenceQuerySupport {
         return true;
     }
 
+    /** 复制字段结构，将引用输出列投影为源引用内码。 */
     private static JSONObject projection(JSONObject schema) {
         JSONObject result = JSONObject.parseObject(schema.toJSONString());
         for (Object item : result.getJSONArray("fields")) {
@@ -43,11 +49,14 @@ public final class ReferenceQuerySupport {
         return result;
     }
 
+    /** 保留原分页查询，仅补查本页及分页衔接所需的引用值。 */
     public static JSONObject streamPage(JSONObject schema, JSONObject params, int offset, int limit, int syncLimit,
             Function<JSONObject, List<List<Object>>> query, Runnable onLimitReached) throws java.text.ParseException {
+        // 权益上限按输出记录计数，本页大小不能越过剩余可同步数量。
         int pageSize = Math.min(limit, Math.max(0, syncLimit - offset));
         boolean detail = schema.containsKey("selectedEntryKey");
         JSONObject projection = projection(schema);
+        // 明细页向前多取一行用于判断跨页单据衔接，并向后多取一行判断是否还有下一页。
         JSONObject request = detail ? DetailSyncSupport.query(projection, params, Math.max(0, offset - (offset > 0 ? 1 : 0)), pageSize + (offset > 0 ? 1 : 0) + 1)
                 : ContoryUtil.kingdeeToKingdeeQuery(projection, offset, pageSize + 1, params.getJSONArray("filterConditions"), params.getJSONArray("sortConfigs"));
         List<List<Object>> rows = new ArrayList<>();
@@ -55,6 +64,8 @@ public final class ReferenceQuerySupport {
             if (row.size() != schema.getJSONArray("fields").size()) throw new IllegalArgumentException("金蝶结果字段数量不一致");
             rows.add(new ArrayList<>(row));
         }
+        // 逐列逐层解析引用值；普通对象分批查询，扩展对象调用专用字典适配器并共享请求级缓存。
+        // 源查询先取得引用内码，再逐跳补充显示值；记录顺序和列位置保持不变。
         resolve(schema.getJSONArray("fields"), rows, query, new HashMap<>());
         int preceding = detail && offset > 0 ? 1 : 0;
         if (rows.size() > pageSize + preceding && (long) offset + pageSize >= syncLimit) onLimitReached.run();
@@ -67,6 +78,7 @@ public final class ReferenceQuerySupport {
         return result;
     }
 
+    /** 规范化引用内码的数字表示，将纯空白视为空引用。 */
     private static String id(Object value) {
         if (ContoryUtil.isEmptyValue(value)) return "";
         String text = value.toString();
@@ -74,14 +86,17 @@ public final class ReferenceQuerySupport {
         catch (NumberFormatException ignored) { return text; }
     }
 
+    /** 执行单据查询并识别金蝶嵌套业务错误。 */
     private static List<List<Object>> execute(Function<JSONObject, List<List<Object>>> query, JSONObject request) {
         List<List<Object>> rows = query.apply(request);
         KingdeeQueryResponse.requireSuccess(rows);
         return rows;
     }
 
+    /** 逐列逐层解析引用值；普通对象分批查询，扩展对象调用专用字典适配器并共享请求级缓存。 */
     private static void resolve(JSONArray fields, List<List<Object>> rows,
             Function<JSONObject, List<List<Object>>> query, Map<String, Map<String, Object>> cache) {
+        // 每列按自身引用计划执行，结果仍写回原列，新增输出列因而不会覆盖来源列。
         for (int column = 0; column < fields.size(); column++) {
             JSONArray plan = fields.getJSONObject(column).getJSONArray("referencePlan");
             if (plan == null) continue;
@@ -89,11 +104,13 @@ public final class ReferenceQuerySupport {
             for (List<Object> row : rows) values.add(row.get(column));
             for (Object item : plan) {
                 JSONObject hop = (JSONObject) item;
+                // 扩展对象使用专用接口及上下文缓存，不能对通用分组对象执行单据查询。
                 if (hop.getString("dictionaryId") != null) {
                     values = ExtensionDictionarySupport.resolve(hop, values, query, cache);
                     continue;
                 }
                 String pk = hop.getString("primaryKey"), key = hop.getString("fieldKey");
+                // 普通引用按完整跳转计划缓存；不同目标对象或取值字段不会共用错误的缓存。
                 Map<String, Object> lookup = cache.computeIfAbsent(hop.toJSONString(), unused -> new HashMap<>());
                 Set<String> pending = new LinkedHashSet<>();
                 for (Object value : values) {
@@ -101,6 +118,7 @@ public final class ReferenceQuerySupport {
                     if (!identity.isBlank() && !"0".equals(identity) && !lookup.containsKey(identity)) pending.add(identity);
                 }
                 List<String> ids = new ArrayList<>(pending);
+                // 引用内码分批查询并转义引号，避免请求过大或破坏筛选字面量。
                 for (int start = 0; start < ids.size(); start += 200) {
                     List<String> chunk = ids.subList(start, Math.min(ids.size(), start + 200));
                     String filter = pk + " in (" + String.join(",", chunk.stream()
@@ -111,6 +129,7 @@ public final class ReferenceQuerySupport {
                     for (List<Object> row : found) {
                         if (row.size() != 2) throw new IllegalArgumentException("引用对象查询字段数量不一致");
                         String identity = id(row.get(0));
+                        // 主键对应多个不同显示值通常意味着选到了多值属性，应明确拒绝而不是随意取一条。
                         if (!returned.add(identity) && !Objects.equals(lookup.get(identity), row.get(1)))
                             throw new IllegalArgumentException("引用对象同一主键返回多个显示值，请选择单值字段");
                         lookup.put(identity, row.get(1));
@@ -123,13 +142,16 @@ public final class ReferenceQuerySupport {
         }
     }
 
+    /** 把引用字段的日期值解析为用于比较的本地日期。 */
     private static LocalDate date(Object value) {
         try { return DateConverterUtil.stringToDate(value.toString()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate(); }
         catch (Exception e) { throw new IllegalArgumentException("引用字段包含无效日期", e); }
     }
 
+    /** 按字段类型在解析后的引用值上计算筛选结果。 */
     private static boolean matches(JSONObject field, Object actual, JSONObject condition) {
         String op = condition.getString("operator");
+        // 筛选中的空值口径与输出转换一致，纯空格不能被视作有内容的字段。
         boolean empty = ContoryUtil.isEmptyValue(actual);
         if ("为空".equals(op)) return empty;
         if ("不为空".equals(op)) return !empty;
@@ -175,7 +197,9 @@ public final class ReferenceQuerySupport {
         };
     }
 
+    /** 以空值、数字、日期或文本语义比较值，纯空白与空值保持一致。 */
     private static int compare(JSONObject field, Object a, Object b) {
+        // 排序也先统一空白和空值，防止把空格解析为数字或日期。
         if (ContoryUtil.isEmptyValue(a)) a = null;
         if (ContoryUtil.isEmptyValue(b)) b = null;
         if (a == b) return 0;
@@ -190,6 +214,7 @@ public final class ReferenceQuerySupport {
         return a.toString().compareTo(b.toString());
     }
 
+    /** 统一旧扁平筛选与条件组结构；无条件时生成一个无约束组。 */
     private static List<JSONArray> groups(JSONArray filters) {
         if (filters == null || filters.isEmpty()) return List.of(new JSONArray());
         if (!filters.getJSONObject(0).containsKey("conditions")) return List.of(filters);
@@ -198,6 +223,7 @@ public final class ReferenceQuerySupport {
         return groups;
     }
 
+    /** 对已经解析并筛选排序的记录分页，保持明细表头填充规则。 */
     public static JSONObject page(JSONObject schema, JSONObject params, List<List<Object>> rows,
             int offset, int limit, int syncLimit) throws java.text.ParseException {
         int pageSize = Math.min(limit, Math.max(0, syncLimit - offset));
@@ -215,10 +241,11 @@ public final class ReferenceQuerySupport {
         return result;
     }
 
-    /** Materialize only explicitly configured reference syncs so filtering/sorting precede pagination. */
+    /** 仅对显式配置且依赖引用值的同步读取候选集，确保筛选排序发生在分页之前。 分批读取候选记录，解析引用后执行筛选、去重和排序，最后由调用方分页。 */
     public static List<List<Object>> collect(JSONObject schema, JSONObject params,
             Function<JSONObject, List<List<Object>>> query) {
         JSONArray fields = schema.getJSONArray("fields");
+        // 建立稳定输出列到物理列位置的索引，同时拒绝失效的筛选排序配置。
         Map<String, Integer> columns = new HashMap<>();
         for (int i = 0; i < fields.size(); i++) columns.put(fields.getJSONObject(i).getString("id"), i);
         JSONArray filters = params.getJSONArray("filterConditions"), sorts = params.getJSONArray("sortConfigs");
@@ -229,9 +256,10 @@ public final class ReferenceQuerySupport {
             if (!columns.containsKey(sort.getString("fieldId")) || !Set.of("asc", "desc").contains(sort.getString("order")))
                 throw new IllegalArgumentException("排序字段或方向已失效");
         }
-        // Reuse existing validation for operators, values and date shortcuts without executing a nested join.
+        // 只复用操作符、取值和日期快捷项的校验，此处不执行嵌套路径查询。
         ContoryUtil.kingdeeToKingdeeQuery(schema, 0, 1, filters, sorts);
         JSONObject projection = projection(schema);
+        // 为明细的稳定排序补上必要序号列，这些辅助列只用于内部计算。
         JSONArray projectedFields = projection.getJSONArray("fields");
         JSONArray sequences = schema.getJSONArray("sequenceKeys");
         if (sequences != null) for (int i = 0; i < sequences.size(); i++) {
@@ -242,11 +270,13 @@ public final class ReferenceQuerySupport {
             }
         }
         Map<String, Map<String, Object>> cache = new HashMap<>();
+        // 多个或者条件组可能返回同一记录，按单据及明细主键去重并保留首次出现顺序。
         Map<String, List<Object>> unique = new LinkedHashMap<>();
         boolean detail = schema.containsKey("selectedEntryKey");
         List<Integer> identityColumns = new ArrayList<>(); identityColumns.add(0);
         if (detail) for (Object key : schema.getJSONArray("entryPrimaryIds")) identityColumns.add(columns.get(String.valueOf(key)));
         for (JSONArray group : groups(filters)) {
+            // 普通条件下推给金蝶；依赖配置后引用值的条件留到引用补查完成再计算。
             JSONArray normal = new JSONArray(), deferred = new JSONArray();
             for (Object item : group) {
                 JSONObject condition = (JSONObject) item;
@@ -262,6 +292,8 @@ public final class ReferenceQuerySupport {
                     if (row.size() != projectedFields.size()) throw new IllegalArgumentException("金蝶结果字段数量不一致");
                     rows.add(new ArrayList<>(row));
                 }
+                // 逐列逐层解析引用值；普通对象分批查询，扩展对象调用专用字典适配器并共享请求级缓存。
+                // 先解析引用再判断延后条件，确保结果总量与后续分页基于真实显示值。
                 resolve(fields, rows, query, cache);
                 for (List<Object> row : rows) {
                     boolean accept = true;
@@ -279,6 +311,7 @@ public final class ReferenceQuerySupport {
             }
         }
         List<List<Object>> rows = new ArrayList<>(unique.values());
+        // 先排序后分页；明细模式仍以单据分组，明细排序只在各单据内部生效。
         List<JSONObject> order = new ArrayList<>();
         int headCount = schema.getIntValue("headerFieldCount");
         if (sorts != null) for (Object item : sorts) {
@@ -296,7 +329,7 @@ public final class ReferenceQuerySupport {
             if (sequences != null) for (Object key : sequences) order.add(JSONObject.of("fieldId", key, "order", "asc"));
             for (Object key : schema.getJSONArray("entryPrimaryIds")) order.add(JSONObject.of("fieldId", key, "order", "asc"));
         }
-        // Stable ordering also applies when separate OR groups contribute different source rows.
+        // 不同或者条件组贡献的记录合并后，同样应用稳定排序。
         rows.sort((a, b) -> {
             for (JSONObject sort : order) {
                 int column = columns.get(sort.getString("fieldId"));

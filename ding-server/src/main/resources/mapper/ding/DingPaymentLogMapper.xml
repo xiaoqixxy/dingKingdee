@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.ding.mapper.DingPaymentLogMapper">
 
+    <!-- DingPaymentLogResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingPaymentLog" id="DingPaymentLogResult">
 		<id     property="id"    column="id"    />
 		<result property="orderNo"    column="order_no"    />
@@ -20,12 +21,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    <result property="corpName" column="corp_name" />
     </resultMap>
 	
+	<!-- selectDingPaymentLogVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<sql id="selectDingPaymentLogVo">
         select corp_name, id, order_no, ding_corp_id, pay_channel, transaction_id, pay_amount, status, raw_data, 
                ext1, ext2, ext3, create_time
 		from (select source.*, tenant.corp_name from ding_payment_log source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
+    <!-- selectDingPaymentLogList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingPaymentLogList" parameterType="com.dj.middle.ding.domain.DingPaymentLog" resultMap="DingPaymentLogResult">
 	    <include refid="selectDingPaymentLogVo"/>
 		<where>
@@ -45,21 +48,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by id desc
 	</select>
 	
+	<!-- selectDingPaymentLogById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingPaymentLogById" parameterType="Long" resultMap="DingPaymentLogResult">
 		<include refid="selectDingPaymentLogVo"/>
 		where id = #{id}
 	</select>
 	
+	<!-- selectDingPaymentLogByOrderNo：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingPaymentLogByOrderNo" parameterType="String" resultMap="DingPaymentLogResult">
 		<include refid="selectDingPaymentLogVo"/>
 		where order_no = #{orderNo}
 		order by id desc
 	</select>
 	
+	<!-- deleteDingPaymentLogById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteDingPaymentLogById" parameterType="Long">
   		delete from ding_payment_log where id = #{id}
   	</delete>
   	
+  	<!-- deleteDingPaymentLogByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
   	<delete id="deleteDingPaymentLogByIds" parameterType="Long">
   		delete from ding_payment_log where id in
   		<foreach collection="array" item="id" open="(" separator="," close=")">
@@ -67,6 +74,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
+    <!-- updateDingPaymentLog：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateDingPaymentLog" parameterType="com.dj.middle.ding.domain.DingPaymentLog">
   		update ding_payment_log
   		<set>
@@ -84,6 +92,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
+    <!-- insertDingPaymentLog：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingPaymentLog" parameterType="com.dj.middle.ding.domain.DingPaymentLog" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_payment_log(
             create_time,

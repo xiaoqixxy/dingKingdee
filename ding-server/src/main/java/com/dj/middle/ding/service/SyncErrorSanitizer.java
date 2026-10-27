@@ -2,21 +2,25 @@ package com.dj.middle.ding.service;
 
 import java.util.Collection;
 
-/** Only used for selected error messages, never for storing raw response/request bodies. */
+/** 仅处理选定的错误信息，不保存原始请求或响应正文。 同步异常信息和堆栈的凭证脱敏。 */
 final class SyncErrorSanitizer {
+    /** 工具类仅提供静态方法，禁止外部实例化。 */
     private SyncErrorSanitizer() {}
 
+    /** 生成可展示的脱敏错误信息，并清理控制字符。 */
     static String sanitize(String message, Collection<String> secrets) {
         String result = redact(message, secrets).replaceAll("[\\p{Cntrl}]", " ");
         return result.substring(0, Math.min(result.length(), 1000));
     }
 
+    /** 将异常堆栈转换为脱敏文本，供后台排查。 */
     static String stackTrace(Throwable error, Collection<String> secrets) {
         java.io.StringWriter text = new java.io.StringWriter();
         error.printStackTrace(new java.io.PrintWriter(text));
         return redact(text.toString(), secrets);
     }
 
+    /** 删除错误文本中的凭证值及已知敏感参数。 */
     private static String redact(String message, Collection<String> secrets) {
         if (message == null) return "";
         String result = message;

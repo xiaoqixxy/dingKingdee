@@ -2,6 +2,7 @@
   <div class="app-container business-page">
     <div class="business-heading"><span class="business-eyebrow">业务工作空间</span><h1>💎 产品与套餐</h1><p>配置套餐价格、周期与同步权益。</p></div>
     <h2 class="business-filter-title">🔎 筛选条件</h2>
+    <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
       <el-form-item label="产品名称" prop="productName">
         <el-input
@@ -74,6 +75,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- 列表按稳定记录主键展示，操作按钮遵循页面权限控制。 -->
     <el-table v-loading="loading" :data="productList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="产品ID" align="center" prop="id" width="80" />
@@ -131,7 +133,9 @@
     />
 
     <!-- 添加或修改产品配置对话框 -->
+    <!-- 独立业务弹窗，关闭和提交由脚本区统一处理。 -->
     <el-dialog :title="title" v-model="open" width="700px" append-to-body>
+      <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="产品名称" prop="productName">
           <el-input v-model="form.productName" placeholder="请输入产品名称" />
@@ -240,6 +244,7 @@ const rules = {
 const formRef = ref()
 const queryRef = ref()
 
+/** 按当前筛选和页码读取列表，并更新加载状态。 */
 function getList() {
   loading.value = true
   listProduct(queryParams).then(response => {
@@ -249,11 +254,13 @@ function getList() {
   })
 }
 
+/** 关闭编辑窗口并重置未提交的表单状态。 */
 function cancel() {
   open.value = false
   reset()
 }
 
+/** 重建编辑表单默认值并清理校验提示。 */
 function reset() {
   form.id = undefined
   form.productName = undefined
@@ -270,28 +277,33 @@ function reset() {
   proxy.resetForm('formRef')
 }
 
+/** 变更查询条件后从第一页重新加载。 */
 function handleQuery() {
   queryParams.pageNum = 1
   getList()
 }
 
+/** 清空查询表单并恢复默认分页。 */
 function resetQuery() {
   proxy.resetForm('queryRef')
   handleQuery()
 }
 
+/** 同步勾选行标识及批量操作按钮状态。 */
 function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.id)
   single.value = selection.length !== 1
   multiple.value = !selection.length
 }
 
+/** 重置表单并打开新增窗口。 */
 function handleAdd() {
   reset()
   open.value = true
   title.value = '添加产品配置'
 }
 
+/** 按行主键读取详情后打开编辑窗口。 */
 function handleUpdate(row) {
   reset()
   const id = row.id || ids.value
@@ -302,6 +314,7 @@ function handleUpdate(row) {
   })
 }
 
+/** 通过表单校验后按主键选择新增或更新接口，成功后刷新列表。 */
 function submitForm() {
   proxy.$refs.formRef.validate(valid => {
     if (valid) {
@@ -322,6 +335,7 @@ function submitForm() {
   })
 }
 
+/** 确认删除后调用接口，并重新加载列表。 */
 function handleDelete(row) {
   const idsArr = row.id || ids.value
   proxy.$modal.confirm('是否确认删除产品配置编号为"' + idsArr + '"的数据项？').then(() => {

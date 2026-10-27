@@ -18,40 +18,50 @@ import com.dj.middle.ding.mapper.DingTenantMapper;
 import com.dj.middle.ding.service.IDingSubscriptionService;
 import com.dj.middle.ding.util.DingTalkApiUtil;
 
+/** 企业订阅业务实现。 */
 @Service
 public class DingSubscriptionServiceImpl implements IDingSubscriptionService
 {
+    /** 记录当前业务处理过程及异常的日志对象。 */
     private static final Logger log = LoggerFactory.getLogger(DingSubscriptionServiceImpl.class);
+    /** 提供企业订阅数据访问能力的映射接口。 */
     @Autowired
     private DingSubscriptionMapper dingSubscriptionMapper;
 
+    /** 提供产品套餐数据访问能力的映射接口。 */
     @Autowired
     private DingProductMapper dingProductMapper;
 
+    /** 提供钉钉企业数据访问能力的映射接口。 */
     @Autowired
     private DingTenantMapper dingTenantMapper;
 
+    /** 访问钉钉企业与应用接口的工具。 */
     @Autowired
     private DingTalkApiUtil dingTalkApiUtil;
 
+    /** 查询指定主键的企业订阅记录。 */
     @Override
     public DingSubscription selectDingSubscriptionById(Long id)
     {
         return dingSubscriptionMapper.selectDingSubscriptionById(id);
     }
 
+    /** 查询指定企业的企业订阅记录。 */
     @Override
     public DingSubscription selectDingSubscriptionByCorpId(String dingCorpId)
     {
         return dingSubscriptionMapper.selectDingSubscriptionByCorpId(dingCorpId);
     }
 
+    /** 查询符合筛选条件的企业订阅列表。 */
     @Override
     public List<DingSubscription> selectDingSubscriptionList(DingSubscription dingSubscription)
     {
         return dingSubscriptionMapper.selectDingSubscriptionList(dingSubscription);
     }
 
+    /** 新增企业订阅记录。 */
     @Override
     public int insertDingSubscription(DingSubscription dingSubscription)
     {
@@ -59,6 +69,7 @@ public class DingSubscriptionServiceImpl implements IDingSubscriptionService
         return dingSubscriptionMapper.insertDingSubscription(dingSubscription);
     }
 
+    /** 更新企业订阅记录。 */
     @Override
     public int updateDingSubscription(DingSubscription dingSubscription)
     {
@@ -66,18 +77,21 @@ public class DingSubscriptionServiceImpl implements IDingSubscriptionService
         return dingSubscriptionMapper.updateDingSubscription(dingSubscription);
     }
 
+    /** 删除指定主键的企业订阅记录。 */
     @Override
     public int deleteDingSubscriptionById(Long id)
     {
         return dingSubscriptionMapper.deleteDingSubscriptionById(id);
     }
 
+    /** 删除指定主键集合的企业订阅记录。 */
     @Override
     public int deleteDingSubscriptionByIds(Long[] ids)
     {
         return dingSubscriptionMapper.deleteDingSubscriptionByIds(ids);
     }
 
+    /** 读取企业当前订阅，缺失时按既有规则登记默认产品权益。 */
     @Override
     public DingProduct getOrRegisterDefaultProduct(String dingCorpId)
     {
@@ -111,6 +125,7 @@ public class DingSubscriptionServiceImpl implements IDingSubscriptionService
         return defaultProduct;
     }
 
+    /** 根据订阅关联企业更新钉钉企业信息。 */
     private void syncDingTenantInfo(String dingCorpId)
     {
         DingTenant existingTenant = dingTenantMapper.selectDingTenantByCorpId(dingCorpId);

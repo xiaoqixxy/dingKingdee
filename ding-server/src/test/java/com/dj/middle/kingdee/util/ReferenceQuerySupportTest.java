@@ -8,7 +8,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** ReferenceQuerySupportTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class ReferenceQuerySupportTest {
+    /** 生成当前测试使用的字段结构与引用计划。 */
     private JSONObject schema() {
         return JSONObject.of("Id", "ORDER", "fields", JSONArray.of(
                 JSONObject.of("id", "FID", "type", "text", "filterType", "number", "isPrimary", true),
@@ -16,9 +18,12 @@ class ReferenceQuerySupportTest {
                         JSONObject.of("formId", "MATERIAL", "primaryKey", "MID", "fieldKey", "FUnit"),
                         JSONObject.of("formId", "UNIT", "primaryKey", "UID", "fieldKey", "FName")))));
     }
+    /** 构造单个筛选条件。 */
     private JSONObject condition(String op, Object value) { return JSONObject.of("fieldId", "Ref.FName", "operator", op, "value", value); }
+    /** 构造当前场景需要的同步配置参数。 */
     private JSONObject params(JSONObject... conditions) { return JSONObject.of("filterConditions", JSONArray.of(JSONObject.of("conditions", JSONArray.of((Object[]) conditions)))); }
 
+    /** 模拟单据与引用对象的查询响应，验证请求字段及分页。 */
     private Function<JSONObject, List<List<Object>>> query(List<List<Object>> source, AtomicInteger sourceCalls) {
         return request -> {
             String form = request.getString("FormId");
@@ -44,6 +49,7 @@ class ReferenceQuerySupportTest {
         };
     }
 
+    /** 验证：逐跳解析后先筛选再分页，并保留别名与列标识。 */
     @Test void resolvesHopsFiltersBeforePaginationAndPreservesAliasesAndColumnIds() throws Exception {
         List<List<Object>> source = new ArrayList<>();
         for (int i = 1; i <= 305; i++) source.add(List.of(i, i <= 300 ? 1 : 2));
@@ -60,6 +66,7 @@ class ReferenceQuerySupportTest {
         assertEquals(2, last.getJSONArray("records").size()); assertFalse(last.getBooleanValue("hasMore"));
     }
 
+    /** 验证：或者条件组结果去重且空引用仍为空。 */
     @Test void orGroupsDeduplicateRowsAndNullReferencesRemainEmpty() {
         List<List<Object>> source = List.of(List.of(1, 1), List.of(2, 2), Arrays.asList(3, null));
         JSONObject params = params(condition("包含", "alpha"));
@@ -70,6 +77,7 @@ class ReferenceQuerySupportTest {
         assertEquals(1, empty.size()); assertNull(empty.get(0).get(1));
     }
 
+    /** 验证：按配置引用值排序发生在分页之前。 */
     @Test void configuredReferenceSortPrecedesPagination() {
         List<List<Object>> source = List.of(List.of(1, 1), List.of(2, 2));
         JSONObject params = new JSONObject();
@@ -78,6 +86,7 @@ class ReferenceQuerySupportTest {
         assertEquals(List.of(2, "zeta"), rows.get(0));
     }
 
+    /** 验证：引用业务错误不伪装为查不到数据。 */
     @Test void referenceBusinessErrorsAreNotTreatedAsMissingValues() {
         JSONObject schema = schema();
         assertThrows(KingdeeQueryException.class, () -> ReferenceQuerySupport.collect(schema, new JSONObject(), request -> {
@@ -86,6 +95,7 @@ class ReferenceQuerySupportTest {
         }));
     }
 
+    /** 验证：仅调整显示属性时只补查当前页并遵守限额。 */
     @Test void defaultDisplayChangesResolveOnlyTheRequestedPageAndHonorLimits() throws Exception {
         JSONObject schema = schema();
         assertTrue(ReferenceQuerySupport.canStream(schema, new JSONObject()));
@@ -107,6 +117,7 @@ class ReferenceQuerySupportTest {
         assertEquals(1, limits.get());
     }
 
+    /** 验证：候选集解析保留明细顺序且跨页抑制重复表头。 */
     @Test void materializedDetailGroupsKeepSequenceAndSuppressHeadersAcrossPages() throws Exception {
         JSONObject schema = schema();
         schema.getJSONArray("fields").add(1, JSONObject.of("id", "Entry_FEntryID", "type", "text", "filterType", "number"));

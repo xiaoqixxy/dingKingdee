@@ -15,6 +15,7 @@ import java.util.Map;
  * @author ruoyi
  * @see com.dj.middle.kingdee.service.impl.K3CloudProxyServiceImpl
  */
+/** 金蝶代理与钉钉数据源格式转换服务契约。 */
 public interface K3CloudProxyService {
 
     /**
@@ -80,6 +81,7 @@ public interface K3CloudProxyService {
      *         </pre>
      * @throws RuntimeException 当金蝶接口调用失败时抛出
      */
+    /** 读取选中表单的字段与明细元数据并返回前端结构。 */
     JSONObject sheetMeta(Map<String, Object> requestBody);
 
     /**
@@ -120,6 +122,7 @@ public interface K3CloudProxyService {
      * @throws ParseException 日期解析异常
      * @throws RuntimeException 当金蝶接口调用失败时抛出
      */
+    /** 按当前同步参数查询一页记录并包装为钉钉响应。 */
     JSONObject records(Map<String, Object> requestBody) throws ParseException;
 
     /**
@@ -133,6 +136,7 @@ public interface K3CloudProxyService {
      */
     JSONObject sheetMetaWithFormId(String selectedFormId, String paramsJson);
 
+    /** 返回引用对象的可选字段；扩展对象使用项目维护的字典结构。 */
     JSONObject referenceSchema(String formId, String paramsJson);
 
     /**

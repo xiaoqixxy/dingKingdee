@@ -6,24 +6,29 @@ import com.dj.middle.payment.config.DingPayConfig;
 import com.dj.middle.payment.dto.PaymentRequest;
 import com.dj.middle.payment.dto.PaymentResponse;
 
+/** 钉钉支付渠道的请求签名与二维码支付适配。 */
 @Component
 public class DingPayChannelImpl implements PaymentChannel
 {
+    /** 钉钉支付渠道配置。 */
     @Autowired
-    private DingPayConfig dingPayConfig;
+ private DingPayConfig dingPayConfig;
 
+    /** 返回当前支付渠道的编码。 */
     @Override
     public String getChannelCode()
     {
         return "ding_pay";
     }
 
+    /** 返回当前支付渠道的显示名称。 */
     @Override
     public String getChannelName()
     {
         return "钉钉支付";
     }
 
+    /** 调用当前支付渠道创建二维码支付订单并返回统一响应。 */
     @Override
     public PaymentResponse createQrPayment(PaymentRequest request)
     {
@@ -54,6 +59,7 @@ public class DingPayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 按支付渠道约定验证回调内容，返回验签结果。 */
     @Override
     public boolean verifyCallback(String rawData)
     {
@@ -69,6 +75,7 @@ public class DingPayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 读取接口访问令牌。 */
     private String getAccessToken()
     {
         try {
@@ -82,6 +89,7 @@ public class DingPayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 向钉钉支付网关发送POST请求并读取响应。 */
     private String httpPost(String url, String body) throws Exception
     {
         java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
@@ -102,6 +110,7 @@ public class DingPayChannelImpl implements PaymentChannel
         return sb.toString();
     }
 
+    /** 向钉钉支付网关发送GET请求并读取响应。 */
     private String httpGet(String url) throws Exception
     {
         java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
@@ -117,6 +126,7 @@ public class DingPayChannelImpl implements PaymentChannel
         return sb.toString();
     }
 
+    /** 按钉钉支付协议计算请求签名。 */
     private String computeSign(String content, String appSecret)
     {
         try {
@@ -129,6 +139,7 @@ public class DingPayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 把支付链接生成二维码图片并编码为Base64。 */
     private String generateQRCodeBase64(String content, int width, int height)
     {
         try {

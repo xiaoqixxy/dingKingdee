@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** EmployeeSyncTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class EmployeeSyncTest {
+    /** 构造不含业务凭证的最小元数据测试夹具。 */
     private JSONObject metadata() throws Exception {
         try (var input = getClass().getResourceAsStream("/employee-metadata.json")) {
             return JSONObject.parseObject(new String(Objects.requireNonNull(input).readAllBytes(),
@@ -16,6 +18,7 @@ class EmployeeSyncTest {
         }
     }
 
+    /** 验证：员工主证件读取关联内码，其他引用保持原显示值。 */
     @Test void employeeHeadQueriesCardIdAndKeepsOtherReferenceNames() throws Exception {
         JSONObject metadata = metadata();
         String before = metadata.toJSONString();
@@ -35,6 +38,7 @@ class EmployeeSyncTest {
         assertEquals("", ContoryUtil.getKingdeeFieldValue(card, null));
     }
 
+    /** 验证：员工明细查询也保留证件内码。 */
     @Test void employeeDetailQueriesAlsoKeepCardId() throws Exception {
         JSONObject params = new JSONObject();
         params.put("selectedEntryKey", "FPostEntity");

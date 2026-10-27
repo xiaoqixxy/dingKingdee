@@ -2,6 +2,7 @@
   <div class="app-container business-page">
     <div class="business-heading"><span class="business-eyebrow">业务工作空间</span><h1>▤ 表单模板管理</h1><p>维护可复用的金蝶表单定义。</p></div>
     <h2 class="business-filter-title">🔎 筛选条件</h2>
+    <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
       <el-form-item label="表单名称" prop="formName">
         <el-input
@@ -83,6 +84,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- 列表按稳定记录主键展示，操作按钮遵循页面权限控制。 -->
     <el-table v-loading="loading" :data="tableConfigList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键ID" align="center" prop="configId" />
@@ -125,7 +127,9 @@
     />
 
     <!-- 添加或修改金蝶表单配置对话框 -->
+    <!-- 独立业务弹窗，关闭和提交由脚本区统一处理。 -->
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+      <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="表单名称" prop="formName">
           <el-input v-model="form.formName" placeholder="请输入表单名称" />
@@ -161,6 +165,7 @@
     </el-dialog>
 
     <!-- 导入对话框 -->
+    <!-- 独立业务弹窗，关闭和提交由脚本区统一处理。 -->
     <el-dialog :title="upload.title" v-model="upload.open" width="400px" append-to-body>
       <el-upload
         ref="uploadRef"
@@ -250,6 +255,7 @@ const upload = reactive({
 })
 
 /** 查询金蝶表单配置列表 */
+/** 按当前筛选和页码读取列表，并更新加载状态。 */
 function getList() {
   loading.value = true
   listTableConfig(proxy.addDateRange(queryParams, dateRange.value)).then(response => {
@@ -260,12 +266,14 @@ function getList() {
 }
 
 /** 取消按钮 */
+/** 关闭编辑窗口并重置未提交的表单状态。 */
 function cancel() {
   open.value = false
   reset()
 }
 
 /** 表单重置 */
+/** 重建编辑表单默认值并清理校验提示。 */
 function reset() {
   form.configId = undefined
   form.formName = undefined
@@ -280,12 +288,14 @@ function reset() {
 }
 
 /** 搜索按钮操作 */
+/** 变更查询条件后从第一页重新加载。 */
 function handleQuery() {
   queryParams.pageNum = 1
   getList()
 }
 
 /** 重置按钮操作 */
+/** 清空查询表单并恢复默认分页。 */
 function resetQuery() {
   dateRange.value = []
   proxy.resetForm('queryRef')
@@ -293,6 +303,7 @@ function resetQuery() {
 }
 
 /** 多选框选中数据 */
+/** 同步勾选行标识及批量操作按钮状态。 */
 function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.configId)
   single.value = selection.length !== 1
@@ -300,6 +311,7 @@ function handleSelectionChange(selection) {
 }
 
 /** 新增按钮操作 */
+/** 重置表单并打开新增窗口。 */
 function handleAdd() {
   reset()
   open.value = true
@@ -307,6 +319,7 @@ function handleAdd() {
 }
 
 /** 修改按钮操作 */
+/** 按行主键读取详情后打开编辑窗口。 */
 function handleUpdate(row) {
   reset()
   const configId = row.configId || ids.value
@@ -318,6 +331,7 @@ function handleUpdate(row) {
 }
 
 /** 提交按钮 */
+/** 通过表单校验后按主键选择新增或更新接口，成功后刷新列表。 */
 function submitForm() {
   proxy.$refs.formRef.validate(valid => {
     if (valid) {
@@ -339,6 +353,7 @@ function submitForm() {
 }
 
 /** 删除按钮操作 */
+/** 确认删除后调用接口，并重新加载列表。 */
 function handleDelete(row) {
   const configIds = row.configId || ids.value
   proxy.$modal.confirm('是否确认删除金蝶表单配置编号为"' + configIds + '"的数据项？').then(() => {
@@ -350,6 +365,7 @@ function handleDelete(row) {
 }
 
 /** 导出按钮操作 */
+/** 使用当前条件导出业务记录。 */
 function handleExport() {
   proxy.download('kingdee/tableConfig/export', {
     ...queryParams
@@ -357,33 +373,39 @@ function handleExport() {
 }
 
 /** 导入按钮操作 */
+/** 打开导入窗口并准备上传状态。 */
 function handleImport() {
   upload.title = '金蝶表单配置导入'
   upload.open = true
 }
 
 /** 下载模板操作 */
+/** 下载当前业务的导入模板。 */
 function importTemplate() {
   proxy.download('kingdee/tableConfig/importTemplate', {
   }, `kingdee_table_config_template_${new Date().getTime()}.xlsx`)
 }
 
 /** 文件上传中处理 */
+/** 上传期间保持加载状态，防止重复提交。 */
 function handleFileUploadProgress(event, file, fileList) {
   upload.isUploading = true
 }
 
 /** 文件选择处理 */
+/** 更新待导入文件列表。 */
 function handleFileChange(file, fileList) {
   upload.selectedFile = file
 }
 
 /** 文件删除处理 */
+/** 移除未提交的导入文件。 */
 function handleFileRemove(file, fileList) {
   upload.selectedFile = null
 }
 
 /** 文件上传成功处理 */
+/** 显示服务端导入结果并刷新列表。 */
 function handleFileSuccess(response, file, fileList) {
   upload.open = false
   upload.isUploading = false
@@ -393,6 +415,7 @@ function handleFileSuccess(response, file, fileList) {
 }
 
 /** 提交上传文件 */
+/** 提交当前选择的导入文件。 */
 function submitFileForm() {
   const file = upload.selectedFile
   if (!file || !file.name.toLowerCase().endsWith('.xls') && !file.name.toLowerCase().endsWith('.xlsx')) {

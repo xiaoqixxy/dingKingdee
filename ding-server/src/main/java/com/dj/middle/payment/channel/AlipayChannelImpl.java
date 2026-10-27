@@ -14,14 +14,18 @@ import com.dj.middle.payment.config.AlipayConfig;
 import com.dj.middle.payment.dto.PaymentRequest;
 import com.dj.middle.payment.dto.PaymentResponse;
 
+/** 支付宝当面付二维码及回调验签适配。 */
 @Component
 public class AlipayChannelImpl implements PaymentChannel
 {
+    /** 支付宝应用与支付签名配置。 */
     @Autowired
     private AlipayConfig alipayConfig;
 
+    /** 支付客户端是否已完成初始化。 */
     private volatile boolean initialized = false;
 
+    /** 初始化支付宝支付客户端。 */
     private void init()
     {
         if (!initialized) {
@@ -43,21 +47,25 @@ public class AlipayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 返回当前支付渠道的编码。 */
     @Override
     public String getChannelCode()
     {
         return "alipay";
     }
 
+    /** 返回当前支付渠道的显示名称。 */
     @Override
     public String getChannelName()
     {
         return "支付宝";
     }
 
+    /** 调用当前支付渠道创建二维码支付订单并返回统一响应。 */
     @Override
     public PaymentResponse createQrPayment(PaymentRequest request)
     {
+        // 初始化支付宝支付客户端。
         init();
         try {
             AlipayTradePrecreateResponse response = Factory.Payment.FaceToFace()
@@ -74,9 +82,11 @@ public class AlipayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 按支付渠道约定验证回调内容，返回验签结果。 */
     @Override
     public boolean verifyCallback(String rawData)
     {
+        // 初始化支付宝支付客户端。
         init();
         try {
             Map<String, String> params = PaymentUtil.parseAliCallbackParams(rawData);
@@ -86,6 +96,7 @@ public class AlipayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 把支付链接生成二维码图片并编码为Base64。 */
     private String generateQRCodeBase64(String content, int width, int height)
     {
         try {

@@ -5,7 +5,9 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+/** 同步请求签名校验。 */
 public class SignatureUtil {
+    /** 接口签名计算使用的密钥。 */
     public static final String secretKey = "g8Kx3mPq7wE9jR5vN2yB4aH6cF1dL0sT";
 
     /**

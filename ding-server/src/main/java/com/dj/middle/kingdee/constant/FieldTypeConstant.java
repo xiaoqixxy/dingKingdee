@@ -75,6 +75,7 @@ public class FieldTypeConstant {
      * 用于 ContoryUtil 中的类型判断
      */
     public static final int FieldType_DATE = 61;
+    /** 金蝶数值类型字段的类型标识集合。 */
     public static final int FieldType_NUMBER = 106;
 
     /**
@@ -84,7 +85,10 @@ public class FieldTypeConstant {
      * 查询时需要追加 .FName 获取关联对象名称
      */
     public static final int FieldType_OBJ = 127;
+    /** 金蝶布尔类型字段的类型标识集合。 */
     public static final int FieldType_BOOLEN = 8;
+    /** 默认读取名称的引用对象元素类型集合。 */
     public static final List<Integer> ElementType_OBJ_FNAME =  List.of(16,44);
+    /** 引用对象元素类型集合。 */
     public static final List<Integer> ElementType_OBJ = List.of(30,31,44);
 }

@@ -14,7 +14,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** EnterpriseListJoinTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class EnterpriseListJoinTest {
+    /** 建立独立的内存数据库，并准备企业名称关联测试数据。 */
     private JdbcDataSource source() {
         var source=new JdbcDataSource();
         source.setURL("jdbc:h2:mem:"+UUID.randomUUID()+";MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1");
@@ -23,6 +25,7 @@ class EnterpriseListJoinTest {
         return source;
     }
 
+    /** 验证：关联企业名称时保留孤立业务记录且先筛选分页。 */
     @Test void recordPaginationRetainsOrphansAndFiltersBeforeJoining() {
         var source=source(); var jdbc=new JdbcTemplate(source);
         jdbc.execute("CREATE TABLE ding_sync_log(id bigint,ding_corp_id varchar(64),ding_form_id varchar(64),sync_count int,status int,error_msg varchar(100),create_time timestamp,trace_id varchar(64),execution_id bigint)");
@@ -44,6 +47,7 @@ class EnterpriseListJoinTest {
         }
     }
 
+    /** 验证：企业名称映射不影响原企业标识查询。 */
     @Test void subscriptionNameMappingPreservesCorpIdLookup() throws Exception {
         var source=source(); var jdbc=new JdbcTemplate(source);
         jdbc.execute("CREATE TABLE ding_product(id bigint,product_name varchar(100))");

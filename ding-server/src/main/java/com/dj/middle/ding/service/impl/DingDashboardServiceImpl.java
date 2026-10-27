@@ -17,8 +17,10 @@ import com.dj.middle.ding.service.IDingDashboardService;
  * 负责对 Mapper 返回的聚合数据进行日期补齐和码值转换，保证前端图表数据连续可读
  */
 @Service
+/** 补齐趋势日期并组装钉钉业务看板数据。 */
 public class DingDashboardServiceImpl implements IDingDashboardService
 {
+    /** 看板按日汇总时使用的日期格式。 */
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     /** 订单类型码值映射：1=新购 2=升级 3=降级 4=续费 */
@@ -38,9 +40,11 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         PAY_STATUS_MAP.put(3, "退款");
     }
 
+    /** 提供None数据访问能力的映射接口。 */
     @Autowired
     private DingDashboardMapper dingDashboardMapper;
 
+    /** 汇总企业、订单、订阅及同步等看板指标。 */
     @Override
     public Map<String, Object> selectOverview()
     {
@@ -52,6 +56,7 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         return overview;
     }
 
+    /** 按时间范围聚合订单趋势。 */
     @Override
     public List<Map<String, Object>> selectOrderTrend(int days)
     {
@@ -76,6 +81,7 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         return result;
     }
 
+    /** 按订单类型汇总数量及金额。 */
     @Override
     public List<Map<String, Object>> selectOrderTypeDist()
     {
@@ -98,6 +104,7 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         return result;
     }
 
+    /** 按支付状态聚合订单分布。 */
     @Override
     public List<Map<String, Object>> selectPayStatusDist()
     {
@@ -120,12 +127,14 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         return result;
     }
 
+    /** 按支付渠道聚合订单分布。 */
     @Override
     public List<Map<String, Object>> selectPayChannelDist()
     {
         return ensureList(dingDashboardMapper.selectPayChannelDist());
     }
 
+    /** 统计企业行业分布。 */
     @Override
     public List<Map<String, Object>> selectIndustryDist()
     {
@@ -145,6 +154,7 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         return result;
     }
 
+    /** 按日期统计同步变化。 */
     @Override
     public List<Map<String, Object>> selectSyncTrend(int days)
     {
@@ -172,6 +182,7 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         return result;
     }
 
+    /** 补齐日期后返回企业新增趋势。 */
     @Override
     public List<Map<String, Object>> selectTenantGrowth(int days)
     {
@@ -208,6 +219,7 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         return result;
     }
 
+    /** 按销量汇总产品排名。 */
     @Override
     public List<Map<String, Object>> selectTopProducts()
     {
@@ -251,6 +263,7 @@ public class DingDashboardServiceImpl implements IDingDashboardService
         return indexed;
     }
 
+    /** 将空查询结果转换为空集合，简化统计组装。 */
     private List<Map<String, Object>> ensureList(List<Map<String, Object>> raw)
     {
         return raw == null ? new ArrayList<>() : raw;

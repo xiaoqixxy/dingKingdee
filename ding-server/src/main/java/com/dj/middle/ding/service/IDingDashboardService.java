@@ -6,6 +6,7 @@ import java.util.Map;
 /**
  * 仪表盘统计 Service 接口
  */
+/** 钉钉业务看板统计契约。 */
 public interface IDingDashboardService
 {
     /** 顶部 KPI 概览 */

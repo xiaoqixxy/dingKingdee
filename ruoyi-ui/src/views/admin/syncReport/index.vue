@@ -26,6 +26,7 @@
       <el-card class="chart-card" shadow="never"><template #header><strong>同步条数与每日增减</strong></template><Echart v-if="hasData" :option="volumeChart" height="320px" /><el-empty v-else description="当前范围暂无执行记录，可切换历史单页口径查看旧日志" /></el-card>
       <el-card class="chart-card" shadow="never"><template #header><strong>执行状态趋势</strong></template><Echart v-if="hasData" :option="executionChart" height="300px" /><el-empty v-else description="暂无执行数据" /></el-card>
       <el-card class="chart-card" shadow="never"><template #header><div class="welcome-inner"><strong>最近异常执行（最多 10 条）</strong><span class="muted">完整堆栈请查看同步执行记录</span></div></template>
+        <!-- 列表按稳定记录主键展示，操作按钮遵循页面权限控制。 -->
         <el-table :data="report.errors" empty-text="当前范围没有异常执行" stripe>
           <el-table-column prop="id" label="执行编号" width="100" /><el-table-column prop="corp_name" label="企业名称" min-width="180" show-overflow-tooltip /><el-table-column prop="ding_corp_id" label="企业 ID" min-width="180" show-overflow-tooltip />
           <el-table-column label="状态" width="110"><template #default="{row}"><el-tag type="danger">{{ row.status==='PARTIAL'?'部分成功':'失败' }}</el-tag></template></el-table-column>
@@ -56,6 +57,7 @@ const cards=computed(()=>{const c=report.value.current;return [
   {label:'成功同步条数',value:format(c.records),sub:`较上周期 ${signed(c.change)} 条（${c.changePercent==null?'上周期为 0，无百分比':signed(Number(c.changePercent.toFixed(1)))+'%'}）`,icon:'⇅',color:'#9270CA'},
   {label:'平均执行耗时',value:c.averageDuration==null?'—':(c.averageDuration/1000).toFixed(2)+' 秒',sub:'已结束执行的分页处理累计耗时',icon:'◷',color:'#F6BD16'}
 ]})
+/** 组装共享的日期坐标轴、图例和提示框，再接收各图表的数据系列。 */
 function chart(series){return {color:['#5B8FF9','#5AD8A6','#E8684A','#F6BD16','#9270CA'],tooltip:{trigger:'axis'},legend:{top:0},grid:{left:65,right:30,top:45,bottom:30},xAxis:{type:'category',data:report.value.daily.map(r=>r.day)},yAxis:{type:'value',splitLine:{lineStyle:{type:'dashed'}}},series}}
 const volumeChart=computed(()=>chart([
   {name:'成功同步条数',type:'line',smooth:true,data:report.value.daily.map(r=>r.records)},
@@ -68,6 +70,7 @@ const executionChart=computed(()=>chart([
   {name:'达到同步上限',type:'bar',data:report.value.daily.map(r=>r.limited)},
   {name:'未结束',type:'bar',data:report.value.daily.map(r=>r.active)}
 ]))
+/** 加载当前数据集并以请求序号丢弃旧响应。 */
 async function load(){const id=++requestId;loading.value=true;failed.value=false;report.value=null;try{const res=await request({url:'/admin/sync-report',method:'get',params:{days:days.value,scope:scope.value}});if(id===requestId)report.value=res.data}catch{if(id===requestId)failed.value=true}finally{if(id===requestId)loading.value=false}}
 onMounted(load)
 </script>

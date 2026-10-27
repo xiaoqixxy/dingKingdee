@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.kingdee.mapper.KingdeeTableConfigMapper">
 
+    <!-- KingdeeTableConfigResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.kingdee.domain.KingdeeTableConfig" id="KingdeeTableConfigResult">
 		<id     property="configId"    column="config_id"    />
 		<result property="formName"    column="form_name"    />
@@ -20,12 +21,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="remark"      column="remark"       />
 	</resultMap>
 	
+	<!-- selectKingdeeTableConfigVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<sql id="selectKingdeeTableConfigVo">
         select config_id, form_name, form_key, form_config, sort_order, extend1, extend2, extend3, 
                create_by, create_time, update_by, update_time, remark 
 		from kingdee_table_config
     </sql>
 
+    <!-- selectKingdeeTableConfigList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectKingdeeTableConfigList" parameterType="com.dj.middle.kingdee.domain.KingdeeTableConfig" resultMap="KingdeeTableConfigResult">
 	    <include refid="selectKingdeeTableConfigVo"/>
 		<where>
@@ -45,20 +48,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by sort_order asc, config_id asc
 	</select>
 	
+	<!-- selectKingdeeTableConfigById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectKingdeeTableConfigById" parameterType="Long" resultMap="KingdeeTableConfigResult">
 		<include refid="selectKingdeeTableConfigVo"/>
 		where config_id = #{configId}
 	</select>
 	
+	<!-- checkFormKeyUnique：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="checkFormKeyUnique" parameterType="String" resultMap="KingdeeTableConfigResult">
 		<include refid="selectKingdeeTableConfigVo"/>
 		where form_key = #{formKey} limit 1
 	</select>
 	
+	<!-- deleteKingdeeTableConfigById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteKingdeeTableConfigById" parameterType="Long">
  		delete from kingdee_table_config where config_id = #{configId}
  	</delete>
  	
+ 	<!-- deleteKingdeeTableConfigByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
  	<delete id="deleteKingdeeTableConfigByIds" parameterType="Long">
  		delete from kingdee_table_config where config_id in
  		<foreach collection="array" item="configId" open="(" separator="," close=")">
@@ -66,6 +73,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
  	</delete>
 
+    <!-- updateKingdeeTableConfig：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateKingdeeTableConfig" parameterType="com.dj.middle.kingdee.domain.KingdeeTableConfig">
  		update kingdee_table_config
  		<set>
@@ -83,6 +91,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  		where config_id = #{configId}
  	</update>
  	
+    <!-- insertKingdeeTableConfig：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertKingdeeTableConfig" parameterType="com.dj.middle.kingdee.domain.KingdeeTableConfig">
  		insert into kingdee_table_config(
  			<if test="formName != null and formName != ''">form_name,</if>

@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
  * 仪表盘统计 Mapper
  * 提供各业务维度的聚合统计查询，返回结果统一使用 Map 承载
  */
+/** 业务看板的分组统计查询。 */
 public interface DingDashboardMapper
 {
     /**

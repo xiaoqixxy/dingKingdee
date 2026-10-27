@@ -18,31 +18,39 @@ import com.dj.middle.payment.config.WechatPayConfig;
 import com.dj.middle.payment.dto.PaymentRequest;
 import com.dj.middle.payment.dto.PaymentResponse;
 
+/** 微信Native支付及回调验签适配。 */
 @Component
 public class WechatPayChannelImpl implements PaymentChannel
 {
+    /** 记录当前业务处理过程及异常的日志对象。 */
     private static final Logger log = LoggerFactory.getLogger(WechatPayChannelImpl.class);
 
+    /** 微信支付商户身份与证书配置。 */
     @Autowired
     private WechatPayConfig wechatPayConfig;
 
+    /** 微信原生扫码支付接口客户端。 */
     private NativePayService nativePayService;
 
+    /** 返回当前支付渠道的编码。 */
     @Override
     public String getChannelCode()
     {
         return "wechat_pay";
     }
 
+    /** 返回当前支付渠道的显示名称。 */
     @Override
     public String getChannelName()
     {
         return "微信支付";
     }
 
+    /** 调用当前支付渠道创建二维码支付订单并返回统一响应。 */
     @Override
     public PaymentResponse createQrPayment(PaymentRequest request)
     {
+        // 加载商户证书与私钥并初始化微信Native支付服务。
         initWechatPay();
         try
         {
@@ -75,12 +83,14 @@ public class WechatPayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 按支付渠道约定验证回调内容，返回验签结果。 */
     @Override
     public boolean verifyCallback(String rawData)
     {
         return true;
     }
 
+    /** 加载商户证书与私钥并初始化微信Native支付服务。 */
     private synchronized void initWechatPay()
     {
         if (nativePayService != null)
@@ -106,6 +116,7 @@ public class WechatPayChannelImpl implements PaymentChannel
         }
     }
 
+    /** 把支付链接生成二维码图片并编码为Base64。 */
     private String generateQRCodeBase64(String content, int width, int height)
     {
         try

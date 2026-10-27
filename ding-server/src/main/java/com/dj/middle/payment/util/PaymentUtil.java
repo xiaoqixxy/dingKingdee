@@ -2,7 +2,9 @@ package com.dj.middle.payment.util;
 
 import java.util.Map;
 
+/** 支付通知参数的格式解析工具。 */
 public class PaymentUtil {
+    /** 将支付宝回调表单内容解析为键值参数。 */
     public static Map<String, String> parseAliCallbackParams(String rawData)
     {
         Map<String, String> params = new java.util.HashMap<>();

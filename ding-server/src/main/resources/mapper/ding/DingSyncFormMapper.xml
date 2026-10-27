@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.ding.mapper.DingSyncFormMapper">
 
+    <!-- DingSyncFormResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingSyncForm" id="DingSyncFormResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
@@ -17,11 +18,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    <result property="corpName" column="corp_name" />
     </resultMap>
 	
+	<!-- selectDingSyncFormVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<sql id="selectDingSyncFormVo">
         select corp_name, id, ding_corp_id, ding_form_id, form_name, source_system, status, ext1, ext2, ext3 
 		from (select source.*, tenant.corp_name from ding_sync_form source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
+    <!-- selectDingSyncFormList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingSyncFormList" parameterType="com.dj.middle.ding.domain.DingSyncForm" resultMap="DingSyncFormResult">
 	    <include refid="selectDingSyncFormVo"/>
 		<where>
@@ -44,30 +47,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by id desc
 	</select>
 	
+	<!-- selectDingSyncFormById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingSyncFormById" parameterType="Long" resultMap="DingSyncFormResult">
 		<include refid="selectDingSyncFormVo"/>
 		where id = #{id}
 	</select>
 	
+	<!-- selectDingSyncFormByCorpIdAndFormId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingSyncFormByCorpIdAndFormId" resultMap="DingSyncFormResult">
 		<include refid="selectDingSyncFormVo"/>
 		where ding_corp_id = #{dingCorpId} and ding_form_id = #{dingFormId}
 	</select>
 	
+	<!-- selectDingSyncFormByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingSyncFormByCorpId" parameterType="String" resultMap="DingSyncFormResult">
 		<include refid="selectDingSyncFormVo"/>
 		where ding_corp_id = #{dingCorpId}
 		order by id desc
 	</select>
 	
+	<!-- countByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="countByCorpId" parameterType="String" resultType="int">
 		select count(*) from ding_sync_form where ding_corp_id = #{dingCorpId} and status = 1
 	</select>
 	
+	<!-- deleteDingSyncFormById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteDingSyncFormById" parameterType="Long">
   		delete from ding_sync_form where id = #{id}
   	</delete>
   	
+  	<!-- deleteDingSyncFormByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
   	<delete id="deleteDingSyncFormByIds" parameterType="Long">
   		delete from ding_sync_form where id in
   		<foreach collection="array" item="id" open="(" separator="," close=")">
@@ -75,6 +84,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
+    <!-- updateDingSyncForm：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateDingSyncForm" parameterType="com.dj.middle.ding.domain.DingSyncForm">
   		update ding_sync_form
   		<set>
@@ -90,6 +100,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
+    <!-- insertDingSyncForm：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingSyncForm" parameterType="com.dj.middle.ding.domain.DingSyncForm" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_sync_form(
   			ding_corp_id,

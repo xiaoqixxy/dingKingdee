@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** MaterialGroupSyncTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class MaterialGroupSyncTest {
     // Minimal fixture of the failing tenant's BD_MATERIAL group metadata (no business rows).
+    /** 构造不含业务凭证的最小元数据测试夹具。 */
     private JSONObject metadata() {
         return JSONObject.parseObject("""
             {"Id":"BD_MATERIAL","Name":[{"Key":2052,"Value":"物料"}],"PkFieldName":"FMATERIALID","Entrys":[
@@ -19,6 +21,7 @@ class MaterialGroupSyncTest {
             """);
     }
 
+    /** 验证：分组默认取编码，其他引用保持默认名称。 */
     @Test void groupUsesNumberWhileOrdinaryReferencesKeepNames() throws Exception {
         JSONObject schema = DetailSyncSupport.schema(metadata(), new JSONObject());
         JSONObject query = ContoryUtil.kingdeeToKingdeeQuery(schema, 0, 300, null, null);
@@ -28,6 +31,7 @@ class MaterialGroupSyncTest {
         assertEquals("G001", result.getJSONArray("records").getJSONObject(0).getJSONObject("fields").getString("FMaterialGroup.FNumber"));
     }
 
+    /** 验证：明细模式不直接查询通用分组名称。 */
     @Test void detailModeAlsoAvoidsGenericGroupNameJoin() {
         JSONObject params = JSONObject.of("selectedEntryKey", "FEntity");
         JSONObject query = DetailSyncSupport.query(DetailSyncSupport.schema(metadata(), params), params, 0, 2);
@@ -35,6 +39,7 @@ class MaterialGroupSyncTest {
         assertFalse(query.getString("FieldKeys").contains("FMaterialGroup.FName"));
     }
 
+    /** 验证：业务错误保留类型与真实上游错误码。 */
     @Test void businessErrorKeepsTypedCauseAndRealCode() {
         var row = List.<Object>of(Map.of("Result", Map.of("ResponseStatus", Map.of(
             "IsSuccess", false, "ErrorCode", "500", "Errors", List.of(Map.of("Message", "对象名 'FormGroup_L' 无效。"))))));

@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.ding.mapper.DingSubscriptionMapper">
 
+    <!-- DingSubscriptionResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingSubscription" id="DingSubscriptionResult">
 		<id     property="id"    column="id"    />
 		<result property="dingCorpId"    column="ding_corp_id"    />
@@ -22,6 +23,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    <result property="corpName" column="corp_name" />
     </resultMap>
 	
+<!-- selectDingSubscriptionVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 <sql id="selectDingSubscriptionVo">
         select tenant.corp_name, s.id, s.ding_corp_id, s.product_id, s.product_type, s.start_time, s.end_time, s.auto_renew, 
                s.used_form_count, s.month_used_sync, s.status, p.product_name, s.ext1, s.ext2, s.ext3 
@@ -30,6 +32,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join ding_tenant tenant on tenant.ding_corp_id = s.ding_corp_id
     </sql>
 
+    <!-- selectDingSubscriptionList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingSubscriptionList" parameterType="com.dj.middle.ding.domain.DingSubscription" resultMap="DingSubscriptionResult">
 	    <include refid="selectDingSubscriptionVo"/>
 		<where>
@@ -49,20 +52,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by s.id desc
 	</select>
 	
+	<!-- selectDingSubscriptionById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingSubscriptionById" parameterType="Long" resultMap="DingSubscriptionResult">
 		<include refid="selectDingSubscriptionVo"/>
 		where s.id = #{id}
 	</select>
 	
+	<!-- selectDingSubscriptionByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingSubscriptionByCorpId" parameterType="String" resultMap="DingSubscriptionResult">
 		<include refid="selectDingSubscriptionVo"/>
 		where s.ding_corp_id = #{dingCorpId}
 	</select>
 	
+	<!-- deleteDingSubscriptionById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteDingSubscriptionById" parameterType="Long">
    		delete from ding_subscription where id = #{id}
    	</delete>
    	
+   	<!-- deleteDingSubscriptionByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
    	<delete id="deleteDingSubscriptionByIds" parameterType="Long">
    		delete from ding_subscription where id in
    		<foreach collection="array" item="id" open="(" separator="," close=")">
@@ -70,6 +77,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
    	</delete>
 
+    <!-- updateDingSubscription：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateDingSubscription" parameterType="com.dj.middle.ding.domain.DingSubscription">
    		update ding_subscription
    		<set>
@@ -89,6 +97,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
    		where id = #{id}
    	</update>
    	
+    <!-- insertDingSubscription：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingSubscription" parameterType="com.dj.middle.ding.domain.DingSubscription" useGeneratedKeys="true" keyProperty="id">
    		insert into ding_subscription(
    			ding_corp_id,

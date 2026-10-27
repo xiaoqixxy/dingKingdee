@@ -1,8 +1,11 @@
 package com.dj.middle.admin;
 import java.util.Map;
 import com.dj.common.exception.ServiceException;
+/** 后台业务记录查询的数据集白名单与SQL构造。 */
 public final class AdminRecordSql {
+ /** 维护数据集对应的固定表名、字段及连接关系。 */
  public record Dataset(String table,String time,String status,String number,String columns) {}
+ /** 仅允许预先登记的数据集，避免外部类型直接拼接表名。 */
  public static Dataset dataset(String kind) {
   return switch(kind) {
    case "syncLog" -> new Dataset("ding_sync_log","create_time","status","ding_form_id","id,ding_corp_id,ding_form_id,sync_count,status,error_msg,create_time,trace_id,execution_id");
@@ -15,6 +18,7 @@ public final class AdminRecordSql {
    default -> throw new ServiceException("不支持的记录类型",400);
   };
  }
+ /** 按允许的筛选参数生成参数化条件。 */
  private static String where(Dataset d,AdminRecordQuery q) {
   StringBuilder s=new StringBuilder(" WHERE 1=1");
   if(has(q.getDingCorpId()))s.append(" AND ding_corp_id=#{q.dingCorpId}");
@@ -25,8 +29,12 @@ public final class AdminRecordSql {
   if(has(q.getEndDate()))s.append(" AND ").append(d.time()).append(" < DATE_ADD(#{q.endDate},INTERVAL 1 DAY)");
   return s.toString();
  }
+ /** 判断筛选参数是否存在有效内容。 */
  private static boolean has(String s){return s!=null&&!s.isBlank();}
+ /** 按数据集定义生成分页查询SQL。 */
  public static String list(Map<String,Object> p){Dataset d=dataset((String)p.get("kind"));return "SELECT records.*,tenant.corp_name FROM (SELECT "+d.columns()+" FROM "+d.table()+where(d,(AdminRecordQuery)p.get("q"))+" ORDER BY "+d.time()+" DESC,id DESC LIMIT #{q.pageSize} OFFSET #{q.offset}) records LEFT JOIN ding_tenant tenant ON tenant.ding_corp_id=records.ding_corp_id ORDER BY records."+d.time()+" DESC,records.id DESC";}
+ /** 按相同条件生成总数查询SQL。 */
  public static String count(Map<String,Object> p){Dataset d=dataset((String)p.get("kind"));return "SELECT COUNT(*) FROM "+d.table()+where(d,(AdminRecordQuery)p.get("q"));}
+ /** 使用数据集白名单生成单条记录查询SQL。 */
  public static String detail(Map<String,Object> p){Dataset d=dataset((String)p.get("kind"));return "SELECT "+d.columns()+(java.util.Set.of("execution","apiLog").contains((String)p.get("kind"))?",error_stack":"")+" FROM "+d.table()+" WHERE id=#{id}";}
 }

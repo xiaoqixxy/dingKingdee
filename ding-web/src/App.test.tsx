@@ -56,6 +56,7 @@ async function openEntries() {
   await screen.findByText('📋 选择明细表');
 }
 
+// 验证多明细选择、两种表头模式及缺少钉钉宿主时的明确提示。
 test('metadata multiple selection, both modes, selected fields and real missing-host error', async () => {
   await openEntries();
   fireEvent.click(screen.getByRole('checkbox', { name: /明细信息/ }));
@@ -74,6 +75,7 @@ test('metadata multiple selection, both modes, selected fields and real missing-
   await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ selectedEntryKeys: ['FEntity', 'FSecond'], headerFillMode: 'ALL_ROWS', configVersion: 2 })));
 });
 
+// 切换明细清理失效筛选，返回时保留填充方式。
 test('changing entity removes stale filters, going back retains the selected mode', async () => {
   await openEntries();
   fireEvent.click(screen.getByRole('checkbox', { name: /明细信息/ }));
@@ -90,6 +92,7 @@ test('changing entity removes stale filters, going back retains the selected mod
   expect(screen.getByText('已清除不属于当前明细表的筛选和排序条件')).toBeInTheDocument();
 });
 
+// 无明细表单继续使用纯表头流程。
 test('no entries keeps header-only workflow', async () => {
   options = [];
   await openEntries();
@@ -99,6 +102,7 @@ test('no entries keeps header-only workflow', async () => {
   expect(screen.getAllByRole('option', { name: '单据编号' }).length).toBeGreaterThan(0);
 });
 
+// 元数据失败时不推进向导。
 test('metadata failure does not advance', async () => {
   schemaFails = true;
   render(<App />);
@@ -109,6 +113,7 @@ test('metadata failure does not advance', async () => {
 });
 
 
+// 重新打开并提交后保留表单、明细、分组筛选和排序。
 test('saved form, detail mode, grouped filters and sorting survive reopening and submission', async () => {
   savedSelection = {
     selectedFormId: 'ER_ExpenseRequest', selectedFormName: '费用申请单',
@@ -131,6 +136,7 @@ test('saved form, detail mode, grouped filters and sorting survive reopening and
   await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining(savedSelection)));
 });
 
+// 自定义表单在加载选项及返回时仍被保留。
 test('saved custom form survives loading options and returning to form selection', async () => {
   savedSelection = { selectedFormId: 'CUSTOM_FORM', selectedFormName: '自定义单据' };
   await openEntries();
@@ -169,6 +175,7 @@ async function advanceRestoredConfig() {
   clickNext();
 }
 
+// 兼容两个宿主接口层级并保留未修改配置。
 test.each([true, false])('DingTalk modify settings restores current sheet and preserves untouched values (modern=%s)', async modern => {
   const read = jest.fn().mockResolvedValue(modern ? existingSync : JSON.stringify(existingSync));
   const save = jest.fn().mockResolvedValue(undefined);
@@ -182,7 +189,7 @@ test.each([true, false])('DingTalk modify settings restores current sheet and pr
     { conditions: [{ fieldId: 'FBillNo', operator: '=', value: 'UPDATED' }] }, existingSync.filterConditions[1],
   ] };
   expect(save.mock.calls[0][0]).toEqual(expect.objectContaining(expected));
-  // Reopen the plugin, as DingTalk does when modifying settings again.
+  // 模拟钉钉再次修改同步设置时重新打开插件。
   first.unmount();
   read.mockResolvedValue(save.mock.calls[0][0]);
   render(<App />);
@@ -190,6 +197,7 @@ test.each([true, false])('DingTalk modify settings restores current sheet and pr
   expect(screen.getByDisplayValue('UPDATED')).toBeInTheDocument();
 });
 
+// 修改已有同步时不可退回连接创建，反复返回不丢配置。
 test('editing cannot return above form selection and keeps settings on repeated back navigation', async () => {
   mockDingTalkHost(jest.fn().mockResolvedValue(existingSync), jest.fn());
   render(<App />);
@@ -208,12 +216,14 @@ test('editing cannot return above form selection and keeps settings on repeated 
   expect(params).toEqual(expect.objectContaining({ CID: existingSync.CID, APP_SECRET: existingSync.APP_SECRET }));
 });
 
+// 新数据源无保存配置时仍可创建连接。
 test.each([null, {}, ''])('new sync with no host config keeps connection creation available (%j)', async config => {
   mockDingTalkHost(jest.fn().mockResolvedValue(config), jest.fn());
   render(<App />);
   expect(await screen.findByRole('button', { name: '+ 新增配置' })).toBeInTheDocument();
 });
 
+// 配置恢复失败时阻止空配置覆盖，重试后恢复。
 test('failed config read blocks empty submission and retry restores saved settings', async () => {
   const read = jest.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValue(existingSync);
   mockDingTalkHost(read, jest.fn());
@@ -226,6 +236,7 @@ test('failed config read blocks empty submission and retry restores saved settin
 });
 
 
+// 严格模式重复副作用时宿主仍只初始化一次。
 test('StrictMode restores settings when the SDK initializes only once', async () => {
   mockDingTalkHost(jest.fn().mockResolvedValue(existingSync), jest.fn());
   let ready: () => void = () => {};
@@ -236,6 +247,7 @@ test('StrictMode restores settings when the SDK initializes only once', async ()
   await advanceRestoredConfig();
 });
 
+// 打开不同钉钉表时读取各自的同步配置。
 test('opening a different sheet reads its own configuration', async () => {
   const read = jest.fn().mockResolvedValue(existingSync);
   mockDingTalkHost(read, jest.fn());
@@ -253,6 +265,7 @@ test('opening a different sheet reads its own configuration', async () => {
 });
 
 
+// 修改配置时字段失败可重试且不暴露不适用前置步骤。
 test('editing schema failure provides retry without exposing earlier steps', async () => {
   schemaFails = true;
   mockDingTalkHost(jest.fn().mockResolvedValue(existingSync), jest.fn());
@@ -266,6 +279,7 @@ test('editing schema failure provides retry without exposing earlier steps', asy
 });
 
 
+// 文本提供包含和空值操作符，并正确保存无取值条件。
 test('text filters offer substring and no-value operators and save empty checks', async () => {
   await openEntries();
   clickNext();
@@ -288,6 +302,7 @@ test('text filters offer substring and no-value operators and save empty checks'
 });
 
 
+// 登录校验必须返回明确的认证成功，不把空数据或业务失败视为校验通过。
 test.each([
   [{ code: 0, data: [] }, '服务端尚未返回身份校验结果，请先更新后端'],
   [{ code: 500, msg: '身份认证失败' }, '身份认证失败'],
@@ -307,6 +322,7 @@ test.each([
 });
 
 
+// 字段下拉按名称编码过滤且失焦后恢复真实选项。
 test('filter dropdown accepts text, filters names and codes, selects and restores on blur', async () => {
   await openEntries();
   fireEvent.click(screen.getByRole('checkbox', { name: /明细信息/ }));
@@ -341,6 +357,7 @@ test('filter dropdown accepts text, filters names and codes, selects and restore
 });
 
 
+// 可选字段别名恢复后进入筛选并保持稳定标识。
 test('optional field aliases restore, reach filters and save with stable field IDs', async () => {
   savedSelection = { selectedFormId: 'ER_ExpenseRequest', selectedFormName: '费用申请单', fieldConfigs: [{ fieldId: 'FBillNo', alias: '原单号' }] };
   await openEntries();
@@ -358,6 +375,7 @@ test('optional field aliases restore, reach filters and save with stable field I
 });
 
 
+// 新增引用输出列进入筛选并保存独立标识。
 test('added reference columns reach filtering and are saved with independent output IDs', async () => {
   options = [{ ...entries[0], fields: [...entries[0].fields, { id: 'FEntity_FMaterial.FName', name: '物料', type: 'text', referenceFormId: 'MATERIAL', referenceKey: 'FMaterial' } as any] }];
   await openEntries();

@@ -11,7 +11,9 @@ import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** DatabaseRepairRegressionTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class DatabaseRepairRegressionTest {
+    /** 验证：业务Mapper可解析且创建时间正确写入。 */
     @Test
     void businessMappersParseAndCreationTimeIsPersisted() throws Exception {
         Configuration config = new Configuration();
@@ -39,16 +41,19 @@ class DatabaseRepairRegressionTest {
         assertTrue(sql.contains("s.product_type ="));
     }
 
+    /** 验证：新订阅按套餐类型计算年费权益，不误用订单类型。 */
     @Test
     void newAnnualSubscriptionUsesProductTypeInsteadOfNewPurchaseOrderType() throws Exception {
         assertProductType(false);
     }
 
+    /** 验证：更新已有年费订阅时仍按套餐类型判断有效期。 */
     @Test
     void existingAnnualSubscriptionUsesProductTypeInsteadOfNewPurchaseOrderType() throws Exception {
         assertProductType(true);
     }
 
+    /** 断言订阅使用产品套餐类型而非订单类型。 */
     private void assertProductType(boolean existing) throws Exception {
         DingProduct product = new DingProduct();
         product.setId(1L);
@@ -75,6 +80,7 @@ class DatabaseRepairRegressionTest {
         assertEquals(2, saved.get().getProductType());
     }
 
+    /** 为隔离测试注入所需依赖。 */
     private void inject(Object object, String name, Object value) throws Exception {
         var field = object.getClass().getDeclaredField(name);
         field.setAccessible(true);

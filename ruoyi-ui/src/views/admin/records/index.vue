@@ -3,6 +3,7 @@
   <div class="record-heading"><div><span class="eyebrow">业务工作空间</span><h1>{{ config.icon }} {{ config.title }}</h1><p>{{ config.subtitle }}</p></div><div><el-button v-if="kind==='execution'" v-hasPermi="['ding:syncLog:list']" @click="$router.push('/integration/syncLog')">历史同步日志</el-button><el-button v-if="kind==='refund'" v-hasPermi="['ding:refund:add']" type="primary" icon="Plus" @click="openRefund">申请退款</el-button></div></div>
   <el-card shadow="never" class="record-card">
    <template #header><strong>🔎 筛选条件</strong><span class="filter-note">企业ID与业务编号精确匹配</span></template>
+   <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
    <el-form :model="query" label-position="top" class="record-filter" @submit.prevent="search">
     <el-form-item label="企业ID"><el-input v-model="query.dingCorpId" clearable placeholder="输入钉钉企业ID" @keyup.enter="search" /></el-form-item>
     <el-form-item :label="config.no"><el-input v-model="query.businessNo" clearable :placeholder="'输入'+config.no" @keyup.enter="search" /></el-form-item>
@@ -15,6 +16,7 @@
   <el-card shadow="never" class="record-card">
    <template #header><strong>{{ config.title }}</strong><span class="filter-note">共 {{ total }} 条</span></template>
    <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" class="mb16" />
+   <!-- 列表按稳定记录主键展示，操作按钮遵循页面权限控制。 -->
    <el-table v-loading="loading" :data="rows" row-key="id" empty-text="暂无记录，产生业务活动后将在这里显示">
     <el-table-column v-for="[key,label,width] in config.columns" :key="key" :prop="key" :label="label" :min-width="width" show-overflow-tooltip><template #default="{row}"><el-tag v-if="['status','result','change_type'].includes(key)" :type="tagType(row[key])" effect="light">{{ config.statuses[row[key]] || row[key] }}</el-tag><span v-else>{{ displayValue(key,row[key]) }}</span></template></el-table-column>
     <el-table-column label="操作" width="150" fixed="right"><template #default="{row}"><el-button link type="primary" @click="showDetail(row)">详情</el-button><el-button v-if="kind==='refund'&&row.status==='REQUESTED'" v-hasPermi="['ding:refund:cancel']" link type="danger" @click="cancel(row)">撤销</el-button></template></el-table-column>
@@ -28,6 +30,7 @@
   <el-drawer v-model="stackOpen" title="完整错误堆栈（已脱敏）" size="min(1000px, 100vw)" append-to-body><pre v-loading="stackLoading" class="detail-value">{{ stackText }}</pre></el-drawer>
   <el-drawer v-model="refundOpen" title="申请退款" size="min(560px, 100vw)" :close-on-click-modal="!saving">
    <el-alert title="提交后生成待处理申请，不会立即退回资金，请在支付平台完成退款处理。" type="info" :closable="false" show-icon />
+   <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
    <el-form ref="refundForm" :model="refund" :rules="refundRules" label-position="top" class="refund-form">
     <el-form-item label="📋 订单号" prop="orderNo"><el-input v-model="refund.orderNo" maxlength="64" placeholder="填写已支付订单号" /></el-form-item>
     <el-form-item label="🏦 支付商户号" prop="merchantAccountId"><el-input v-model="refund.merchantAccountId" maxlength="64" placeholder="填写原支付订单所属商户号" /></el-form-item>
@@ -55,27 +58,43 @@ const stackOpen=ref(false),stackText=ref(''),stackLoading=ref(false)
 const refundOpen=ref(false),saving=ref(false),refundForm=ref(),refund=reactive({})
 const refundRules={orderNo:[{required:true,message:'请输入订单号',trigger:'blur'}],merchantAccountId:[{required:true,message:'请输入商户号',trigger:'blur'}],amount:[{required:true,message:'请输入金额',trigger:'blur'}],reason:[{required:true,message:'请输入退款原因',trigger:'blur'}]}
 let sequence=0,detailSequence=0
+/** 加载当前数据集并以请求序号丢弃旧响应。 */
 async function load(){const seq=++sequence;loading.value=true;error.value='';try{const res=await listRecords(props.kind,{...query,startDate:dates.value?.[0],endDate:dates.value?.[1]});if(seq===sequence){rows.value=res.rows;total.value=res.total}}catch{if(seq===sequence){error.value='记录加载失败，请重试或检查访问权限。';rows.value=[];total.value=0}}finally{if(seq===sequence)loading.value=false}}
+/** 把列表页码重置为第一页后查询。 */
 function search(){query.pageNum=1;load()}
+/** 重建编辑表单默认值并清理校验提示。 */
 function reset(){Object.assign(query,{pageNum:1,pageSize:20,dingCorpId:'',businessNo:'',status:'',traceId:''});dates.value=[];load()}
+/** 把业务状态映射为标签颜色，不改变服务端状态值。 */
 function tagType(v){return ['FAILED','TIMEOUT','2'].includes(String(v))?'danger':['SUCCESS','SUCCEEDED','1'].includes(String(v))?'success':['PENDING','REQUESTED','PROCESSING','PARTIAL'].includes(String(v))?'warning':'info'}
 const labels={log_scope:{BATCH:'完整批次',PAGE:'历史单页',LEGACY:'旧游标续传'},business_type:{TENANT:'企业',ORDER:'订单',REFUND:'退款',INVOICE:'发票',SUBSCRIPTION:'订阅',CONFIG:'配置'},actor_type:{USER:'用户',SYSTEM:'系统',CALLBACK:'回调'},direction:{DING_TO_KINGDEE:'钉钉 → 金蝶',KINGDEE_TO_DING:'金蝶 → 钉钉'},trigger_type:{MANUAL:'手动',SCHEDULE:'定时',RETRY:'重试',EVENT:'事件触发'},platform:{DING:'钉钉',KINGDEE:'金蝶',PAYMENT:'支付平台'},event_type:{TENANT_STUB_CREATED:'建立待完善企业档案',SUBSCRIPTION_TYPE_REPAIRED:'修复订阅类型',SUBSCRIPTION_EXPIRED_REPAIRED:'修复订阅过期状态',REFUND_REQUESTED:'申请退款',REFUND_CANCELLED:'撤销退款申请'}}
+/** 优先使用字段字典显示业务枚举，再处理时间和通用值。 */
 function displayValue(key,value){if(value==null)return '—';if(labels[key]?.[value])return labels[key][value];if(['status','result','change_type'].includes(key))return config.value.statuses[value]||value;if(typeof value==='string' && /^\d{4}-\d{2}-\d{2}T\d{2}:/.test(value))return value.replace('T',' ').slice(0,19);return valueText(value)}
+/** 把空值、对象和文本转为详情可读表示。 */
 function valueText(value){if(value===null||value===undefined||value==='')return '—';if(typeof value==='object')return JSON.stringify(value,null,2);if(typeof value==='string'&&value.startsWith('{')){try{return JSON.stringify(JSON.parse(value),null,2)}catch{}}return String(value)}
+/** 清空上次详情后加载当前记录，执行记录再并行加载分页和接口明细。 */
 async function showDetail(row){
  const seq=++detailSequence;detail.value={};items.value=[];pages.value=[];apiCalls.value=[];apiError.value='';pageError.value='';itemTotal.value=0;pageTotal.value=0;apiTotal.value=0;detailOpen.value=true;detailLoading.value=true
  try{const res=await recordDetail(props.kind,row.id);if(seq!==detailSequence)return;detail.value=res.data
   if(props.kind==='execution'){itemPage.value=1;pageNum.value=1;apiPage.value=1;await Promise.all([loadItems(),loadPages(),checkPermi(['ding:apiLog:list'])?loadApis():Promise.resolve()])}
  }catch{if(seq===detailSequence)detailOpen.value=false}finally{if(seq===detailSequence)detailLoading.value=false}
 }
+/** 分页读取当前执行批次的页面记录，以详情请求序号避免串行串页。 */
 async function loadPages(){const id=detail.value.id,seq=detailSequence;if(!id)return;pageError.value='';try{const res=await executionPages(id,{pageNum:pageNum.value,pageSize:pageSize.value});if(seq===detailSequence){pages.value=res.rows;pageTotal.value=res.total}}catch{if(seq===detailSequence)pageError.value='分页记录加载失败，请重试'}}
+/** 在权限允许时读取当前批次接口调用明细。 */
 async function loadApis(){const id=detail.value.id,seq=detailSequence;if(!id)return;apiError.value='';try{const res=await executionApis(id,{pageNum:apiPage.value,pageSize:apiSize.value});if(seq===detailSequence){apiCalls.value=res.rows;apiTotal.value=res.total}}catch{if(seq===detailSequence)apiError.value='接口调用记录加载失败，请重试'}}
+/** 把已有堆栈内容展示在独立阅读窗口。 */
 function showInlineStack(value){stackText.value=value;stackLoading.value=false;stackOpen.value=true}
+/** 读取指定分页记录的脱敏堆栈。 */
 async function showPageStack(row){stackOpen.value=true;stackLoading.value=true;stackText.value='';try{const res=await executionPageStack(detail.value.id,row.id);stackText.value=res.data||row.error_message||'暂无堆栈'}catch{stackText.value='堆栈加载失败，请重试'}finally{stackLoading.value=false}}
+/** 读取接口调用记录的异常堆栈。 */
 async function showApiStack(row){stackOpen.value=true;stackLoading.value=true;stackText.value='';try{const res=await recordDetail('apiLog',row.id);stackText.value=res.data.error_stack||row.error_message||'暂无堆栈'}catch{stackText.value='堆栈加载失败，请重试'}finally{stackLoading.value=false}}
+/** 分页读取当前执行批次返回的源记录。 */
 async function loadItems(){const id=detail.value.id;if(!id)return;const res=await executionItems(id,{pageNum:itemPage.value,pageSize:itemSize.value});if(detail.value.id===id){items.value=res.rows;itemTotal.value=res.total}}
+/** 生成新的退款申请号并清空表单。 */
 function openRefund(){Object.assign(refund,{refundNo:'RF'+crypto.randomUUID(),orderNo:'',merchantAccountId:'',amount:undefined,reason:''});refundOpen.value=true}
+/** 校验退款申请表单后提交，成功时刷新列表。 */
 async function submitRefund(){try{await refundForm.value.validate()}catch{return}saving.value=true;try{await requestRefund({...refund});ElMessage.success('退款申请已提交');refundOpen.value=false;load()}finally{saving.value=false}}
+/** 确认后撤销当前待处理退款申请，再刷新列表。 */
 async function cancel(row){try{await ElMessageBox.confirm('确认撤销这笔待处理的退款申请？','撤销申请',{type:'warning'})}catch{return}await cancelRefund(row.id);ElMessage.success('申请已撤销');load()}
 watch(()=>props.kind,()=>{detailOpen.value=false;reset()},{immediate:true})
 </script>

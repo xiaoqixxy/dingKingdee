@@ -6,22 +6,28 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** GroupReferenceConfigurationTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class GroupReferenceConfigurationTest {
+    /** 构造不含业务凭证的最小元数据测试夹具。 */
     private JSONObject metadata(String form, String pk, String fields) {
         return JSONObject.parseObject("{\"Id\":\"" + form + "\",\"PkFieldName\":\"" + pk
                 + "\",\"Name\":[{\"Key\":2052,\"Value\":\"Test\"}],\"Entrys\":[{\"Key\":\"Head\",\"EntityType\":\"HeadEntity\",\"Fields\":" + fields + "}]}");
     }
+    // 构造包含物料分组与销售分组的元数据，验证相同通用对象保留不同所属字段。
+    /** 构造物料引用元数据测试夹具。 */
     private JSONObject material() {
         return metadata("BD_MATERIAL", "FMATERIALID", """
             [{"Key":"FMaterialGroup","Name":[{"Key":2052,"Value":"物料分组"}],"FieldType":127,"ElementType":33,"LookUpObjectFormId":"BOS_FORMGROUP","GroupFieldTableName":"T_BD_MATERIALGROUP"},
              {"Key":"FSalGroup","Name":[{"Key":2052,"Value":"销售分组"}],"FieldType":127,"ElementType":33,"LookUpObjectFormId":"BOS_FORMGROUP","GroupFieldTableName":"T_BD_MATERIALSALGROUP"}]
             """);
     }
+    /** 构造具有引用字段的来源对象。 */
     private JSONObject source() {
         return ContoryUtil.kingdeeToDing(metadata("STK_InStock", "FID", """
             [{"Key":"FMaterialId","Name":[{"Key":2052,"Value":"物料"}],"FieldType":127,"ElementType":13,"LookUpObjectFormId":"BD_MATERIAL"}]
             """));
     }
+    /** 构造当前场景需要的同步配置参数。 */
     private JSONObject params(boolean legacy) {
         JSONArray configs = new JSONArray();
         for (String group : List.of("FMaterialGroup", "FSalGroup")) {
@@ -32,12 +38,14 @@ class GroupReferenceConfigurationTest {
         }
         return JSONObject.of("fieldConfigs", configs);
     }
+    /** 将测试字段配置应用到来源结构。 */
     private JSONObject configured(boolean legacy) {
         return FieldConfigurationSupport.apply(source(), params(legacy), form -> {
             assertEquals("BD_MATERIAL", form, "must not load generic BOS_FORMGROUP");
             return material();
         });
     }
+    /** 验证：占位分组对象使用维护字典且携带所属字段上下文。 */
     @Test void placeholderUsesTheMaintainedDictionaryAndGroupChoicesCarryOwnerContext() {
         JSONObject placeholder = JSONObject.of("Id", "BOS_FORMGROUP", "PkFieldName", "FID", "Entrys", new JSONArray());
         assertEquals("FNumber", FieldConfigurationSupport.referenceSchema(placeholder).getJSONArray("fields").getJSONObject(0).getString("key"));
@@ -51,6 +59,7 @@ class GroupReferenceConfigurationTest {
             assertEquals(i == 1 ? "物料分组" : "销售分组", field.getString("name"));
         }
     }
+    /** 验证：旧合成FID路径兼容为原编码并保持输出列稳定。 */
     @Test void legacyFidChildrenUseSameQueriesAndStableOutputColumnsAsNewChoices() {
         assertEquals(configured(false), configured(true));
         for (Object item : configured(true).getJSONArray("fields")) {
@@ -65,6 +74,7 @@ class GroupReferenceConfigurationTest {
             assertEquals("FNumber", plan.getJSONObject(1).getString("fieldKey"));
         }
     }
+    /** 验证：物料分组通过所属对象与专用分组接口解析。 */
     @Test void groupValuesAreResolvedThroughMaterialAndNeverThroughGenericGroupQueries() throws Exception {
         JSONObject schema = configured(true);
         JSONObject result = ReferenceQuerySupport.streamPage(schema, params(true), 0, 10, 100, request -> {
@@ -87,6 +97,7 @@ class GroupReferenceConfigurationTest {
         assertEquals("M001", values.getString("FMaterialId.FName__ref_FMaterialGroup"));
         assertEquals("S002", values.getString("FMaterialId.FName__ref_FSalGroup"));
     }
+    /** 验证：已有直接分组列保留标识和别名。 */
     @Test void existingDirectGroupColumnRetainsIdAliasAndOwnerQuery() {
         JSONObject schema = ContoryUtil.kingdeeToDing(material());
         JSONObject config = JSONObject.of("fieldConfigs", JSONArray.of(JSONObject.of("fieldId", "FMaterialGroup.FNumber",
@@ -97,12 +108,14 @@ class GroupReferenceConfigurationTest {
         assertEquals("FMATERIALID,FMaterialGroup.FNumber,FSalGroup.FNumber",
                 ContoryUtil.kingdeeToKingdeeQuery(fixed, 0, 10, null, null).getString("FieldKeys"));
     }
+    /** 验证：不支持的分组属性明确拒绝而非静默换义。 */
     @Test void arbitraryGroupChildrenAreNotSilentlyReinterpreted() {
         JSONObject params = params(false);
         params.getJSONArray("fieldConfigs").getJSONObject(0).getJSONArray("referencePath").add("FNotSupported");
         assertThrows(IllegalArgumentException.class, () -> FieldConfigurationSupport.apply(source(), params, form -> material()));
     }
 
+    /** 验证：带版本的新路径支持真实内码名称描述及父级名称。 */
     @Test void versionedChoicesExposeRealGroupIdNamesDescriptionsAndParentNames() {
         for (String attribute : List.of("FID", "FName", "FDescription")) {
             JSONObject params = JSONObject.of("fieldConfigs", JSONArray.of(JSONObject.of("fieldId", "FMaterialId.FName",

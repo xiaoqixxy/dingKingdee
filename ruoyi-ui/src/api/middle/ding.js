@@ -1,5 +1,7 @@
+/** 金蝶及钉钉业务接口或展示字典，沿用统一请求封装与服务端字段约定。 */
 import request from '@/utils/request'
 
+/** 按条件查询产品套餐，通过统一请求封装处理鉴权与错误。 */
 export function listProduct(query) {
   return request({
     url: '/ding/product/list',
@@ -8,6 +10,7 @@ export function listProduct(query) {
   })
 }
 
+/** 读取产品套餐，通过统一请求封装处理鉴权与错误。 */
 export function getProduct(id) {
   return request({
     url: '/ding/product/' + id,
@@ -15,6 +18,7 @@ export function getProduct(id) {
   })
 }
 
+/** 新增产品套餐，通过统一请求封装处理鉴权与错误。 */
 export function addProduct(data) {
   return request({
     url: '/ding/product',
@@ -23,6 +27,7 @@ export function addProduct(data) {
   })
 }
 
+/** 更新产品套餐，通过统一请求封装处理鉴权与错误。 */
 export function updateProduct(data) {
   return request({
     url: '/ding/product',
@@ -31,6 +36,7 @@ export function updateProduct(data) {
   })
 }
 
+/** 删除产品套餐，通过统一请求封装处理鉴权与错误。 */
 export function delProduct(id) {
   return request({
     url: '/ding/product/' + id,
@@ -38,6 +44,7 @@ export function delProduct(id) {
   })
 }
 
+/** 读取可选项产品套餐，通过统一请求封装处理鉴权与错误。 */
 export function getProductOptions() {
   return request({
     url: '/ding/product/options',
@@ -45,6 +52,7 @@ export function getProductOptions() {
   })
 }
 
+/** 按条件查询套餐列表。 */
 export function listPackage(query) {
   return request({
     url: '/ding/package/list',
@@ -53,6 +61,7 @@ export function listPackage(query) {
   })
 }
 
+/** 按标识读取套餐详情。 */
 export function getPackage(id) {
   return request({
     url: '/ding/package/' + id,
@@ -60,6 +69,7 @@ export function getPackage(id) {
   })
 }
 
+/** 新增套餐定义。 */
 export function addPackage(data) {
   return request({
     url: '/ding/package',
@@ -68,6 +78,7 @@ export function addPackage(data) {
   })
 }
 
+/** 更新已有套餐信息。 */
 export function updatePackage(data) {
   return request({
     url: '/ding/package',
@@ -76,6 +87,7 @@ export function updatePackage(data) {
   })
 }
 
+/** 删除指定套餐。 */
 export function delPackage(id) {
   return request({
     url: '/ding/package/' + id,
@@ -83,6 +95,7 @@ export function delPackage(id) {
   })
 }
 
+/** 读取可选套餐下拉列表。 */
 export function getPackageOptions() {
   return request({
     url: '/ding/product/options',
@@ -90,6 +103,7 @@ export function getPackageOptions() {
   })
 }
 
+/** 按条件查询企业，通过统一请求封装处理鉴权与错误。 */
 export function listTenant(query) {
   return request({
     url: '/ding/tenant/list',
@@ -98,6 +112,7 @@ export function listTenant(query) {
   })
 }
 
+/** 读取企业，通过统一请求封装处理鉴权与错误。 */
 export function getTenant(id) {
   return request({
     url: '/ding/tenant/' + id,
@@ -105,6 +120,7 @@ export function getTenant(id) {
   })
 }
 
+/** 读取指定企业的企业，通过统一请求封装处理鉴权与错误。 */
 export function getTenantByCorpId(dingCorpId) {
   return request({
     url: '/ding/tenant/corp/' + dingCorpId,
@@ -112,6 +128,7 @@ export function getTenantByCorpId(dingCorpId) {
   })
 }
 
+/** 新增企业，通过统一请求封装处理鉴权与错误。 */
 export function addTenant(data) {
   return request({
     url: '/ding/tenant',
@@ -120,6 +137,7 @@ export function addTenant(data) {
   })
 }
 
+/** 更新企业，通过统一请求封装处理鉴权与错误。 */
 export function updateTenant(data) {
   return request({
     url: '/ding/tenant',
@@ -128,6 +146,7 @@ export function updateTenant(data) {
   })
 }
 
+/** 删除企业，通过统一请求封装处理鉴权与错误。 */
 export function delTenant(id) {
   return request({
     url: '/ding/tenant/' + id,
@@ -135,6 +154,7 @@ export function delTenant(id) {
   })
 }
 
+/** 按条件查询订阅，通过统一请求封装处理鉴权与错误。 */
 export function listSubscription(query) {
   return request({
     url: '/ding/subscription/list',
@@ -143,6 +163,7 @@ export function listSubscription(query) {
   })
 }
 
+/** 读取订阅，通过统一请求封装处理鉴权与错误。 */
 export function getSubscription(id) {
   return request({
     url: '/ding/subscription/' + id,
@@ -150,6 +171,7 @@ export function getSubscription(id) {
   })
 }
 
+/** 读取指定企业的订阅，通过统一请求封装处理鉴权与错误。 */
 export function getSubscriptionByCorpId(dingCorpId) {
   return request({
     url: '/ding/subscription/corp/' + dingCorpId,
@@ -157,6 +179,7 @@ export function getSubscriptionByCorpId(dingCorpId) {
   })
 }
 
+/** 新增订阅，通过统一请求封装处理鉴权与错误。 */
 export function addSubscription(data) {
   return request({
     url: '/ding/subscription',
@@ -165,6 +188,7 @@ export function addSubscription(data) {
   })
 }
 
+/** 更新订阅，通过统一请求封装处理鉴权与错误。 */
 export function updateSubscription(data) {
   return request({
     url: '/ding/subscription',
@@ -173,6 +197,7 @@ export function updateSubscription(data) {
   })
 }
 
+/** 删除订阅，通过统一请求封装处理鉴权与错误。 */
 export function delSubscription(id) {
   return request({
     url: '/ding/subscription/' + id,
@@ -180,6 +205,7 @@ export function delSubscription(id) {
   })
 }
 
+/** 按条件查询订单，通过统一请求封装处理鉴权与错误。 */
 export function listOrder(query) {
   return request({
     url: '/ding/order/list',
@@ -188,6 +214,7 @@ export function listOrder(query) {
   })
 }
 
+/** 读取订单，通过统一请求封装处理鉴权与错误。 */
 export function getOrder(id) {
   return request({
     url: '/ding/order/' + id,
@@ -195,6 +222,7 @@ export function getOrder(id) {
   })
 }
 
+/** 读取指定订单号的订单，通过统一请求封装处理鉴权与错误。 */
 export function getOrderByNo(orderNo) {
   return request({
     url: '/ding/order/no/' + orderNo,
@@ -202,6 +230,7 @@ export function getOrderByNo(orderNo) {
   })
 }
 
+/** 新增订单，通过统一请求封装处理鉴权与错误。 */
 export function addOrder(data) {
   return request({
     url: '/ding/order',
@@ -210,6 +239,7 @@ export function addOrder(data) {
   })
 }
 
+/** 更新订单，通过统一请求封装处理鉴权与错误。 */
 export function updateOrder(data) {
   return request({
     url: '/ding/order',
@@ -218,6 +248,7 @@ export function updateOrder(data) {
   })
 }
 
+/** 删除订单，通过统一请求封装处理鉴权与错误。 */
 export function delOrder(id) {
   return request({
     url: '/ding/order/' + id,
@@ -225,6 +256,7 @@ export function delOrder(id) {
   })
 }
 
+/** 按条件查询支付日志，通过统一请求封装处理鉴权与错误。 */
 export function listPaymentLog(query) {
   return request({
     url: '/ding/paymentLog/list',
@@ -233,6 +265,7 @@ export function listPaymentLog(query) {
   })
 }
 
+/** 读取支付日志，通过统一请求封装处理鉴权与错误。 */
 export function getPaymentLog(id) {
   return request({
     url: '/ding/paymentLog/' + id,
@@ -240,6 +273,7 @@ export function getPaymentLog(id) {
   })
 }
 
+/** 按条件查询同步表单，通过统一请求封装处理鉴权与错误。 */
 export function listSyncForm(query) {
   return request({
     url: '/ding/syncForm/list',
@@ -248,6 +282,7 @@ export function listSyncForm(query) {
   })
 }
 
+/** 读取同步表单，通过统一请求封装处理鉴权与错误。 */
 export function getSyncForm(id) {
   return request({
     url: '/ding/syncForm/' + id,
@@ -255,6 +290,7 @@ export function getSyncForm(id) {
   })
 }
 
+/** 读取指定企业的同步表单，通过统一请求封装处理鉴权与错误。 */
 export function getSyncFormByCorpId(dingCorpId) {
   return request({
     url: '/ding/syncForm/corp/' + dingCorpId,
@@ -262,6 +298,7 @@ export function getSyncFormByCorpId(dingCorpId) {
   })
 }
 
+/** 新增同步表单，通过统一请求封装处理鉴权与错误。 */
 export function addSyncForm(data) {
   return request({
     url: '/ding/syncForm',
@@ -270,6 +307,7 @@ export function addSyncForm(data) {
   })
 }
 
+/** 更新同步表单，通过统一请求封装处理鉴权与错误。 */
 export function updateSyncForm(data) {
   return request({
     url: '/ding/syncForm',
@@ -278,6 +316,7 @@ export function updateSyncForm(data) {
   })
 }
 
+/** 删除同步表单，通过统一请求封装处理鉴权与错误。 */
 export function delSyncForm(id) {
   return request({
     url: '/ding/syncForm/' + id,
@@ -285,6 +324,7 @@ export function delSyncForm(id) {
   })
 }
 
+/** 读取绑定数量同步表单，通过统一请求封装处理鉴权与错误。 */
 export function getSyncFormCount(dingCorpId) {
   return request({
     url: '/ding/syncForm/count/' + dingCorpId,
@@ -292,6 +332,7 @@ export function getSyncFormCount(dingCorpId) {
   })
 }
 
+/** 按条件查询同步日志，通过统一请求封装处理鉴权与错误。 */
 export function listSyncLog(query) {
   return request({
     url: '/ding/syncLog/list',
@@ -300,6 +341,7 @@ export function listSyncLog(query) {
   })
 }
 
+/** 读取同步日志，通过统一请求封装处理鉴权与错误。 */
 export function getSyncLog(id) {
   return request({
     url: '/ding/syncLog/' + id,
@@ -307,6 +349,7 @@ export function getSyncLog(id) {
   })
 }
 
+/** 删除同步日志，通过统一请求封装处理鉴权与错误。 */
 export function delSyncLog(id) {
   return request({
     url: '/ding/syncLog/' + id,
@@ -314,6 +357,7 @@ export function delSyncLog(id) {
   })
 }
 
+/** 按条件查询发票，通过统一请求封装处理鉴权与错误。 */
 export function listInvoice(query) {
   return request({
     url: '/ding/invoice/list',
@@ -322,6 +366,7 @@ export function listInvoice(query) {
   })
 }
 
+/** 读取发票，通过统一请求封装处理鉴权与错误。 */
 export function getInvoice(id) {
   return request({
     url: '/ding/invoice/' + id,
@@ -329,6 +374,7 @@ export function getInvoice(id) {
   })
 }
 
+/** 新增发票，通过统一请求封装处理鉴权与错误。 */
 export function addInvoice(data) {
   return request({
     url: '/ding/invoice',
@@ -337,6 +383,7 @@ export function addInvoice(data) {
   })
 }
 
+/** 更新发票，通过统一请求封装处理鉴权与错误。 */
 export function updateInvoice(data) {
   return request({
     url: '/ding/invoice',
@@ -345,6 +392,7 @@ export function updateInvoice(data) {
   })
 }
 
+/** 删除发票，通过统一请求封装处理鉴权与错误。 */
 export function delInvoice(id) {
   return request({
     url: '/ding/invoice/' + id,
@@ -352,6 +400,7 @@ export function delInvoice(id) {
   })
 }
 
+/** 创建线上支付订单并返回二维码信息。 */
 export function onlinePay(data) {
   return request({
     url: '/payment/create',
@@ -360,6 +409,7 @@ export function onlinePay(data) {
   })
 }
 
+/** 调用现有模拟支付结果入口，更新订单处理状态。 */
 export function paymentCallback(data) {
   return request({
     url: '/payment/handleResult',

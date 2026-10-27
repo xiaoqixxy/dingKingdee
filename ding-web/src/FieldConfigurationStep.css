@@ -1,53 +1,105 @@
+/* 字段列表、引用子行与操作区的布局。 */
 .plugin-page.field-config-page { overflow: hidden !important; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-step { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-heading h3 { margin: 0; }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-link { flex-shrink: 0; padding: 4px 0; border: 0; background: transparent; color: var(--primary); font: inherit; font-size: 13px; cursor: pointer; }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-dialog { width: min(1100px, calc(100vw - 24px)); height: calc(100vh - 32px); max-width: none; max-height: none; padding: 0; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-card); color: var(--text-primary); box-sizing: border-box; }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-dialog::backdrop { background: rgba(0, 0, 0, .4); }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-content { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-light); }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-heading h3 { margin: 0; font-size: 16px; }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-heading button { border: 0; background: transparent; color: var(--text-secondary); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 16px; font-size: 12px; color: var(--text-secondary); }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-toolbar a { color: var(--primary); }
+/* 操作手册入口及阅读窗口的布局。 */
 .field-config-guide-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: var(--bg-card); }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-step > .field-config-label { flex-shrink: 0; margin: 0; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-list { display: flex; flex-direction: column; flex: 1; margin: 10px 0 0; padding: 0; border: 0; min-width: 0; min-height: 0; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; margin-bottom: 8px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-label input, .field-config-control { width: 100%; box-sizing: border-box; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font: inherit; min-width: 0; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-control { min-height: 36px; font-size: 13px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-table-scroll { overflow: auto; flex: 1; min-height: 0; border: 1px solid var(--border-light); border-radius: 8px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 600px; table-layout: fixed; text-align: left; font-size: 13px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-table thead th { position: sticky; top: 0; z-index: 1; background: var(--bg-subtle); color: var(--text-regular); font-weight: 600; padding: 11px 10px; border-bottom: 1px solid var(--border-color); }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-table tbody th, .field-config-table tbody td { padding: 9px 10px; border-bottom: 1px solid var(--border-light); vertical-align: top; font-weight: 400; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-main-row { background: var(--bg-card); }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-name { display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; min-height: 36px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-name strong { font-weight: 500; line-height: 1.4; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-name small, .field-config-branch small { color: var(--text-secondary); font-size: 11px; font-weight: 400; overflow-wrap: anywhere; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-child-row { background: var(--bg-subtle); }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-branch { display: flex; gap: 6px; align-items: flex-start; min-height: 36px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-branch > span { color: var(--text-placeholder); font-size: 16px; line-height: 1.4; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-branch > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-branch strong { font-weight: 400; overflow-wrap: anywhere; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-muted { color: var(--text-placeholder); font-size: 12px; line-height: 36px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-reset { border: 0; padding: 3px 0 0; background: transparent; color: var(--primary); font-size: 11px; cursor: pointer; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-message-row td { background: var(--bg-subtle); color: var(--text-secondary); font-size: 12px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-message-row [role=alert], .field-config-message-row .field-config-metadata-error { color: #b45309; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-empty { padding: 24px !important; text-align: center; color: var(--text-secondary); }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-actions { flex-shrink: 0; display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-actions button, .field-config-message-row button { cursor: pointer; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); padding: 8px 14px; color: var(--text-regular); }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-actions button:last-child { background: var(--primary); border-color: var(--primary); color: #fff; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-actions button:disabled { cursor: wait; opacity: .6; }
 
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-row-actions button { padding: 0; background: transparent; border: 0; color: var(--primary); cursor: pointer; font-size: 11px; }
+/* 字段列表、引用子行与操作区的布局。 */
 .field-config-row-actions button:last-child:not(:first-child) { color: var(--danger); }
+/* 引用搜索控件及候选项浮层的显示状态。 */
 .reference-search-select { position: relative; }
+/* 引用搜索控件及候选项浮层的显示状态。 */
 .reference-search-select input { padding-right: 28px; text-overflow: ellipsis; }
+/* 引用搜索控件及候选项浮层的显示状态。 */
 .reference-search-toggle { position: absolute; right: 1px; top: 1px; bottom: 1px; width: 27px; border: 0; border-radius: 0 6px 6px 0; background: transparent; cursor: pointer; color: var(--text-secondary); }
+/* 引用搜索控件及候选项浮层的显示状态。 */
 .reference-search-menu { z-index: 10000; overflow-y: auto; padding: 4px 0; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); box-shadow: var(--shadow-sm); font-size: 13px; }
+/* 引用搜索控件及候选项浮层的显示状态。 */
 .reference-search-menu [role=option] { padding: 9px 12px; cursor: pointer; overflow-wrap: anywhere; }
+/* 引用搜索控件及候选项浮层的显示状态。 */
 .reference-search-menu [role=option].is-active { background: var(--primary-bg); }
+/* 引用搜索控件及候选项浮层的显示状态。 */
 .reference-search-menu [aria-selected=true] { color: var(--primary); }
+/* 引用搜索控件及候选项浮层的显示状态。 */
 .reference-search-empty { padding: 10px 12px; color: var(--text-secondary); }

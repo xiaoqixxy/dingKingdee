@@ -42,11 +42,14 @@ import java.util.Map;
  */
 @Slf4j
 @Service
+/** 组装元数据、权益限制、明细和引用查询的同步业务实现。 */
 public class K3CloudProxyServiceImpl implements K3CloudProxyService {
 
+    /** 处理企业订阅业务的服务组件。 */
     @Autowired
     private IDingSubscriptionService dingSubscriptionService;
 
+    /** 记录同步执行生命周期的组件。 */
     @Autowired
     private com.dj.middle.ding.service.SyncExecutionRecorder syncRecorder;
 
@@ -215,6 +218,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
         return result;
     }
 
+    /** 校验对象标识后读取引用对象元数据，防止无效标识进入查询。 */
     private JSONObject loadReferenceMetadata(KingdeeK3CloudUtil util, String formId) {
         if (formId == null || !formId.matches("[A-Za-z0-9_]{1,100}"))
             throw new IllegalArgumentException("引用对象标识无效");
@@ -225,11 +229,13 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
         return metadata;
     }
 
+    /** 在表头和明细结构上应用别名及引用路径配置。 */
     private JSONObject configuredSchema(JSONObject metadata, JSONObject params, KingdeeK3CloudUtil util) {
         return FieldConfigurationSupport.apply(DetailSyncSupport.schema(metadata, params), params,
                 formId -> loadReferenceMetadata(util, formId));
     }
 
+    /** 返回引用对象的可选字段；扩展对象使用项目维护的字典结构。 */
     @Override
     public JSONObject referenceSchema(String formId, String paramsJson) {
         if (com.dj.middle.kingdee.util.ExtensionDictionarySupport.contains(formId))
@@ -276,6 +282,8 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
     @Override
     public JSONObject recordsWithParams(Integer maxResults, Integer nextToken, String paramsJson,String corpId) throws ParseException {
         try {
+            // 读取企业当前订阅，缺失时按既有规则登记默认产品权益。
+            // 同步额度来自服务端当前订阅，不能由前端请求自行放宽。
             DingProduct dingProduct = dingSubscriptionService.getOrRegisterDefaultProduct(corpId);
             //获取同步数量上线
             Integer singleSyncLimit = dingProduct.getSingleSyncLimit();
@@ -296,6 +304,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
             JSONArray sortConfigs = params.getJSONArray("sortConfigs");
 
             KingdeeK3CloudUtil util = new KingdeeK3CloudUtil(SERVER_URL, CID, USER_NAME, APP_ID, APP_SECRET);
+            // 元数据查询也纳入当前批次的接口调用统计，失败时保留可追踪原因。
             JSONObject jsonObject = syncRecorder.api("QueryBusinessInfo", () -> {
                 JSONObject metadata = util.queryBusinessInfo(TABLE_NAME);
                 JSONObject result = metadata == null ? null : metadata.getJSONObject("Result");
@@ -306,6 +315,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
             JSONObject NeedReturnData = jsonObject.getJSONObject("Result").getJSONObject("NeedReturnData");
             JSONObject dingFieldData = configuredSchema(NeedReturnData, params, util);
 
+            // 显式配置引用路径时使用逐跳补查，筛选排序依赖引用值则先物化候选集。
             if (ReferenceQuerySupport.required(dingFieldData)) {
                 if (nextToken == null || nextToken < 0 || maxResults == null || maxResults <= 0)
                     throw new IllegalArgumentException("无效的分页参数");
@@ -316,12 +326,14 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
                 }
                 java.util.function.Function<JSONObject, List<List<Object>>> executeReferenceQuery = query -> {
                     try {
+                        // 扩展分组计划路由到专用接口，普通计划仍走单据查询，两种调用分开计时。
                         if ("QueryGroupInfo".equals(query.getString("queryType")))
                             return syncRecorder.api("QueryGroupInfo", () -> util.queryGroupInfo(query));
                         return syncRecorder.api("ExecuteBillQuery", () -> util.query(query));
                     }
                     catch (Exception e) { throw new IllegalStateException("引用数据查询失败", e); }
                 };
+                // 不依赖引用值筛选排序时，只查询当前页，避免为了改一个显示属性读取全部数据。
                 if (ReferenceQuerySupport.canStream(dingFieldData, params))
                     return ReferenceQuerySupport.streamPage(dingFieldData, params, nextToken, Math.min(maxResults, 300), syncLimit,
                             executeReferenceQuery, () -> syncRecorder.limitReached());
@@ -330,6 +342,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
                 return ReferenceQuerySupport.page(dingFieldData, params, resolved, nextToken, Math.min(maxResults, 300), syncLimit);
             }
 
+            // 未配置额外引用的明细沿用原分页方案，单页限制及权益仍同时生效。
             if (dingFieldData.containsKey("selectedEntryKey")) {
                 if (nextToken == null || nextToken < 0 || maxResults == null || maxResults <= 0)
                     throw new IllegalArgumentException("无效的分页参数");
@@ -339,7 +352,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
                     syncRecorder.limitReached();
                     return DetailSyncSupport.result(dingFieldData, params, java.util.Collections.emptyList(), nextToken, 0, syncLimit);
                 }
-                // Include the preceding row to suppress headers across pages, plus one lookahead row.
+                // 多取上一条用于跨页表头衔接，并超取下一条判断是否还有后续页。
                 int start = Math.max(0, nextToken - 1);
                 int count = pageSize + (nextToken > 0 ? 1 : 0) + 1;
                 JSONObject detailQuery = DetailSyncSupport.query(dingFieldData, params, start, count);
@@ -349,6 +362,7 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
                 return DetailSyncSupport.result(dingFieldData, params, detailRows, nextToken, pageSize, syncLimit);
             }
             
+            // 纯表头且未配置额外引用时保留历史直接查询分支。
             JSONObject queryJson = ContoryUtil.kingdeeToKingdeeQuery(dingFieldData, nextToken, maxResults, filterConditions, sortConfigs);
             List<List<Object>> query = syncRecorder.api("ExecuteBillQuery", () -> util.query(queryJson));
             

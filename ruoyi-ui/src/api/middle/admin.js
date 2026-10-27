@@ -1,3 +1,4 @@
+/** 金蝶及钉钉业务接口或展示字典，沿用统一请求封装与服务端字段约定。 */
 import request from '@/utils/request'
 export const listRecords = (kind, params) => request({ url: `/admin/records/${kind}/list`, params })
 export const recordDetail = (kind, id) => request({ url: `/admin/records/${kind}/${id}` })

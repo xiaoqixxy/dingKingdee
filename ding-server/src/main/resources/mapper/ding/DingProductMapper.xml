@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.ding.mapper.DingProductMapper">
 
+    <!-- DingProductResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingProduct" id="DingProductResult">
 		<id     property="id"    column="id"    />
 		<result property="productName"    column="product_name"    />
@@ -22,12 +23,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="ext3"    column="ext3"    />
 	</resultMap>
 	
+	<!-- selectDingProductVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<sql id="selectDingProductVo">
         select id, product_name, product_type, product_category, is_default, price, sync_form_limit, single_sync_limit, 
                month_sync_limit, status, sort, remark, ext1, ext2, ext3 
 		from ding_product
     </sql>
 
+    <!-- selectDingProductList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingProductList" parameterType="com.dj.middle.ding.domain.DingProduct" resultMap="DingProductResult">
 	    <include refid="selectDingProductVo"/>
 		<where>
@@ -50,25 +53,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by sort desc, id asc
 	</select>
 	
+	<!-- selectDingProductById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingProductById" parameterType="Long" resultMap="DingProductResult">
 		<include refid="selectDingProductVo"/>
 		where id = #{id}
 	</select>
 	
+	<!-- selectDefaultProduct：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDefaultProduct" resultMap="DingProductResult">
 		<include refid="selectDingProductVo"/>
 		where is_default = 1 and status = 1 limit 1
 	</select>
 	
+	<!-- checkProductNameUnique：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="checkProductNameUnique" parameterType="String" resultMap="DingProductResult">
 		<include refid="selectDingProductVo"/>
 		where product_name = #{productName} limit 1
 	</select>
 	
+	<!-- deleteDingProductById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteDingProductById" parameterType="Long">
    		delete from ding_product where id = #{id}
    	</delete>
    	
+   	<!-- deleteDingProductByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
    	<delete id="deleteDingProductByIds" parameterType="Long">
    		delete from ding_product where id in
    		<foreach collection="array" item="id" open="(" separator="," close=")">
@@ -76,6 +84,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
    	</delete>
 
+    <!-- updateDingProduct：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateDingProduct" parameterType="com.dj.middle.ding.domain.DingProduct">
    		update ding_product
    		<set>
@@ -97,6 +106,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
    		where id = #{id}
    	</update>
    	
+    <!-- insertDingProduct：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingProduct" parameterType="com.dj.middle.ding.domain.DingProduct" useGeneratedKeys="true" keyProperty="id">
    		insert into ding_product(
    			product_name,

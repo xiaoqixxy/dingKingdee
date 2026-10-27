@@ -23,6 +23,7 @@ import lombok.Data;
  * @author ruoyi
  */
 @Data
+/** 金蝶登录参数数据对象。 */
 public class KingdeeLoginRequest {
 
     /**

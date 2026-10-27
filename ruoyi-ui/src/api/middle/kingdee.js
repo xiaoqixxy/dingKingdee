@@ -1,5 +1,7 @@
+/** 金蝶及钉钉业务接口或展示字典，沿用统一请求封装与服务端字段约定。 */
 import request from '@/utils/request'
 
+/** 按条件查询金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function listTableConfig(query) {
   return request({
     url: '/middle/kingdee/tableConfig/list',
@@ -8,6 +10,7 @@ export function listTableConfig(query) {
   })
 }
 
+/** 读取金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function getTableConfig(configId) {
   return request({
     url: '/middle/kingdee/tableConfig/' + configId,
@@ -15,6 +18,7 @@ export function getTableConfig(configId) {
   })
 }
 
+/** 新增金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function addTableConfig(data) {
   return request({
     url: '/middle/kingdee/tableConfig',
@@ -23,6 +27,7 @@ export function addTableConfig(data) {
   })
 }
 
+/** 更新金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function updateTableConfig(data) {
   return request({
     url: '/middle/kingdee/tableConfig',
@@ -31,6 +36,7 @@ export function updateTableConfig(data) {
   })
 }
 
+/** 删除金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function delTableConfig(configId) {
   return request({
     url: '/middle/kingdee/tableConfig/' + configId,
@@ -38,6 +44,7 @@ export function delTableConfig(configId) {
   })
 }
 
+/** 读取可选项金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function getTableConfigOptions() {
   return request({
     url: '/middle/kingdee/tableConfig/options',

@@ -4,6 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dj.middle.ding.mapper.DingOrderMapper">
 
+    <!-- DingOrderResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingOrder" id="DingOrderResult">
 		<id     property="id"    column="id"    />
 		<result property="orderNo"    column="order_no"    />
@@ -26,12 +27,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    <result property="corpName" column="corp_name" />
     </resultMap>
 	
+	<!-- selectDingOrderVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<sql id="selectDingOrderVo">
         select corp_name, id, order_no, ding_corp_id, product_id, order_type, total_amount, pay_amount, 
                pay_status, pay_time, expire_time, pay_channel, transaction_id, remark, ext1, ext2, ext3, create_time, update_time
 		from (select source.*, tenant.corp_name from ding_order source left join ding_tenant tenant on tenant.ding_corp_id=source.ding_corp_id) enriched
     </sql>
 
+    <!-- selectDingOrderList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingOrderList" parameterType="com.dj.middle.ding.domain.DingOrder" resultMap="DingOrderResult">
 	    <include refid="selectDingOrderVo"/>
 		<where>
@@ -60,25 +63,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	    order by id desc
 	</select>
 	
+	<!-- selectDingOrderById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingOrderById" parameterType="Long" resultMap="DingOrderResult">
 		<include refid="selectDingOrderVo"/>
 		where id = #{id}
 	</select>
 	
+	<!-- selectDingOrderByOrderNo：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="selectDingOrderByOrderNo" parameterType="String" resultMap="DingOrderResult">
 		<include refid="selectDingOrderVo"/>
 		where order_no = #{orderNo}
 	</select>
 	
+	<!-- checkOrderNoUnique：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<select id="checkOrderNoUnique" parameterType="String" resultMap="DingOrderResult">
 		<include refid="selectDingOrderVo"/>
 		where order_no = #{orderNo} limit 1
 	</select>
 	
+	<!-- deleteDingOrderById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
 	<delete id="deleteDingOrderById" parameterType="Long">
   		delete from ding_order where id = #{id}
   	</delete>
   	
+  	<!-- deleteDingOrderByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
   	<delete id="deleteDingOrderByIds" parameterType="Long">
   		delete from ding_order where id in
   		<foreach collection="array" item="id" open="(" separator="," close=")">
@@ -86,6 +94,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach> 
   	</delete>
 
+    <!-- updateDingOrder：更新指定业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <update id="updateDingOrder" parameterType="com.dj.middle.ding.domain.DingOrder">
   		update ding_order
   		<set>
@@ -109,6 +118,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		where id = #{id}
   	</update>
   	
+    <!-- insertDingOrder：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingOrder" parameterType="com.dj.middle.ding.domain.DingOrder" useGeneratedKeys="true" keyProperty="id">
   		insert into ding_order(
             create_time,
@@ -147,6 +157,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   		)
    	</insert>
 
+    <!-- selectExpiredUnpaidOrders：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectExpiredUnpaidOrders" resultMap="DingOrderResult">
         <include refid="selectDingOrderVo"/>
         where pay_status = 0 and expire_time is not null and expire_time &lt; now()

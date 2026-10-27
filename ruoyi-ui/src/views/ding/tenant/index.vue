@@ -2,6 +2,7 @@
   <div class="app-container business-page">
     <div class="business-heading"><span class="business-eyebrow">业务工作空间</span><h1>🏢 企业列表</h1><p>查看企业套餐、订阅类型与最近同步使用情况，名称标记“待完善”的企业需要补齐资料。</p></div>
     <h2 class="business-filter-title">🔎 筛选条件</h2>
+    <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
       <el-form-item label="企业ID" prop="dingCorpId">
         <el-input
@@ -69,6 +70,7 @@
     </el-row>
 
     <p class="tenant-note">上次使用时间为最近一次同步调用（含失败）；新订阅指近 7 天生效，待续费指 7 天内到期或已到期。</p>
+    <!-- 列表按稳定记录主键展示，操作按钮遵循页面权限控制。 -->
     <el-table v-loading="loading" :data="tenantList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="id" width="80" />
@@ -115,7 +117,9 @@
     />
 
     <!-- 添加或修改租户企业对话框 -->
+    <!-- 独立业务弹窗，关闭和提交由脚本区统一处理。 -->
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+      <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="钉钉企业ID" prop="dingCorpId">
           <el-input v-model="form.dingCorpId" placeholder="请输入钉钉企业ID" :disabled="!!form.id" />
@@ -212,6 +216,7 @@ const rules = {
 const formRef = ref()
 const queryRef = ref()
 
+/** 按当前筛选和页码读取列表，并更新加载状态。 */
 function getList() {
   loading.value = true
   listTenant(queryParams).then(response => {
@@ -221,11 +226,13 @@ function getList() {
   })
 }
 
+/** 关闭编辑窗口并重置未提交的表单状态。 */
 function cancel() {
   open.value = false
   reset()
 }
 
+/** 重建编辑表单默认值并清理校验提示。 */
 function reset() {
   form.id = undefined
   form.dingCorpId = undefined
@@ -239,28 +246,33 @@ function reset() {
   proxy.resetForm('formRef')
 }
 
+/** 变更查询条件后从第一页重新加载。 */
 function handleQuery() {
   queryParams.pageNum = 1
   getList()
 }
 
+/** 清空查询表单并恢复默认分页。 */
 function resetQuery() {
   proxy.resetForm('queryRef')
   handleQuery()
 }
 
+/** 同步勾选行标识及批量操作按钮状态。 */
 function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.id)
   single.value = selection.length !== 1
   multiple.value = !selection.length
 }
 
+/** 重置表单并打开新增窗口。 */
 function handleAdd() {
   reset()
   open.value = true
   title.value = '添加租户企业'
 }
 
+/** 按行主键读取详情后打开编辑窗口。 */
 function handleUpdate(row) {
   reset()
   const id = row.id || ids.value
@@ -271,6 +283,7 @@ function handleUpdate(row) {
   })
 }
 
+/** 通过表单校验后按主键选择新增或更新接口，成功后刷新列表。 */
 function submitForm() {
   proxy.$refs.formRef.validate(valid => {
     if (valid) {
@@ -291,6 +304,7 @@ function submitForm() {
   })
 }
 
+/** 确认删除后调用接口，并重新加载列表。 */
 function handleDelete(row) {
   const idsArr = row.id || ids.value
   proxy.$modal.confirm('是否确认删除租户企业编号为"' + idsArr + '"的数据项？').then(() => {

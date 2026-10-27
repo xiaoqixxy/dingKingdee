@@ -8,7 +8,9 @@ import java.nio.file.Path;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** DetailSyncSupportTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class DetailSyncSupportTest {
+    /** 构造不含业务凭证的最小元数据测试夹具。 */
     private JSONObject metadata() throws Exception {
         try (var input = getClass().getResourceAsStream("/expense-request-metadata.json")) {
             return JSONObject.parseObject(new String(Objects.requireNonNull(input).readAllBytes(), java.nio.charset.StandardCharsets.UTF_8))
@@ -16,10 +18,12 @@ class DetailSyncSupportTest {
         }
     }
 
+    /** 构造当前场景需要的同步配置参数。 */
     private JSONObject params(String mode) {
         return JSONObject.parseObject("{\"CID\":\"test-account\",\"selectedEntryKey\":\"FEntity\",\"headerFillMode\":\"" + mode + "\"}");
     }
 
+    /** 按字段顺序构造一条模拟源记录。 */
     private List<Object> row(JSONObject schema, long bill, long entry) {
         List<Object> row = new ArrayList<>(Collections.nCopies(schema.getJSONArray("fields").size(), null));
         row.set(0, bill);
@@ -28,6 +32,7 @@ class DetailSyncSupportTest {
         return row;
     }
 
+    /** 验证：真实元数据与历史表头结构保持兼容。 */
     @Test void realMetadataAndLegacySchema() throws Exception {
         JSONObject meta = metadata();
         JSONObject legacy = DetailSyncSupport.schema(meta, new JSONObject());
@@ -45,6 +50,7 @@ class DetailSyncSupportTest {
         Files.writeString(Path.of("target/detail-debug/schema.json"), legacy.toJSONString());
     }
 
+    /** 验证：实体前缀输出标识正确映射到查询业务键。 */
     @Test void scopedOutputIdsUseActualBusinessKeysForQueries() throws Exception {
         JSONObject params = params("ALL_ROWS");
         JSONObject schema = DetailSyncSupport.schema(metadata(), params);
@@ -59,6 +65,7 @@ class DetailSyncSupportTest {
         assertFalse(keys.contains("FEntity_FEntity_FEntryID"));
     }
 
+    /** 验证：跨页和重试时仅单据首行填充表头。 */
     @Test void firstRowAcrossPagesAndRetry() throws Exception {
         JSONObject params = params("FIRST_ROW");
         JSONObject schema = DetailSyncSupport.schema(metadata(), params);
@@ -76,6 +83,7 @@ class DetailSyncSupportTest {
         assertTrue(records.getJSONObject(0).getJSONObject("fields").toJSONString().contains("\"FBillNo\":\"\""));
     }
 
+    /** 验证：填充模式不改变记录标识且限额不插入伪记录。 */
     @Test void modeDoesNotChangeIdentityAndLimitDoesNotInsertFakeRows() throws Exception {
         JSONObject first = params("FIRST_ROW"), all = params("ALL_ROWS");
         JSONObject schema = DetailSyncSupport.schema(metadata(), first);
@@ -89,6 +97,7 @@ class DetailSyncSupportTest {
         assertEquals(0, DetailSyncSupport.result(schema, first, List.of(), 2, 0, 2).getJSONArray("records").size());
     }
 
+    /** 验证：筛选后正确识别首行且查询保持稳定单据分组。 */
     @Test void filteredFirstRowAndStableGroupedQuery() throws Exception {
         JSONObject params = params("FIRST_ROW");
         params.put("sortConfigs", JSONArray.parseArray("[{\"fieldId\":\"FEntity_FOrgAmount\",\"order\":\"desc\"}]"));
@@ -102,6 +111,7 @@ class DetailSyncSupportTest {
         assertEquals("FY1", result.getJSONArray("records").getJSONObject(0).getJSONObject("fields").getString("FBillNo"));
     }
 
+    /** 验证：新增筛选操作符通过明细校验并转换字段键。 */
     @Test void newOperatorsPassDetailValidationAndTranslateFieldKeys() throws Exception {
         JSONObject params = params("FIRST_ROW");
         JSONObject schema = DetailSyncSupport.schema(metadata(), params);
@@ -117,6 +127,7 @@ class DetailSyncSupportTest {
         assertTrue(DetailSyncSupport.query(schema, params, 0, 3).getString("FilterString").contains("FOrgAmount is null"));
     }
 
+    /** 验证：拒绝失效实体字段及不支持的填充模式。 */
     @Test void rejectStaleEntityAndFieldsAndUnsupportedModes() throws Exception {
         JSONObject params = params("FIRST_ROW");
         JSONObject meta = metadata();
@@ -131,6 +142,7 @@ class DetailSyncSupportTest {
         assertThrows(IllegalArgumentException.class, () -> DetailSyncSupport.query(schema, params, 0, 10));
     }
 
+    /** 验证：复合辅助资料字段展开为可查询子字段。 */
     @Test void flexContainersAreExpandedIntoQueryableSubfields() throws Exception {
         JSONObject meta = metadata();
         JSONObject flex = JSONObject.parseObject("{\"Key\":\"FAuxPropId\",\"Name\":[{\"Key\":2052,\"Value\":\"辅助属性\"}],\"FlexFields\":[{\"Key\":\"FAUXPROPID__FF100001\",\"FieldName\":\"FF100001\",\"FieldType\":231,\"ElementType\":30,\"Name\":[{\"Key\":2052,\"Value\":\"版本号\"}]}]}");
@@ -143,6 +155,7 @@ class DetailSyncSupportTest {
         assertEquals("FAuxPropId", flex.getString("Key"));
     }
 
+    /** 验证：即使位于分页边界也不把业务错误当记录。 */
     @Test void businessErrorsAreNotTreatedAsRecordsEvenAtPageBoundary() throws Exception {
         JSONObject error = JSONObject.parseObject("{\"Result\":{\"ResponseStatus\":{\"IsSuccess\":false,\"Errors\":[{\"Message\":\"元数据中标识为FAuxPropId的字段不存在\"}]}}}");
         List<List<Object>> rows = List.of(List.of(error));
@@ -153,6 +166,7 @@ class DetailSyncSupportTest {
         assertThrows(IllegalArgumentException.class, () -> DetailSyncSupport.result(schema, params, rows, 300, 300, 1000));
     }
 
+    /** 验证：自定义实体和字段完全使用元数据定义。 */
     @Test void customEntityAndFieldKeysComeEntirelyFromMetadata() throws Exception {
         JSONObject meta = metadata();
         meta.put("Id", "CustomForm");
@@ -177,6 +191,7 @@ class DetailSyncSupportTest {
         assertEquals(59, schema.getIntValue("headerFieldCount"));
     }
 
+    /** 验证：表头与明细共用日期枚举等显示转换。 */
     @Test void detailAndHeadShareAllDisplayFormats() throws Exception {
         JSONObject meta = metadata();
         JSONObject head = meta.getJSONArray("Entrys").getJSONObject(0);
@@ -200,6 +215,7 @@ class DetailSyncSupportTest {
         assertEquals("选项一", ContoryUtil.getKingdeeFieldValue(numericEnum, 1));
     }
 
+    /** 验证：仅同步选中实体且兼容无明细场景。 */
     @Test void onlySelectedEntityAndNoEntryOption() throws Exception {
         JSONObject meta = metadata();
         JSONObject another = JSONObject.parseObject(meta.getJSONArray("Entrys").getJSONObject(1).toJSONString());
@@ -214,6 +230,7 @@ class DetailSyncSupportTest {
         assertTrue(DetailSyncSupport.schema(meta, new JSONObject()).getJSONArray("entryOptions").isEmpty());
     }
 
+    /** 验证：多明细包含完整字段并生成稳定组合标识。 */
     @Test void multipleEntriesIncludeAllFieldsAndStableCombinationIds() throws Exception {
         JSONObject meta = metadata();
         JSONObject second = JSONObject.parseObject(meta.getJSONArray("Entrys").getJSONObject(1).toJSONString());
@@ -240,6 +257,7 @@ class DetailSyncSupportTest {
         assertFalse(DetailSyncSupport.schema(meta, params).containsKey("selectedEntryKey"));
     }
 
+    /** 验证：单位附带空枚举元数据时仍按关联名称显示。 */
     @Test void unitLookupWithEmptyEnumMetadataUsesDisplayName() throws Exception {
         JSONObject meta = metadata();
         JSONObject unit = JSONObject.of("Key", "FUnitID", "LookUpObjectFormId", "BD_UNIT", "Extends", new JSONArray(),

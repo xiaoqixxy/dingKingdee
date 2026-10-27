@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class KingdeeVoucherConfigServiceImpl implements IKingdeeVoucherConfigService
 {
+    /** 提供金蝶连接配置数据访问能力的映射接口。 */
     @Autowired
     private KingdeeVoucherConfigMapper kingdeeVoucherConfigMapper;
 

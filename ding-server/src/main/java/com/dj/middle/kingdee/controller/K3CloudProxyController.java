@@ -30,9 +30,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 @Anonymous
+/** 金蝶登录、字段发现和分页同步的对外入口，统一处理签名与错误响应。 */
 public class K3CloudProxyController {
 
+    /** 封装金蝶鉴权、元数据及同步查询的代理服务。 */
     private final K3CloudProxyService k3CloudProxyService;
+    /** 记录同步执行生命周期的组件。 */
     private final com.dj.middle.ding.service.SyncExecutionRecorder syncRecorder;
 
     /**
@@ -53,6 +56,7 @@ public class K3CloudProxyController {
      */
     @PostMapping({"/sheetMeta", "/formSchema"})
     public JSONObject sheetMeta(@RequestBody String rawBody, HttpServletRequest request) {
+// 按钉钉提供的时间戳与原始正文验签，不重新序列化正文以免改变签名内容。
 //        String timestamp = request.getHeader("Ding-Docs-Timestamp");
 //        String signature = request.getHeader("Ding-Docs-Signature");
         // 使用 rawBody 验签
@@ -113,6 +117,7 @@ public class K3CloudProxyController {
         }
     }
 
+    /** 返回引用对象的可选字段；扩展对象使用项目维护的字典结构。 */
     @PostMapping("/referenceSchema")
     public JSONObject referenceSchema(@RequestBody String rawBody) {
         try {
@@ -139,8 +144,10 @@ public class K3CloudProxyController {
             JSONObject requestBody = JSONObject.parseObject(rawBody);
             log.info("收到已验签的钉钉records请求");
             
+            // 先建立可追踪批次，再读取记录；续传偏移必须来自已校验的批次上下文。
             JSONObject recordsResult = syncRecorder.record(requestBody, () -> {
                 Integer requestedSize = requestBody.getInteger("maxResults");
+                // 客户端未给页大小时采用默认值，服务端额外限制单页最多300条。
                 int pageSize = requestedSize == null ? 300 : requestedSize;
                 int offset = syncRecorder.currentOffset();
                 if (pageSize <= 0 || offset < 0) throw new IllegalArgumentException("无效的分页参数");

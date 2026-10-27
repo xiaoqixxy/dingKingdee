@@ -17,10 +17,14 @@ import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/** SyncExecutionPersistenceTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class SyncExecutionPersistenceTest {
+    /** 测试数据库访问工具。 */
     private JdbcTemplate jdbc;
+    /** 记录同步执行生命周期的组件。 */
     private SyncExecutionRecorder recorder;
 
+    /** 创建隔离的测试数据库与日志组件。 */
     @BeforeEach void setup() {
         JdbcDataSource source = new JdbcDataSource();
         source.setURL("jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000");
@@ -34,27 +38,35 @@ class SyncExecutionPersistenceTest {
         var mapper = new SqlSessionTemplate(new SqlSessionFactoryBuilder().build(config)).getMapper(SyncExecutionMapper.class);
         TransactionTemplate tx = new TransactionTemplate(new DataSourceTransactionManager(source));
         recorder = new SyncExecutionRecorder(new SyncExecutionWriter(mapper) {
+            /** 模拟开始一页同步并建立执行上下文。 */
             @Override public void start(SyncExecution e) { tx.executeWithoutResult(status -> super.start(e)); }
+            /** 完成模拟分页执行并写入统计。 */
             @Override public void finish(SyncExecution e) { tx.executeWithoutResult(status -> super.finish(e)); }
         });
     }
 
+    /** 构造不含真实业务凭证的同步请求。 */
     private JSONObject request(String token, String id) {
         return JSONObject.of("requestId", id, "context", JSONObject.of("corpId", "corp1"), "nextToken", token,
             "params", "{\"selectedFormId\":\"TEST\",\"APP_SECRET\":\"secret-value\"}");
     }
+    /** 按指定范围生成模拟返回记录。 */
     private JSONObject rows(int count, boolean more) {
         int offset = recorder.currentOffset();
         JSONArray rows = new JSONArray();
         for (int i = 0; i < count; i++) rows.add(JSONObject.of("id", String.valueOf(offset+i)));
         return JSONObject.of("records", rows, "hasMore", more, "nextToken", more ? String.valueOf(offset+count) : "");
     }
+    /** 组合一页的执行参数与结果。 */
     private JSONObject page(String token, String id, int count, boolean more) throws Exception {
         return recorder.record(request(token,id), () -> rows(count,more));
     }
+    /** 执行统计SQL并读取测试数据库中的整数结果。 */
     private int number(String sql) { return jdbc.queryForObject(sql,Integer.class); }
+    /** 读取测试数据库中的批次统计状态。 */
     private String state() { return jdbc.queryForObject("SELECT status FROM ding_sync_execution",String.class); }
 
+    /** 验证：三页数据归入一个批次并完整记录645条源记录。 */
     @Test void threePagesProduceOneBatchAndAll645Items() throws Exception {
         JSONObject first=page("","first",300,true);
         assertEquals("RUNNING",state());
@@ -72,6 +84,7 @@ class SyncExecutionPersistenceTest {
         assertEquals(1,number("SELECT count(DISTINCT trace_id) FROM ding_api_call_log"));
     }
 
+    /** 验证：重复页与并发重试不重复累计统计。 */
     @Test void duplicatePagesAndConcurrentRetriesDoNotDoubleCount() throws Exception {
         String token=page("","first",300,true).getString("nextToken");
         assertEquals(token,page("","first",300,true).getString("nextToken"));
@@ -91,6 +104,7 @@ class SyncExecutionPersistenceTest {
         assertEquals(310,number("SELECT count(*) FROM ding_sync_execution_item"));
     }
 
+    /** 验证：失败保存完整脱敏堆栈，重试恢复且保留失败尝试。 */
     @Test void failureKeepsFullStackAndRetryRecoversWithoutLosingFailedAttempt() throws Exception {
         String token=page("","first",300,true).getString("nextToken");
         RuntimeException failure=new RuntimeException("APP_SECRET=secret-value",new IllegalStateException("root cause"));
@@ -109,6 +123,7 @@ class SyncExecutionPersistenceTest {
         assertEquals(1,number("SELECT count(*) FROM ding_sync_execution_page WHERE status='FAILED' AND error_stack IS NOT NULL"));
     }
 
+    /** 验证：令牌不能跨企业跨数据源或跳跃偏移。 */
     @Test void tokenCannotCrossTenantSourceOrSkipOffsets() throws Exception {
         String token=page("","first",300,true).getString("nextToken");
         JSONObject other=request(token,"other");other.getJSONObject("context").put("corpId","corp2");
@@ -122,6 +137,7 @@ class SyncExecutionPersistenceTest {
         assertEquals(2,number("SELECT count(*) FROM ding_sync_execution"));
     }
 
+    /** 验证：接口日志写入失败时整次完成事务回滚。 */
     @Test void finishTransactionRollsBackIfApiLogWriteFails() {
         jdbc.execute("DROP TABLE ding_api_call_log");
         assertThrows(Exception.class,() -> page("","first",10,false));
@@ -131,6 +147,7 @@ class SyncExecutionPersistenceTest {
         assertEquals("RUNNING",jdbc.queryForObject("SELECT status FROM ding_sync_execution_page",String.class));
     }
 
+    /** 验证：兼容旧数字游标并明确拒绝非法令牌。 */
     @Test void legacyNumericPageAndInvalidTokenAreHandledExplicitly() throws Exception {
         page("300","legacy",10,false);
         assertEquals("LEGACY",jdbc.queryForObject("SELECT log_scope FROM ding_sync_execution",String.class));
