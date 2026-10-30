@@ -261,6 +261,7 @@ function getList() {
   listTableConfig(proxy.addDateRange(queryParams, dateRange.value)).then(response => {
     tableConfigList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }

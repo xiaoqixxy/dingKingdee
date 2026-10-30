@@ -55,7 +55,7 @@ export function getProductOptions() {
 /** 按条件查询套餐列表。 */
 export function listPackage(query) {
   return request({
-    url: '/ding/package/list',
+    url: '/ding/product/list',
     method: 'get',
     params: query
   })
@@ -64,7 +64,7 @@ export function listPackage(query) {
 /** 按标识读取套餐详情。 */
 export function getPackage(id) {
   return request({
-    url: '/ding/package/' + id,
+    url: '/ding/product/' + id,
     method: 'get'
   })
 }
@@ -72,7 +72,7 @@ export function getPackage(id) {
 /** 新增套餐定义。 */
 export function addPackage(data) {
   return request({
-    url: '/ding/package',
+    url: '/ding/product',
     method: 'post',
     data: data
   })
@@ -81,7 +81,7 @@ export function addPackage(data) {
 /** 更新已有套餐信息。 */
 export function updatePackage(data) {
   return request({
-    url: '/ding/package',
+    url: '/ding/product',
     method: 'put',
     data: data
   })
@@ -90,7 +90,7 @@ export function updatePackage(data) {
 /** 删除指定套餐。 */
 export function delPackage(id) {
   return request({
-    url: '/ding/package/' + id,
+    url: '/ding/product/' + id,
     method: 'delete'
   })
 }

@@ -141,4 +141,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
    		)
    	</insert>
    	
+    <select id="selectTrialBasicProduct" resultMap="DingProductResult">
+        <include refid="selectDingProductVo"/>
+        where product_category = '基础版' and status = 1
+        order by is_default desc, id asc limit 1
+    </select>
 </mapper>

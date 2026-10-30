@@ -4,7 +4,7 @@ import request from '@/utils/request'
 /** 按条件查询金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function listTableConfig(query) {
   return request({
-    url: '/middle/kingdee/tableConfig/list',
+    url: '/kingdee/tableConfig/list',
     method: 'get',
     params: query
   })
@@ -13,7 +13,7 @@ export function listTableConfig(query) {
 /** 读取金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function getTableConfig(configId) {
   return request({
-    url: '/middle/kingdee/tableConfig/' + configId,
+    url: '/kingdee/tableConfig/' + configId,
     method: 'get'
   })
 }
@@ -21,7 +21,7 @@ export function getTableConfig(configId) {
 /** 新增金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function addTableConfig(data) {
   return request({
-    url: '/middle/kingdee/tableConfig',
+    url: '/kingdee/tableConfig',
     method: 'post',
     data: data
   })
@@ -30,7 +30,7 @@ export function addTableConfig(data) {
 /** 更新金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function updateTableConfig(data) {
   return request({
-    url: '/middle/kingdee/tableConfig',
+    url: '/kingdee/tableConfig',
     method: 'put',
     data: data
   })
@@ -39,7 +39,7 @@ export function updateTableConfig(data) {
 /** 删除金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function delTableConfig(configId) {
   return request({
-    url: '/middle/kingdee/tableConfig/' + configId,
+    url: '/kingdee/tableConfig/' + configId,
     method: 'delete'
   })
 }
@@ -47,7 +47,7 @@ export function delTableConfig(configId) {
 /** 读取可选项金蝶表单配置，通过统一请求封装处理鉴权与错误。 */
 export function getTableConfigOptions() {
   return request({
-    url: '/middle/kingdee/tableConfig/options',
+    url: '/kingdee/tableConfig/options',
     method: 'get'
   })
 }

@@ -53,6 +53,7 @@ public class DingSubscriptionController extends BaseController
 
     /** 新增企业订阅并返回保存结果。 */
     @Operation(summary = "新增套餐订阅")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:subscription:add')")
     @PostMapping
     public AjaxResult add(@RequestBody DingSubscription dingSubscription)
     {
@@ -61,6 +62,7 @@ public class DingSubscriptionController extends BaseController
 
     /** 更新指定企业订阅并返回修改结果。 */
     @Operation(summary = "修改套餐订阅")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:subscription:edit')")
     @PutMapping
     public AjaxResult edit(@RequestBody DingSubscription dingSubscription)
     {
@@ -69,6 +71,7 @@ public class DingSubscriptionController extends BaseController
 
     /** 按主键删除企业订阅。 */
     @Operation(summary = "删除套餐订阅")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:subscription:remove')")
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {

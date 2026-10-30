@@ -78,10 +78,10 @@ public class DingOrderServiceImpl implements IDingOrderService
         dingOrder.setUpdateTime(DateUtils.getNowDate());
         int result = dingOrderMapper.updateDingOrder(dingOrder);
         
-        if (oldOrder != null && dingOrder.getPayStatus() != null 
-            && dingOrder.getPayStatus() == 1 && oldOrder.getPayStatus() != 1) {
+        if (result > 0 && oldOrder != null && Integer.valueOf(1).equals(dingOrder.getPayStatus())
+            && !Integer.valueOf(1).equals(oldOrder.getPayStatus())) {
             // 根据订单套餐创建或更新企业订阅，计算生效及到期时间。
-            createSubscription(dingOrder);
+            createSubscription(dingOrderMapper.selectDingOrderById(dingOrder.getId()));
         }
         
         return result;
@@ -89,40 +89,38 @@ public class DingOrderServiceImpl implements IDingOrderService
 
     /** 根据订单套餐创建或更新企业订阅，计算生效及到期时间。 */
     @Override
+    @Transactional
     public void createSubscription(DingOrder order) {
         // 按企业查找当前订阅，产品不存在时明确终止，不能生成缺少权益定义的订阅。
-        DingSubscription existing = dingSubscriptionMapper.selectDingSubscriptionByCorpId(order.getDingCorpId());
+        DingSubscription existing = dingSubscriptionMapper.selectDingSubscriptionByCorpIdForUpdate(order.getDingCorpId());
         DingProduct product = dingProductMapper.selectDingProductById(order.getProductId());
         if (product == null) {
             throw new com.dj.common.exception.ServiceException("订单关联产品不存在，无法创建订阅");
         }
         
-        // 已有订阅就更新套餐与有效期；新订阅另外初始化用量和自动续费状态。
+        Date paidAt = order.getPayTime() != null ? order.getPayTime() : new Date();
+        boolean continuing = existing != null && java.util.Objects.equals(existing.getProductId(), product.getId())
+                && Integer.valueOf(1).equals(existing.getStatus()) && existing.getEndTime() != null
+                && existing.getEndTime().after(paidAt);
+        // 同套餐提前续费从原到期日延长，已到期或切换套餐从付款日生效。
+        Date base = continuing ? existing.getEndTime() : paidAt;
+        java.time.ZonedDateTime expiry = base.toInstant().atZone(java.time.ZoneId.of("Asia/Shanghai"));
+        expiry = Integer.valueOf(2).equals(product.getProductType()) ? expiry.plusYears(1) : expiry.plusMonths(1);
+        DingSubscription subscription = new DingSubscription();
+        subscription.setProductId(product.getId());
+        subscription.setProductType(product.getProductType());
+        subscription.setStartTime(continuing ? existing.getStartTime() : paidAt);
+        subscription.setEndTime(Date.from(expiry.toInstant()));
+        subscription.setStatus(1);
         if (existing != null) {
-            existing.setProductId(order.getProductId());
-            existing.setProductType(product.getProductType());
-            existing.setStartTime(order.getPayTime() != null ? order.getPayTime() : new Date());
-            if (product != null) {
-                existing.setEndTime(new Date(existing.getStartTime().getTime() + (product.getProductType() == 2 ? 365L : 30L) * 24 * 60 * 60 * 1000));
-            }
-            existing.setStatus(1);
-            dingSubscriptionMapper.updateDingSubscription(existing);
+            // 只更新权益字段，不拿读取时的旧用量覆盖同步过程中新增的用量。
+            subscription.setId(existing.getId());
+            dingSubscriptionMapper.updateDingSubscription(subscription);
         } else {
-            DingSubscription subscription = new DingSubscription();
             subscription.setDingCorpId(order.getDingCorpId());
-            subscription.setProductId(order.getProductId());
-            subscription.setProductType(product.getProductType());
-            subscription.setStartTime(order.getPayTime() != null ? order.getPayTime() : new Date());
-            if (product != null) {
-                long days = product.getProductType() == 2 ? 365 : 30;
-                subscription.setEndTime(new Date(subscription.getStartTime().getTime() + days * 24 * 60 * 60 * 1000));
-            } else {
-                subscription.setEndTime(new Date(subscription.getStartTime().getTime() + 30L * 24 * 60 * 60 * 1000));
-            }
             subscription.setAutoRenew(0);
             subscription.setUsedFormCount(0);
             subscription.setMonthUsedSync(0);
-            subscription.setStatus(1);
             subscription.setCreateTime(DateUtils.getNowDate());
             dingSubscriptionMapper.insertDingSubscription(subscription);
         }

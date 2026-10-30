@@ -47,6 +47,7 @@ public class DingProductController extends BaseController
 
     /** 新增产品套餐并返回保存结果。 */
     @Operation(summary = "新增产品配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:product:add')")
     @PostMapping
     public AjaxResult add(@RequestBody DingProduct dingProduct)
     {
@@ -55,6 +56,7 @@ public class DingProductController extends BaseController
 
     /** 更新指定产品套餐并返回修改结果。 */
     @Operation(summary = "修改产品配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:product:edit')")
     @PutMapping
     public AjaxResult edit(@RequestBody DingProduct dingProduct)
     {
@@ -63,6 +65,7 @@ public class DingProductController extends BaseController
 
     /** 按主键删除产品套餐。 */
     @Operation(summary = "删除产品配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:product:remove')")
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {

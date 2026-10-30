@@ -3,6 +3,8 @@ package com.dj.middle.kingdee.service.impl;
 import com.dj.middle.kingdee.util.DetailSyncSupport;
 import com.dj.middle.kingdee.util.FieldConfigurationSupport;
 import com.dj.middle.kingdee.util.ReferenceQuerySupport;
+import com.dj.middle.kingdee.util.ReportClient;
+import com.dj.middle.kingdee.util.ReportSupport;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
@@ -142,9 +144,9 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
      */
     @Override
     public JSONObject sheetMeta(Map<String, Object> requestBody) {
-        System.err.println(requestBody);
         // 解析连接参数
         JSONObject params = JSONObject.parseObject(requestBody.get("params").toString());
+        if (ReportSupport.enabled(params)) return reportSchema(params.getString("selectedFormId"), params);
         String SERVER_URL = params.getString("SERVER_URL");
         String CID = params.getString("CID");
         String USER_NAME = params.getString("USER_NAME");
@@ -182,6 +184,9 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
      */
     @Override
     public JSONObject records(Map<String, Object> requestBody) throws ParseException {
+        JSONObject sourceParams = JSONObject.parseObject(requestBody.get("params").toString());
+        if (ReportSupport.enabled(sourceParams))
+            throw new IllegalArgumentException("报表同步请使用带企业权益校验的 records 接口");
         // 处理分页参数
         Integer nextToken = 0;
         Integer maxResult = (Integer) requestBody.get("maxResults");
@@ -235,6 +240,38 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
                 formId -> loadReferenceMetadata(util, formId));
     }
 
+    /** 每次使用独立会话，防止多租户 Cookie 或字段缓存串用。 */
+    private JSONObject reportSchema(String formId, JSONObject params) {
+        ReportSupport.validateForm(formId);
+        ReportClient client = createReportClient(params);
+        client.login();
+        return ReportSupport.configured(client.discover(formId), params);
+    }
+
+    /** 报表走专用查询，并在发起请求前裁剪到服务端套餐额度。 */
+    private JSONObject reportRecords(JSONObject params, Integer requested, Integer offset, int syncLimit) throws Exception {
+        if (requested == null || requested <= 0 || offset == null || offset < 0)
+            throw new IllegalArgumentException("无效的报表分页参数");
+        if (offset >= syncLimit) {
+            syncRecorder.limitReached();
+            return JSONObject.of("records", new JSONArray(), "hasMore", false, "nextToken", "");
+        }
+        String formId = params.getString("selectedFormId");
+        ReportSupport.validateForm(formId);
+        ReportClient client = createReportClient(params);
+        syncRecorder.api("ReportLogin", () -> { client.login(); return true; });
+        JSONObject schema = syncRecorder.api("ReportFieldDiscovery", () -> ReportSupport.configured(client.discover(formId), params));
+        int size = Math.min(Math.min(requested, 300), syncLimit - offset);
+        JSONObject query = ReportSupport.query(schema, params, offset, size);
+        JSONObject result = syncRecorder.api("GetSysReportData", () ->
+                ReportSupport.page(schema, params, client.query(formId, query), offset, size, syncLimit));
+        if (result.getBooleanValue("limitReached")) syncRecorder.limitReached();
+        result.remove("limitReached");
+        return result;
+    }
+
+    protected ReportClient createReportClient(JSONObject params) { return new ReportClient(params); }
+
     /** 返回引用对象的可选字段；扩展对象使用项目维护的字典结构。 */
     @Override
     public JSONObject referenceSchema(String formId, String paramsJson) {
@@ -254,6 +291,8 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
         try {
             // 解析params
             JSONObject params = JSONObject.parseObject(paramsJson);
+            if (ReportSupport.enabled(params)) return reportSchema(
+                    selectedFormId == null || selectedFormId.isBlank() ? params.getString("selectedFormId") : selectedFormId, params);
             String SERVER_URL = params.getString("SERVER_URL");
             String CID = params.getString("CID");
             String USER_NAME = params.getString("USER_NAME");
@@ -284,14 +323,17 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
         try {
             // 读取企业当前订阅，缺失时按既有规则登记默认产品权益。
             // 同步额度来自服务端当前订阅，不能由前端请求自行放宽。
-            DingProduct dingProduct = dingSubscriptionService.getOrRegisterDefaultProduct(corpId);
+            DingProduct dingProduct = dingSubscriptionService.requireActiveProduct(corpId);
             //获取同步数量上线
             Integer singleSyncLimit = dingProduct.getSingleSyncLimit();
-            System.err.println("singleSyncLimit => " + singleSyncLimit);
-            System.err.println("nextToken => " + nextToken);
+            if (nextToken == null || nextToken < 0 || maxResults == null || maxResults <= 0)
+                throw new IllegalArgumentException("无效的分页参数");
+
 
             // 解析params
             JSONObject params = JSONObject.parseObject(paramsJson);
+            if (ReportSupport.enabled(params)) return reportRecords(params, maxResults, nextToken,
+                    singleSyncLimit == null ? 0 : singleSyncLimit);
             String SERVER_URL = params.getString("SERVER_URL");
             String CID = params.getString("CID");
             String USER_NAME = params.getString("USER_NAME");
@@ -363,10 +405,18 @@ public class K3CloudProxyServiceImpl implements K3CloudProxyService {
             }
             
             // 纯表头且未配置额外引用时保留历史直接查询分支。
-            JSONObject queryJson = ContoryUtil.kingdeeToKingdeeQuery(dingFieldData, nextToken, maxResults, filterConditions, sortConfigs);
+            int remaining = Math.max(0, (singleSyncLimit == null ? 0 : singleSyncLimit) - nextToken);
+            if (remaining == 0) {
+                syncRecorder.limitReached();
+                return JSONObject.of("records", new JSONArray(), "hasMore", false, "nextToken", "");
+            }
+            int boundedSize = Math.min(Math.min(maxResults, 300), remaining);
+            JSONObject queryJson = ContoryUtil.kingdeeToKingdeeQuery(dingFieldData, nextToken, boundedSize, filterConditions, sortConfigs);
             List<List<Object>> query = syncRecorder.api("ExecuteBillQuery", () -> util.query(queryJson));
             
-            JSONObject result = ContoryUtil.kingdeeToDingResult(dingFieldData, query, nextToken, maxResults,singleSyncLimit);
+            if (query.size() >= boundedSize && (long) nextToken + boundedSize >= singleSyncLimit)
+                syncRecorder.limitReached();
+            JSONObject result = ContoryUtil.kingdeeToDingResult(dingFieldData, query, nextToken, boundedSize,singleSyncLimit);
             //添加权限过滤
 
             log.info("records查询成功: {}", result.size());

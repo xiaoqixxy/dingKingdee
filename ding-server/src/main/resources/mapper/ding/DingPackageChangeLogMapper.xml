@@ -6,94 +6,94 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- DingPackageChangeLogResult：数据库列到业务对象属性的映射；字段映射与条件参数需与对应Mapper保持一致。 -->
     <resultMap type="com.dj.middle.ding.domain.DingPackageChangeLog" id="DingPackageChangeLogResult">
-		<id     property="id"    column="id"    />
-		<result property="dingCorpId"    column="ding_corp_id"    />
-		<result property="oldPackageId"    column="old_package_id"    />
-		<result property="newPackageId"    column="new_package_id"    />
-		<result property="changeType"    column="change_type"    />
-		<result property="orderNo"    column="order_no"    />
-		<result property="operator"    column="operator"    />
-		<result property="ext1"    column="ext1"    />
-		<result property="ext2"    column="ext2"    />
-		<result property="ext3"    column="ext3"    />
-	<result property="createTime" column="create_time" />
-	</resultMap>
-	
-	<!-- selectDingPackageChangeLogVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
-	<sql id="selectDingPackageChangeLogVo">
-        select id, ding_corp_id, old_package_id, new_package_id, change_type, order_no, operator, 
+        <id     property="id"    column="id"    />
+        <result property="dingCorpId"    column="ding_corp_id"    />
+        <result property="oldPackageId"    column="old_product_id"    />
+        <result property="newPackageId"    column="new_product_id"    />
+        <result property="changeType"    column="change_type"    />
+        <result property="orderNo"    column="order_no"    />
+        <result property="operator"    column="operator"    />
+        <result property="ext1"    column="ext1"    />
+        <result property="ext2"    column="ext2"    />
+        <result property="ext3"    column="ext3"    />
+    <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <!-- selectDingPackageChangeLogVo：复用的字段列表或查询片段；字段映射与条件参数需与对应Mapper保持一致。 -->
+    <sql id="selectDingPackageChangeLogVo">
+        select id, ding_corp_id, old_product_id, new_product_id, change_type, order_no, operator,
                ext1, ext2, ext3, create_time
-		from ding_package_change_log
+        from ding_product_change_log
     </sql>
 
     <!-- selectDingPackageChangeLogList：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <select id="selectDingPackageChangeLogList" parameterType="com.dj.middle.ding.domain.DingPackageChangeLog" resultMap="DingPackageChangeLogResult">
-	    <include refid="selectDingPackageChangeLogVo"/>
-		<where>
-		    <if test="dingCorpId != null and dingCorpId != ''">
-				AND ding_corp_id = #{dingCorpId}
-			</if>
-			<if test="changeType != null">
-				AND change_type = #{changeType}
-			</if>
-			<if test="orderNo != null and orderNo != ''">
-				AND order_no like concat('%', #{orderNo}, '%')
-			</if>
-	    </where>
-	    order by id desc
-	</select>
-	
-	<!-- selectDingPackageChangeLogById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
-	<select id="selectDingPackageChangeLogById" parameterType="Long" resultMap="DingPackageChangeLogResult">
-		<include refid="selectDingPackageChangeLogVo"/>
-		where id = #{id}
-	</select>
-	
-	<!-- selectDingPackageChangeLogByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
-	<select id="selectDingPackageChangeLogByCorpId" parameterType="String" resultMap="DingPackageChangeLogResult">
-		<include refid="selectDingPackageChangeLogVo"/>
-		where ding_corp_id = #{dingCorpId}
-		order by id desc
-	</select>
-	
-	<!-- deleteDingPackageChangeLogById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
-	<delete id="deleteDingPackageChangeLogById" parameterType="Long">
-  		delete from ding_package_change_log where id = #{id}
-  	</delete>
-  	
-  	<!-- deleteDingPackageChangeLogByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
-  	<delete id="deleteDingPackageChangeLogByIds" parameterType="Long">
-  		delete from ding_package_change_log where id in
-  		<foreach collection="array" item="id" open="(" separator="," close=")">
-  			#{id}
-        </foreach> 
-  	</delete>
+        <include refid="selectDingPackageChangeLogVo"/>
+        <where>
+            <if test="dingCorpId != null and dingCorpId != ''">
+                AND ding_corp_id = #{dingCorpId}
+            </if>
+            <if test="changeType != null">
+                AND change_type = #{changeType}
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                AND order_no like concat('%', #{orderNo}, '%')
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <!-- selectDingPackageChangeLogById：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
+    <select id="selectDingPackageChangeLogById" parameterType="Long" resultMap="DingPackageChangeLogResult">
+        <include refid="selectDingPackageChangeLogVo"/>
+        where id = #{id}
+    </select>
+
+    <!-- selectDingPackageChangeLogByCorpId：按约定参数查询业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
+    <select id="selectDingPackageChangeLogByCorpId" parameterType="String" resultMap="DingPackageChangeLogResult">
+        <include refid="selectDingPackageChangeLogVo"/>
+        where ding_corp_id = #{dingCorpId}
+        order by id desc
+    </select>
+
+    <!-- deleteDingPackageChangeLogById：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
+    <delete id="deleteDingPackageChangeLogById" parameterType="Long">
+        delete from ding_product_change_log where id = #{id}
+    </delete>
+
+    <!-- deleteDingPackageChangeLogByIds：删除指定范围的业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
+    <delete id="deleteDingPackageChangeLogByIds" parameterType="Long">
+        delete from ding_product_change_log where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
 
     <!-- insertDingPackageChangeLog：保存新增业务记录；字段映射与条件参数需与对应Mapper保持一致。 -->
     <insert id="insertDingPackageChangeLog" parameterType="com.dj.middle.ding.domain.DingPackageChangeLog" useGeneratedKeys="true" keyProperty="id">
-  		insert into ding_package_change_log(
+        insert into ding_product_change_log(
             create_time,
-  			ding_corp_id,
-  			old_package_id,
-  			new_package_id,
-  			change_type,
-  			order_no,
-  			operator
-  			<if test="ext1 != null">,ext1</if>
-  			<if test="ext2 != null">,ext2</if>
-  			<if test="ext3 != null">,ext3</if>
-  		)values(
+            ding_corp_id,
+            old_product_id,
+            new_product_id,
+            change_type,
+            order_no,
+            operator
+            <if test="ext1 != null">,ext1</if>
+            <if test="ext2 != null">,ext2</if>
+            <if test="ext3 != null">,ext3</if>
+        )values(
             COALESCE(#{createTime}, CURRENT_TIMESTAMP(3)),
-  			#{dingCorpId},
-  			#{oldPackageId},
-  			#{newPackageId},
-  			#{changeType},
-  			#{orderNo},
-  			#{operator}
-  			<if test="ext1 != null">,#{ext1}</if>
-  			<if test="ext2 != null">,#{ext2}</if>
-  			<if test="ext3 != null">,#{ext3}</if>
-  		)
-  	</insert>
-  	
+            #{dingCorpId},
+            #{oldPackageId},
+            #{newPackageId},
+            #{changeType},
+            #{orderNo},
+            #{operator}
+            <if test="ext1 != null">,#{ext1}</if>
+            <if test="ext2 != null">,#{ext2}</if>
+            <if test="ext3 != null">,#{ext3}</if>
+        )
+    </insert>
+
 </mapper>

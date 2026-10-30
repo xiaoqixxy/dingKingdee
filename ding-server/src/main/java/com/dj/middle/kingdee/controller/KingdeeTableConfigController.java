@@ -54,6 +54,7 @@ public class KingdeeTableConfigController extends BaseController
 
     /** 新增金蝶表单配置并返回保存结果。 */
     @Operation(summary = "新增金蝶表单配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('kingdee:tableConfig:add')")
     @PostMapping
     public AjaxResult add(@RequestBody KingdeeTableConfig kingdeeTableConfig)
     {
@@ -67,6 +68,7 @@ public class KingdeeTableConfigController extends BaseController
 
     /** 更新指定金蝶表单配置并返回修改结果。 */
     @Operation(summary = "修改金蝶表单配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('kingdee:tableConfig:edit')")
     @PutMapping
     public AjaxResult edit(@RequestBody KingdeeTableConfig kingdeeTableConfig)
     {
@@ -75,6 +77,7 @@ public class KingdeeTableConfigController extends BaseController
 
     /** 按主键删除金蝶表单配置。 */
     @Operation(summary = "删除金蝶表单配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('kingdee:tableConfig:remove')")
     @DeleteMapping("/{configIds}")
     public AjaxResult remove(@PathVariable Long[] configIds)
     {
@@ -93,6 +96,7 @@ public class KingdeeTableConfigController extends BaseController
 
     /** 按查询条件导出金蝶表单配置数据。 */
     @Operation(summary = "导出金蝶表单配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('kingdee:tableConfig:export')")
     @PostMapping("/export")
     public void export(HttpServletResponse response, KingdeeTableConfig kingdeeTableConfig)
     {
@@ -112,6 +116,7 @@ public class KingdeeTableConfigController extends BaseController
 
     /** 校验并导入金蝶表单配置数据。 */
     @Operation(summary = "导入数据")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('kingdee:tableConfig:import')")
     @PostMapping("/importData")
     public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
     {

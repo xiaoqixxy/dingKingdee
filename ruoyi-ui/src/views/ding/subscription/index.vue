@@ -238,6 +238,7 @@ function getList() {
   listSubscription(queryParams).then(response => {
     subscriptionList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }

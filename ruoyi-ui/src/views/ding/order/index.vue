@@ -335,6 +335,7 @@ function getList() {
   listOrder(proxy.addDateRange(queryParams, dateRange.value)).then(response => {
     orderList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }

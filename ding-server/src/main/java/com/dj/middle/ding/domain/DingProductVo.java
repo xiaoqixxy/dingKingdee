@@ -25,6 +25,12 @@ public class DingProductVo
     private Integer status;
     /** 到期时间。 */
     private String endTime;
+    private boolean active;
+    private String accessMessage;
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active=active; }
+    public String getAccessMessage() { return accessMessage; }
+    public void setAccessMessage(String message) { this.accessMessage=message; }
 
     /** 读取记录主键。 */
     public Long getId()

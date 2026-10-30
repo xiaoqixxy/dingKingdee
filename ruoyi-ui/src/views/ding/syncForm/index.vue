@@ -192,6 +192,7 @@ function getList() {
   listSyncForm(queryParams).then(response => {
     syncFormList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }

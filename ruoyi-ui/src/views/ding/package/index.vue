@@ -2,17 +2,17 @@
   <div class="app-container">
     <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
-      <el-form-item label="套餐名称" prop="packageName">
+      <el-form-item label="套餐名称" prop="productName">
         <el-input
-          v-model="queryParams.packageName"
+          v-model="queryParams.productName"
           placeholder="请输入套餐名称"
           clearable
           style="width: 240px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="套餐类型" prop="packageType">
-        <el-select v-model="queryParams.packageType" placeholder="请选择套餐类型" clearable style="width: 240px">
+      <el-form-item label="套餐类型" prop="productType">
+        <el-select v-model="queryParams.productType" placeholder="请选择套餐类型" clearable style="width: 240px">
           <el-option label="包月" :value="1" />
           <el-option label="包年" :value="2" />
           <el-option label="按量付费" :value="3" />
@@ -64,11 +64,11 @@
     <el-table v-loading="loading" :data="packageList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="套餐ID" align="center" prop="id" width="80" />
-      <el-table-column label="套餐名称" align="center" prop="packageName" :show-overflow-tooltip="true" />
-      <el-table-column label="套餐类型" align="center" prop="packageType" width="100">
+      <el-table-column label="套餐名称" align="center" prop="productName" :show-overflow-tooltip="true" />
+      <el-table-column label="套餐类型" align="center" prop="productType" width="100">
         <template #default="scope">
-          <el-tag v-if="scope.row.packageType === 1" type="success">包月</el-tag>
-          <el-tag v-else-if="scope.row.packageType === 2" type="primary">包年</el-tag>
+          <el-tag v-if="scope.row.productType === 1" type="success">包月</el-tag>
+          <el-tag v-else-if="scope.row.productType === 2" type="primary">包年</el-tag>
           <el-tag v-else type="info">按量付费</el-tag>
         </template>
       </el-table-column>
@@ -115,11 +115,11 @@
     <el-dialog :title="title" v-model="open" width="700px" append-to-body>
       <!-- 筛选或编辑表单由响应式状态驱动，校验规则在脚本区维护。 -->
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="套餐名称" prop="packageName">
-          <el-input v-model="form.packageName" placeholder="请输入套餐名称" />
+        <el-form-item label="套餐名称" prop="productName">
+          <el-input v-model="form.productName" placeholder="请输入套餐名称" />
         </el-form-item>
-        <el-form-item label="套餐类型" prop="packageType">
-          <el-radio-group v-model="form.packageType">
+        <el-form-item label="套餐类型" prop="productType">
+          <el-radio-group v-model="form.productType">
             <el-radio :label="1">包月</el-radio>
             <el-radio :label="2">包年</el-radio>
             <el-radio :label="3">按量付费</el-radio>
@@ -195,15 +195,15 @@ const open = ref(false)
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
-  packageName: undefined,
-  packageType: undefined,
+  productName: undefined,
+  productType: undefined,
   status: undefined
 })
 
 const form = reactive({
   id: undefined,
-  packageName: undefined,
-  packageType: 1,
+  productName: undefined,
+  productType: 1,
   price: 0,
   syncFormLimit: 0,
   singleSyncLimit: 0,
@@ -217,8 +217,8 @@ const form = reactive({
 })
 
 const rules = {
-  packageName: [{ required: true, message: '套餐名称不能为空', trigger: 'blur' }],
-  packageType: [{ required: true, message: '套餐类型不能为空', trigger: 'change' }],
+  productName: [{ required: true, message: '套餐名称不能为空', trigger: 'blur' }],
+  productType: [{ required: true, message: '套餐类型不能为空', trigger: 'change' }],
   price: [{ required: true, message: '价格不能为空', trigger: 'blur' }]
 }
 
@@ -231,6 +231,7 @@ function getList() {
   listPackage(queryParams).then(response => {
     packageList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }
@@ -244,8 +245,8 @@ function cancel() {
 /** 重建编辑表单默认值并清理校验提示。 */
 function reset() {
   form.id = undefined
-  form.packageName = undefined
-  form.packageType = 1
+  form.productName = undefined
+  form.productType = 1
   form.price = 0
   form.syncFormLimit = 0
   form.singleSyncLimit = 0

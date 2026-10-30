@@ -56,29 +56,34 @@ public final class DetailSyncSupport {
         }
         for (int i = 0; i < entities.size(); i++) {
             JSONObject entity = entities.getJSONObject(i);
-            if (!"EntryEntity".equals(entity.getString("EntityType"))) continue;
+            boolean subHead = "SubHeadEntity".equals(entity.getString("EntityType"));
+            if (!subHead && !"EntryEntity".equals(entity.getString("EntityType"))) continue;
             JSONObject option = new JSONObject();
             String key = entity.getString("Key");
             option.put("key", key);
             option.put("name", name(entity));
+            option.put("entityType", entity.getString("EntityType"));
             // 复用既有字段类型转换，不修改来源元数据。
             JSONObject copy = JSONObject.parseObject(metadata.toJSONString());
             String pk = entity.getString("EntryPkFieldName");
             String parent = entity.getString("ParentKey");
             // 只有具备主键、且直属表头的明细可以稳定分页；多层子明细先明确标为不支持。
-            boolean supported = pk != null && !pk.isBlank()
+            boolean supported = subHead || pk != null && !pk.isBlank()
                     && (parent == null || parent.isBlank() || headEntityKeys.contains(parent));
             option.put("supported", supported);
             option.put("reason", supported ? "" : "缺少明细主键或属于多层子明细，暂不支持");
             copy.put("PkFieldName", key + "_" + pk);
             JSONArray fields = ContoryUtil.kingdeeToDing(copy, key).getJSONArray("fields");
-            fields.getJSONObject(0).put("name", name(entity) + "·明细内码");
-            for (int j = 1; j < fields.size(); j++) {
+            if (subHead) fields.remove(0);
+            else fields.getJSONObject(0).put("name", name(entity) + "·明细内码");
+            for (int j = subHead ? 0 : 1; j < fields.size(); j++) {
                 JSONObject field = fields.getJSONObject(j);
                 // Output IDs are entity-scoped; ExecuteBillQuery uses business field keys without that prefix.
                 // 查询使用金蝶业务键，输出列增加实体前缀，避免多个明细中同名字段冲突。
-                field.put("queryKey", field.getString("id"));
-                field.put("id", key + "_" + field.getString("id"));
+                if (!subHead) {
+                    field.put("queryKey", field.getString("id"));
+                    field.put("id", key + "_" + field.getString("id"));
+                }
                 field.put("name", name(entity) + "·" + field.getString("name"));
             }
             option.put("fields", fields);
@@ -89,11 +94,24 @@ public final class DetailSyncSupport {
         }
         result.put("entryOptions", options);
         result.put("headFields", JSONArray.parseArray(headFields.toJSONString()));
-        // 未选择明细时沿用纯表头结构，避免历史表头同步被明细逻辑影响。
+        // 未选择子表头或明细时沿用纯主表头结构。
         if (selectedKeys.isEmpty()) return result;
-        // 校验明细表头填充模式，旧配置默认仅首行显示表头。
+        if (selectedOptions.size() != selectedKeys.size()) throw new IllegalArgumentException("所选子表头或明细表不存在，请重新选择");
+        // 子表头属于单值表头：不生成明细内码，不改变记录粒度，也不要求存在明细行。
+        Set<String> headerIds = new HashSet<>();
+        for (Object item : headFields) headerIds.add(((JSONObject) item).getString("id"));
+        for (JSONObject option : selectedOptions) {
+            if (!"SubHeadEntity".equals(option.getString("entityType"))) continue;
+            for (Object item : option.getJSONArray("fields")) {
+                JSONObject field = (JSONObject) item;
+                if (!headerIds.add(field.getString("id")))
+                    throw new IllegalArgumentException("表头与子表头字段标识冲突: " + field.getString("id"));
+                headFields.add(field);
+            }
+        }
+        selectedOptions.removeIf(option -> "SubHeadEntity".equals(option.getString("entityType")));
+        if (selectedOptions.isEmpty()) return result;
         mode(params);
-        if (selectedOptions.size() != selectedKeys.size()) throw new IllegalArgumentException("所选明细表不存在，请重新选择");
         result.put("headerFieldCount", headFields.size());
         result.put("selectedEntryKey", selectedOptions.get(0).getString("key"));
         JSONArray keys = new JSONArray();

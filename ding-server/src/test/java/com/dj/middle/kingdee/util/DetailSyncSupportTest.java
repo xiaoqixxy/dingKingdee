@@ -10,6 +10,56 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** DetailSyncSupportTest：使用隔离夹具验证业务边界与历史兼容，不连接真实业务环境。 */
 class DetailSyncSupportTest {
+    @Test void supplierMetadataExposesAllTabsAndSelectsFinanceFields() throws Exception {
+        try (var input = getClass().getResourceAsStream("/supplier-subhead-metadata.json")) {
+            JSONObject meta = JSONObject.parseObject(new String(Objects.requireNonNull(input).readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            JSONObject discovery = DetailSyncSupport.schema(meta, new JSONObject());
+            assertEquals(6, discovery.getJSONArray("entryOptions").size());
+            assertEquals(23, discovery.getJSONArray("fields").size());
+            JSONObject params = JSONObject.of("selectedEntryKeys", JSONArray.of("FBaseInfo", "FBusinessInfo", "FFinanceInfo"));
+            JSONObject selected = DetailSyncSupport.schema(meta, params);
+            assertEquals(78, selected.getJSONArray("fields").size());
+            assertFalse(selected.containsKey("selectedEntryKey"));
+            String keys = ContoryUtil.kingdeeToKingdeeQuery(selected, 0, 10, null, null).getString("FieldKeys");
+            assertTrue(keys.contains("FPayCurrencyId.FName"));
+            assertTrue(keys.contains("FFinanceDesc"));
+            assertTrue(keys.contains("FAddress"));
+            assertEquals(23, DetailSyncSupport.schema(meta, new JSONObject()).getJSONArray("fields").size());
+        }
+    }
+
+    /** 子表头无需明细主键，单独选择仍保持每张单据一行，与明细组合时纳入表头填充范围。 */
+    @Test void optionalSubHeadsPreserveBillGrainAndCombineWithDetails() throws Exception {
+        JSONObject meta = metadata();
+        meta.getJSONArray("Entrys").add(JSONObject.of("Key", "FFinanceInfo", "EntityType", "SubHeadEntity",
+                "Name", JSONArray.of(JSONObject.of("Key", 2052, "Value", "财务信息")),
+                "Fields", JSONArray.of(JSONObject.of("Key", "FFinanceDesc", "FieldType", 231, "ElementType", 1,
+                        "Name", JSONArray.of(JSONObject.of("Key", 2052, "Value", "备注"))))));
+        JSONObject discovery = DetailSyncSupport.schema(meta, new JSONObject());
+        JSONObject option = discovery.getJSONArray("entryOptions").getJSONObject(1);
+        assertEquals("SubHeadEntity", option.getString("entityType"));
+        assertTrue(option.getBooleanValue("supported"));
+        assertEquals(1, option.getJSONArray("fields").size());
+        assertFalse(discovery.getJSONArray("fields").toJSONString().contains("FFinanceDesc"));
+        JSONObject params = JSONObject.of("selectedEntryKeys", JSONArray.of("FFinanceInfo"));
+        JSONObject only = DetailSyncSupport.schema(meta, params);
+        assertFalse(only.containsKey("selectedEntryKey"));
+        assertTrue(only.getJSONArray("fields").getJSONObject(0).getBooleanValue("isPrimary"));
+        assertTrue(ContoryUtil.kingdeeToKingdeeQuery(only, 0, 10, null, null).getString("FieldKeys").contains("FFinanceDesc"));
+        params.put("selectedEntryKeys", JSONArray.of("FFinanceInfo", "FEntity"));
+        JSONObject mixed = DetailSyncSupport.schema(meta, params);
+        assertEquals("FEntity", mixed.getString("selectedEntryKey"));
+        int headCount = mixed.getIntValue("headerFieldCount");
+        assertEquals("FFinanceDesc", mixed.getJSONArray("fields").getJSONObject(headCount - 1).getString("id"));
+        assertEquals("FEntity_FEntryID", mixed.getJSONArray("entryPrimaryIds").getString(0));
+        List<Object> first = row(mixed, 1, 11), second = row(mixed, 1, 12);
+        first.set(headCount - 1, "财务备注"); second.set(headCount - 1, "财务备注");
+        JSONArray records = DetailSyncSupport.result(mixed, params, List.of(first, second), 0, 10, 100).getJSONArray("records");
+        assertEquals("财务备注", records.getJSONObject(0).getJSONObject("fields").getString("FFinanceDesc"));
+        assertEquals("", records.getJSONObject(1).getJSONObject("fields").getString("FFinanceDesc"));
+        assertTrue(DetailSyncSupport.query(mixed, params, 0, 10).getString("FieldKeys").contains("FFinanceDesc"));
+    }
+
     /** 构造不含业务凭证的最小元数据测试夹具。 */
     private JSONObject metadata() throws Exception {
         try (var input = getClass().getResourceAsStream("/expense-request-metadata.json")) {

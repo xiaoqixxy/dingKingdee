@@ -1,3 +1,5 @@
+import builtinReports from './builtinReports.json';
+import { groupedForms, mergeBuiltinForms } from './formGroups';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { initView } from 'dingtalk-docs-cool-app';
 import { API } from './config/api';
@@ -97,7 +99,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({ options, value, onChange, pla
         {open ? '▲' : '▼'}
       </span>
       {open && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, maxHeight: '200px', overflowY: 'auto', background: '#fff', border: '1px solid #dcdfe6', borderRadius: '4px', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', zIndex: 1000, marginTop: '4px' }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, maxHeight: '320px', overflowY: 'auto', background: '#fff', border: '1px solid #dcdfe6', borderRadius: '4px', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', zIndex: 1000, marginTop: '4px' }}>
           {options.map((opt) => (
             <div key={opt.value} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '14px', background: value.includes(opt.value) ? '#f5f7fa' : '#fff', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => toggle(opt.value)} onMouseEnter={(e) => (e.currentTarget.style.background = '#f5f7fa')} onMouseLeave={(e) => (e.currentTarget.style.background = value.includes(opt.value) ? '#f5f7fa' : '#fff')}>
               <input type="checkbox" checked={value.includes(opt.value)} onChange={() => toggle(opt.value)} style={{ width: '14px', height: '14px', accentColor: '#409EFF' }} />
@@ -155,6 +157,7 @@ type HeaderFillMode = 'FIRST_ROW' | 'ALL_ROWS';
 interface EntryOption {
   key: string;
   name: string;
+  entityType?: 'SubHeadEntity' | 'EntryEntity';
   supported: boolean;
   reason?: string;
   fields: SheetField[];
@@ -193,6 +196,9 @@ interface VoucherConfigItem {
   appId?: string;
   appSecret?: string;
   selectedFormId?: string;
+  sourceType?: 'BILL' | 'REPORT';
+  reportKeyFields?: string[];
+  reportModel?: Record<string, unknown>;
   selectedFormName?: string;
   selectedEntryKey?: string;
   selectedEntryKeys?: string[];
@@ -222,6 +228,8 @@ interface ToastItem {
 
 /** 当前企业的产品权益与到期信息。 */
 interface ProductInfo {
+  active?: boolean;
+  accessMessage?: string;
   id: number;
   productName: string;
   productType: number;
@@ -624,6 +632,9 @@ function App() {
   // 表单选择状态：搜索词与真正选中的表单标识分开，防止自由输入被误当作有效表单。
   const [formList, setFormList] = useState<FormItemType[]>([]);
   const [selectedFormId, setSelectedFormId] = useState<string>('');
+  const [sourceType, setSourceType] = useState<'BILL' | 'REPORT'>('BILL');
+  const [reportKeyFields, setReportKeyFields] = useState<string[]>([]);
+  const [reportModelText, setReportModelText] = useState('{}');
   const [selectedFormName, setSelectedFormName] = useState<string>('');
   const [isOtherForm, setIsOtherForm] = useState(false);
   const [otherFormName, setOtherFormName] = useState('');
@@ -684,6 +695,7 @@ function App() {
 
   /** 重置连接表单和历史同步选择，进入新增配置流程。 */
   const handleAddConfig = () => {
+    setSourceType('BILL'); setReportKeyFields([]); setReportModelText('{}');
     setSelectedEntryKey('');
     setSelectedEntryKeys([]);
     setHeaderFillMode('FIRST_ROW');
@@ -715,6 +727,9 @@ function App() {
   // 兼容早期平铺条件和当前按 OR 分组保存的条件。
   /** 从已有配置恢复表单、明细、字段别名、引用路径及筛选排序。 */
   const restoreSyncSelection = (item: VoucherConfigItem) => {
+    setSourceType(item.sourceType || 'BILL');
+    setReportKeyFields(item.reportKeyFields || []);
+    setReportModelText(JSON.stringify(item.reportModel || {}, null, 2));
     setSelectedEntryKey(item.selectedEntryKey || '');
     setSelectedEntryKeys(item.selectedEntryKeys ?? (item.selectedEntryKey ? [item.selectedEntryKey] : []));
     setHeaderFillMode(item.headerFillMode || 'FIRST_ROW');
@@ -726,9 +741,9 @@ function App() {
     setDisplayValue(item.selectedFormName || '');
     setFormSearchText('');
     setFormDropdownOpen(false);
-    setIsOtherForm(false);
-    setOtherFormKey('');
-    setOtherFormName('');
+    setIsOtherForm(item.sourceType === 'REPORT');
+    setOtherFormKey(item.sourceType === 'REPORT' ? item.selectedFormId || '' : '');
+    setOtherFormName(item.sourceType === 'REPORT' ? item.selectedFormName || '' : '');
     setSheetFields(item.sheetFields || []);
     setFieldConfigs(item.fieldConfigs || []);
     const groups = (item.filterConditions || []).map(condition =>
@@ -771,7 +786,7 @@ function App() {
   const handleBackToList = () => {
     if (syncMode && savedSyncConfigRef.current) {
       savedSyncConfigRef.current = {
-        ...savedSyncConfigRef.current, selectedFormId, selectedFormName,
+        ...savedSyncConfigRef.current, selectedFormId, selectedFormName, sourceType, reportKeyFields,
         selectedEntryKey, selectedEntryKeys, headerFillMode, filterConditions, sortConfigs, sheetFields, fieldConfigs,
       };
     }
@@ -892,28 +907,28 @@ function App() {
     }
   };
 
-  /** 确认支付成功后刷新权益并结束支付展示。 */
+  /** 只读取渠道通知已确认的订单状态，客户端不能自行标记已支付。 */
   const handlePaySuccess = async () => {
     try {
-      await fetch(API.payment.handleResult, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderNo: payInfo.orderNo, action: 'pay' }), mode: 'cors' });
-      showMessage('支付成功，套餐已升级', 'success');
+      const response = await fetch(API.payment.getByOrderNo(payInfo.orderNo), { method: 'GET', mode: 'cors' });
+      const result = await response.json();
+      if (!response.ok || result.code !== 200) throw new Error(result.msg || '支付状态查询失败');
+      if (result.data?.payStatus !== 1) {
+        showMessage('暂未收到支付成功通知，请完成付款后稍后重试', 'warning');
+        return;
+      }
+      showMessage('支付已确认，套餐已生效', 'success');
       closePayDialog();
       const corpId = getCorpIdFromUrl();
       if (corpId) fetchCurrentProduct(corpId);
     } catch (error) {
-      showMessage('支付回调处理失败', 'error');
+      showMessage(error instanceof Error ? error.message : '支付状态查询失败', 'error');
     }
   };
 
-  /** 处理用户关闭支付界面的既有订单交互。 */
-  const handlePayClose = async () => {
-    try {
-      await fetch(API.payment.handleResult, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderNo: payInfo.orderNo, action: 'cancel' }), mode: 'cors' });
-      showMessage('订单已取消', 'warning');
-      closePayDialog();
-    } catch (error) {
-      showMessage('取消订单失败', 'error');
-    }
+  /** 关闭展示不修改订单，未支付订单由服务端到期任务关闭。 */
+  const handlePayClose = () => {
+    closePayDialog();
   };
 
   /** 关闭二维码窗口并清理计时器及支付临时状态。 */
@@ -1023,7 +1038,7 @@ function App() {
       const response = await fetch(API.tableConfig.options, { method: 'GET', headers: { 'Content-Type': 'application/json' }, mode: 'cors' });
       const result = await response.json();
       if (result.code === 200 && result.data) {
-        const list = result.data.map((item: any) => ({ id: item.formKey, name: item.formName }));
+        const list = mergeBuiltinForms(result.data.map((item: any) => ({ id: item.formKey, name: item.formName })));
         setFormList(list);
         if (list.length > 0 && !savedFormId) {
           setSelectedFormId(list[0].id);
@@ -1055,7 +1070,7 @@ function App() {
   const loadSheetMetaWithForm = async (formId: string, formName: string): Promise<SheetField[]> => {
     setFieldLoading(true);
     try {
-      const paramsObj = { ...kingdeeConfig, selectedFormId: formId, selectedFormName: formName };
+      const paramsObj = { ...kingdeeConfig, selectedFormId: formId, selectedFormName: formName, sourceType };
       const requestData = { context: { corpId: 'dingbf492c95f9a6eab9acaaa37764f94726', unionId: 'JXBKf9sL0GzZE9Qr3bJYvQiEiE' }, params: JSON.stringify(paramsObj), requestId: `0b830cc8${Date.now().toString(16)}` };
       const response = await fetch(API.formSchema, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8', Accept: 'application/json' }, body: JSON.stringify(requestData), mode: 'cors', credentials: 'omit' });
       const result = await response.json();
@@ -1075,10 +1090,11 @@ function App() {
         setSortConfigs([{ fieldId: '', order: 'asc' }]);
       }
       setMetadataFormId(formId);
+      setReportKeyFields(keys => keys.filter(key => fields.some((field: SheetField) => field.id === key && !field.isPrimary)));
       setSheetFields([...fields]);
       return fields;
     } catch (error) {
-      showMessage('加载表单字段失败', 'error');
+      showMessage(error instanceof Error ? error.message : '加载表单字段失败', 'error');
       setSheetFields([]);
       return [];
     } finally {
@@ -1212,7 +1228,7 @@ function App() {
         return;
       }
       // 验证选中的表单是否在列表中（防止使用已删除的表单）
-      const isValidForm = formList.some(f => f.id === selectedFormId);
+      const isValidForm = (sourceType === 'REPORT' ? builtinReports : formList).some(f => f.id === selectedFormId);
       if (!isValidForm) {
         showMessage('所选表单不存在，请重新选择', 'warning');
         return;
@@ -1241,6 +1257,9 @@ function App() {
   const handleSubmit = async () => {
     try {
       setLoading(true);
+      const reportModel = sourceType === 'REPORT' ? parseReportModel() : {};
+      if (sourceType === 'REPORT' && (!reportKeyFields.length || reportKeyFields.some(key => !sheetFields.some(field => field.id === key && !field.isPrimary))))
+        throw new Error('请选择能唯一标识报表记录的业务字段');
       const invalid = filterConditions.flatMap(group => group.conditions).find(f => filterError(f, sheetFields.find(field => field.id === f.fieldId)));
       if (invalid) { showMessage(filterError(invalid, sheetFields.find(field => field.id === invalid.fieldId)), 'warning'); return; }
       // 过滤掉空条件,保持嵌套的分组结构
@@ -1249,7 +1268,10 @@ function App() {
       })).filter(group => group.conditions.length > 0);
       const validSorts = sortConfigs.filter(s => s.fieldId.trim());
       // 沿用当前宿主保存的其他配置，只更新本次向导明确修改的同步参数。
-      const submitData = { ...savedSyncConfigRef.current, ...kingdeeConfig, configVersion: 2, selectedFormId, selectedFormName, selectedEntryKey, selectedEntryKeys, headerFillMode, filterConditions: validFilters, sortConfigs: validSorts, sheetFields, fieldConfigs };
+      const submitData = { ...savedSyncConfigRef.current, ...kingdeeConfig, configVersion: 2, selectedFormId, selectedFormName, sourceType,
+        reportKeyFields: sourceType === 'REPORT' ? reportKeyFields : [], reportModel,
+        selectedEntryKey, selectedEntryKeys, headerFillMode, filterConditions: sourceType === 'REPORT' ? [] : validFilters,
+        sortConfigs: sourceType === 'REPORT' ? [] : validSorts, sheetFields, fieldConfigs };
       const host = getDataSourceHost();
       if (host?.saveConfigAndGoNext) {
         await host.saveConfigAndGoNext(submitData);
@@ -1438,6 +1460,7 @@ function App() {
               <span style={styles.productTitle}>当前产品：{currentProduct.productName}</span>
             </div>
             <div style={styles.productInfo}>
+              {currentProduct.active === false && <span role="alert">{currentProduct.accessMessage || '套餐当前不可用，请续费或联系管理员'}</span>}
               <span>到期时间：{formatDate(currentProduct.endTime)}</span>
               <span>可绑定表单：{formatFormLimit(currentProduct.syncFormLimit, currentProduct.productName)}</span>
               <span>单次同步上限：{currentProduct.singleSyncLimit}条</span>
@@ -1449,9 +1472,10 @@ function App() {
         <div style={styles.planGrid}>
           {plans.map((plan) => {
             const pkg = getPkgByLevel(plan.level);
-            const isActive = currentLevel === plan.level;
-            const isDowngrade = currentLevel > plan.level;
-            const showPayBtn = !isActive && !isDowngrade;
+            const hasActivePlan = currentProduct?.active !== false;
+            const isActive = hasActivePlan && currentLevel === plan.level;
+            const isDowngrade = hasActivePlan && currentLevel > plan.level;
+            const showPayBtn = Boolean(pkg && pkg.price > 0 && !isDowngrade);
 
             return (
               <div
@@ -1499,7 +1523,7 @@ function App() {
                       style={{ ...styles.planPayBtn, background: plan.color }}
                       onClick={() => handleSelectPackage(pkg)}
                     >
-                      支付 ¥{pkg.price}/年
+                      {isActive ? '续费' : '开通'} ¥{pkg.price}/年
                     </button>
                   )}
                   {isActive && (
@@ -1543,7 +1567,7 @@ function App() {
             <p style={{ fontSize: '14px', color: '#909399', marginBottom: '8px' }}>请使用手机扫码支付</p>
             <p style={{ fontSize: '16px', color: '#e6a23c', fontWeight: 'bold' }}>剩余时间：{payCountdown}</p>
             <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-              <button style={{ ...styles.button, ...styles.primaryBtn, flex: 1 }} onClick={handlePaySuccess}>模拟支付成功</button>
+              <button style={{ ...styles.button, ...styles.primaryBtn, flex: 1 }} onClick={handlePaySuccess}>已完成付款，查询结果</button>
               <button style={{ ...styles.button, ...styles.defaultBtn, flex: 1 }} onClick={handlePayClose}>关闭</button>
             </div>
           </div>
@@ -1688,7 +1712,8 @@ function App() {
           <button style={{ ...styles.button, ...styles.primaryBtn, padding: '4px 12px', fontSize: '12px' }} onClick={handleUpgradeClick}>升级套餐</button>
         </div>
         <div style={styles.productInfo}>
-          <span>到期时间：{formatDate(currentProduct.endTime)}</span>
+          {currentProduct.active === false && <span role="alert">{currentProduct.accessMessage || '套餐当前不可用，请续费或联系管理员'}</span>}
+              <span>到期时间：{formatDate(currentProduct.endTime)}</span>
           <span>可绑定表单：{formatFormLimit(currentProduct.syncFormLimit, currentProduct.productName)}</span>
           <span>单次同步上限：{currentProduct.singleSyncLimit}条</span>
         </div>
@@ -1773,6 +1798,65 @@ function App() {
   };
 
   /** 渲染表单搜索与自定义表单入口。 */
+  const changeSourceType = (type: 'BILL' | 'REPORT') => {
+    setSourceType(type);
+    setIsOtherForm(false);
+    setFormSearchText(''); setFormDropdownOpen(false);
+    setOtherFormKey(''); setOtherFormName('');
+    setSelectedFormId(''); setSelectedFormName(''); setDisplayValue('');
+    setMetadataFormId(''); setSheetFields([]); setHeadFields([]); setFieldConfigs([]);
+    setSelectedEntryKeys([]); setSelectedEntryKey(''); setEntryOptions([]);
+    setReportKeyFields([]); setReportModelText('{}');
+    setFilterConditions([{ conditions: [{ fieldId: '', operator: '=', value: '' }] }]);
+    setSortConfigs([{ fieldId: '', order: 'asc' }]);
+  };
+
+  const parseReportModel = (): Record<string, unknown> => {
+    let model: unknown;
+    try { model = JSON.parse(reportModelText); } catch { throw new Error('报表 Model 必须是有效的 JSON 对象'); }
+    if (!model || typeof model !== 'object' || Array.isArray(model)) throw new Error('报表 Model 必须是 JSON 对象');
+    return model as Record<string, unknown>;
+  };
+
+  const renderReportKeys = () => (
+    <div className="entry-step">
+      <h3>📊 报表记录标识</h3>
+      <p className="entry-help">选择一组非空、组合后唯一且保持稳定的业务字段。请勿使用序号或可能变化的金额等字段。</p>
+      <fieldset className="entry-options"><legend>唯一标识字段（可多选）</legend>
+        {headFields.filter(field => !field.isPrimary).map(field => (
+          <label key={field.id} className={`entry-option ${reportKeyFields.includes(field.id) ? 'is-selected' : ''}`}>
+            <input type="checkbox" checked={reportKeyFields.includes(field.id)} onChange={event => setReportKeyFields(keys => event.target.checked ? [...keys, field.id] : keys.filter(key => key !== field.id))} />
+            <span>{field.name}（{field.id}）</span>
+          </label>
+        ))}
+      </fieldset>
+      <div style={styles.btnGroup}>
+        <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={() => setCurrentStep(1)}>返回</button>
+        <button style={{ ...styles.button, ...styles.primaryBtn }} disabled={!reportKeyFields.length} onClick={() => {
+          setConfigurationFields(headFields); setSheetFields(headFields); setCurrentStep(3);
+        }}>下一步</button>
+      </div>
+    </div>
+  );
+
+  const renderReportSubmit = () => (
+    <div className="entry-step">
+      <h3>📊 报表同步配置</h3>
+      <p className="entry-help">{selectedFormName} · {sheetFields.filter(field => !field.isPrimary).length} 个业务字段，按文本同步。</p>
+      <div style={styles.formSelectionPanel}>
+        <label htmlFor="report-model" style={styles.label}>⚙️ 报表过滤参数 Model（JSON）</label>
+        <textarea id="report-model" style={{ ...styles.input, minHeight: 120, width: '100%', boxSizing: 'border-box' }}
+          value={reportModelText} onChange={event => setReportModelText(event.target.value)} />
+        <p className="form-selection-help">默认填写 {'{}'}。参数名以该报表接口为准；字段发现使用默认过滤条件，若参数会改变列结构，需要单独适配。</p>
+        <p className="form-selection-help">同步期间请保持报表数据和默认排序稳定。所选字段组合必须在整张报表中唯一；当前会校验每页内的重复值。</p>
+      </div>
+      <div style={styles.btnGroup}>
+        <button style={{ ...styles.button, ...styles.defaultBtn }} onClick={() => setCurrentStep(3)}>返回</button>
+        <button style={{ ...styles.button, ...styles.primaryBtn }} disabled={loading} onClick={handleSubmit}>{loading ? '提交中...' : '提交配置'}</button>
+      </div>
+    </div>
+  );
+
   const renderStep2 = () => (
     <div className="form-selection-page" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
       <div style={styles.formSelectionHeading}>
@@ -1783,6 +1867,16 @@ function App() {
         </div>
       </div>
       <div style={styles.formSelectionPanel}>
+      <div style={styles.formItem}>
+        <label htmlFor="source-type" style={styles.label}><span style={styles.labelIcon}>📊</span>数据类型</label>
+        <div style={styles.inputWrapper}>
+          <div style={styles.inputIconBox}>📊</div>
+          <select id="source-type" style={styles.input} value={sourceType} onChange={event => changeSourceType(event.target.value as 'BILL' | 'REPORT')}>
+            <option value="BILL">业务单据</option><option value="REPORT">系统报表</option>
+          </select>
+        </div>
+
+      </div>
       {!isOtherForm ? (
         <>
           <div style={{ ...styles.formItem, position: 'relative' }}>
@@ -1856,12 +1950,10 @@ function App() {
                 zIndex: 1000,
                 marginTop: '4px',
               }}>
-                {formList
-                  .filter(item => 
-                    !formSearchText || 
-                    item.name.toLowerCase().includes(formSearchText.toLowerCase())
-                  )
-                  .map((item) => (
+                {groupedForms(sourceType === 'REPORT' ? builtinReports : formList, formSearchText).map(group => (
+                  <section key={group.name} aria-label={group.name}>
+                    <div style={{padding: '8px 12px', background: '#f3f4f6', color: '#4b5563', fontWeight: 600, fontSize: '13px'}}>📁 {group.name} · {group.items.length}</div>
+                    {group.items.map(item => (
                     <button type="button"
                       key={item.id}
                       style={{
@@ -1891,14 +1983,12 @@ function App() {
                         setFormDropdownOpen(false);
                       }}
                     >
-                      {item.name}{selectedFormId === item.id && <span style={{ float: 'right', color: '#1677ff' }}>✓</span>}
+                      {item.name}<small style={{display: 'block', color: '#6b7280', marginTop: '3px'}}>{item.id}</small>{selectedFormId === item.id && <span style={{ float: 'right', color: '#1677ff' }}>✓</span>}
                     </button>
-                  ))
-                }
-                {formList.filter(item => 
-                  !formSearchText || 
-                  item.name.toLowerCase().includes(formSearchText.toLowerCase())
-                ).length === 0 && (
+                    ))}
+                  </section>
+                ))}
+                {groupedForms(sourceType === 'REPORT' ? builtinReports : formList, formSearchText).length === 0 && (
                   <div style={{ padding: '16px', textAlign: 'center', color: '#bfbfbf', fontSize: '13px' }}>
                     未找到匹配的表单
                   </div>
@@ -1946,9 +2036,7 @@ function App() {
                 padding: '6px 14px'
               }} 
               onClick={() => {
-                setIsOtherForm(false);
-                setOtherFormName('');
-                setOtherFormKey('');
+                changeSourceType(sourceType);
               }}
             >
               返回选择列表
@@ -1990,12 +2078,15 @@ function App() {
   const handleEntryNext = () => {
     const entries = entryOptions.filter(entry => selectedEntryKeys.includes(entry.key));
     if (entries.length !== selectedEntryKeys.length || entries.some(entry => !entry.supported)) {
-      showMessage('请选择可同步的明细表', 'warning');
+      showMessage('请选择可同步的子表头或明细表', 'warning');
       return;
     }
-    const fields = entries.length
-      ? [...headFields.map(field => ({ ...field, isPrimary: false })), ...entries.flatMap((entry, index) => entry.fields.map(field => ({ ...field, isPrimary: index === 0 && field.isPrimary })))]
-      : headFields;
+    const subHeads = entries.filter(entry => entry.entityType === 'SubHeadEntity');
+    const details = entries.filter(entry => entry.entityType !== 'SubHeadEntity');
+    const headers = [...headFields, ...subHeads.flatMap(entry => entry.fields)];
+    const fields = details.length
+      ? [...headers.map(field => ({ ...field, isPrimary: false })), ...details.flatMap((entry, index) => entry.fields.map(field => ({ ...field, isPrimary: index === 0 && field.isPrimary })))]
+      : headers;
     const ids = new Set(fields.map(field => field.id));
     if (ids.size !== fields.length) {
       showMessage('表头与明细字段标识冲突，该表单需要适配', 'error');
@@ -2013,7 +2104,7 @@ function App() {
     setSheetFields(fields);
     setConfigurationFields(fields);
     setFieldConfigs(configs => configs.filter(config => ids.has(config.fieldId)));
-    if (removed) showMessage('已清除不属于当前明细表的筛选和排序条件', 'warning');
+    if (removed) showMessage('已清除不属于当前同步范围的筛选和排序条件', 'warning');
     setCurrentStep(3);
   };
 
@@ -2054,7 +2145,7 @@ function App() {
     if (!fieldConfigs.length) { applyConfiguredFields(configurationFields); setCurrentStep(4); return; }
     setFieldConfigBusy(true);
     try {
-      const params = { ...kingdeeConfig, selectedFormId, selectedFormName, selectedEntryKeys, selectedEntryKey, headerFillMode, fieldConfigs };
+      const params = { ...kingdeeConfig, selectedFormId, selectedFormName, sourceType, selectedEntryKeys, selectedEntryKey, headerFillMode, fieldConfigs };
       const response = await fetch(API.formSchema, { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ params: JSON.stringify(params), context: { corpId: getCorpIdFromUrl() } }) });
       const result = await response.json();
@@ -2068,27 +2159,27 @@ function App() {
   /** 渲染明细多选及表头填充方式。 */
   const renderEntryStep = () => (
     <div className="entry-step">
-      <h3>📋 选择明细表</h3>
-      <p className="entry-help">{selectedFormName} · 支持同时选择多个明细表</p>
+      <h3>📋 选择同步范围</h3>
+      <p className="entry-help">{selectedFormName} · 支持同时选择多个子表头和明细表</p>
       <fieldset className="entry-options">
         <legend>同步数据范围</legend>
         <label className={`entry-option ${!selectedEntryKeys.length ? 'is-selected' : ''}`}>
           <input type="checkbox" name="entryKey" checked={!selectedEntryKeys.length} onChange={() => { setSelectedEntryKeys([]); setSelectedEntryKey(''); }} />
-          <span>不同步明细，仅同步表头</span>
+          <span>仅同步主表头</span>
         </label>
         {entryOptions.map(entry => (
           <label key={entry.key} className={`entry-option ${selectedEntryKeys.includes(entry.key) ? 'is-selected' : ''}`}>
             <input type="checkbox" name="entryKey" value={entry.key} checked={selectedEntryKeys.includes(entry.key)}
               disabled={!entry.supported} onChange={() => { const keys = selectedEntryKeys.includes(entry.key) ? selectedEntryKeys.filter(key => key !== entry.key) : [...selectedEntryKeys, entry.key]; setSelectedEntryKeys(keys); setSelectedEntryKey(keys[0] || ''); }} />
-            <span>{entry.name}<small>{entry.supported ? `${Math.max(0, entry.fields.length - 1)} 个明细字段` : entry.reason}</small></span>
+            <span>{entry.name}<small>{entry.supported ? (entry.entityType === 'SubHeadEntity' ? `子表头 · ${entry.fields.length} 个字段` : `明细表 · ${Math.max(0, entry.fields.length - 1)} 个字段`) : entry.reason}</small></span>
           </label>
         ))}
       </fieldset>
-      {entryOptions.length === 0 && <p className="entry-help">该表单没有可同步的明细表，将仅同步表头。</p>}
-      {selectedEntryKeys.length > 0 && (
+      {entryOptions.length === 0 && <p className="entry-help">该表单没有可同步的子表头或明细表，将仅同步主表头。</p>}
+      {entryOptions.some(entry => selectedEntryKeys.includes(entry.key) && entry.entityType !== 'SubHeadEntity') && (
         <fieldset className="entry-options">
           <legend>🔄 同步方式</legend>
-          {selectedEntryKeys.length > 1 && <p className="entry-help">多个明细按金蝶联查结果展开，同一单据的明细组合可能重复显示，请勿直接汇总金额。</p>}
+          {entryOptions.filter(entry => selectedEntryKeys.includes(entry.key) && entry.entityType !== 'SubHeadEntity').length > 1 && <p className="entry-help">多个明细按金蝶联查结果展开，同一单据的明细组合可能重复显示，请勿直接汇总金额。</p>}
           <label className={`entry-option ${headerFillMode === 'FIRST_ROW' ? 'is-selected' : ''}`}>
             <input type="radio" name="headerFillMode" checked={headerFillMode === 'FIRST_ROW'} onChange={() => setHeaderFillMode('FIRST_ROW')} />
             <span>只有第一行包含表头数据<small>每张单据筛选后的第一条明细显示表头，其余行留空。</small></span>
@@ -2312,11 +2403,11 @@ function App() {
           {currentStep <= 1 && renderProductInfo()}
           {currentStep === 0 && renderStep1()}
           {currentStep === 1 && renderStep2()}
-          {currentStep === 2 && renderEntryStep()}
+          {currentStep === 2 && (sourceType === 'REPORT' ? renderReportKeys() : renderEntryStep())}
           {currentStep === 3 && <FieldConfigurationStep fields={configurationFields} configs={fieldConfigs}
             onChange={setFieldConfigs} loadFields={loadReferenceFields} busy={fieldConfigBusy}
             onBack={() => setCurrentStep(2)} onNext={handleFieldConfigNext} />}
-          {currentStep === 4 && renderStep3()}
+          {currentStep === 4 && (sourceType === 'REPORT' ? renderReportSubmit() : renderStep3())}
         </main>
       )}
     </div>

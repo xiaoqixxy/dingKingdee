@@ -10,7 +10,7 @@ const entries = [
   { key: 'FEntity', name: '明细信息', supported: true, fields: [{ id: 'FEntity_FEntryID', name: '明细内码', type: 'text', isPrimary: true }, { id: 'FEntity_FOrgAmount', name: '明细信息·申请金额', type: 'number' }] },
   { key: 'FSecond', name: '其他明细', supported: true, fields: [{ id: 'FSecond_FEntryID', name: '其他内码', type: 'text', isPrimary: true }, { id: 'FSecond_FNote', name: '其他明细·备注', type: 'text' }] },
 ];
-let options = entries;
+let options: (typeof entries[number] & { entityType?: 'SubHeadEntity' | 'EntryEntity' })[] = entries;
 let schemaFails = false;
 let savedSelection: any = {};
 
@@ -49,11 +49,54 @@ function clickNext() {
   if (skip) fireEvent.click(skip);
 }
 
+test('report selection discovers fields, requires keys, saves model and restores report mode', async () => {
+  const save = jest.fn().mockResolvedValue(undefined);
+  (window as any).Dingdocs = { base: { host: { saveConfigAndGoNext: save } } };
+  render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: '同步数据' }));
+  fireEvent.change(await screen.findByLabelText(/数据类型/), { target: { value: 'REPORT' } });
+  fireEvent.click(screen.getByRole('button', { name: '+ 使用其他表单' }));
+  fireEvent.change(screen.getByPlaceholderText('请输入表单名称'), { target: { value: '角色字段权限报表' } });
+  const idInput = screen.getAllByRole('textbox').find(input => (input as HTMLInputElement).placeholder.includes('ID'));
+  expect(idInput).toBeDefined();
+  fireEvent.change(idInput!, { target: { value: 'SEC_RoleFieldPermissionDataRpt' } });
+  fireEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await screen.findByText('📊 报表记录标识');
+  expect(screen.getByRole('button', { name: '下一步' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('checkbox', { name: /单据编号/ }));
+  clickNext();
+  await screen.findByText('📊 报表同步配置');
+  fireEvent.change(screen.getByLabelText(/报表过滤参数 Model/), { target: { value: '[]' } });
+  fireEvent.click(screen.getByRole('button', { name: '提交配置' }));
+  expect(await screen.findByText('报表 Model 必须是 JSON 对象')).toBeInTheDocument();
+  expect(save).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText(/报表过滤参数 Model/), { target: { value: '{"FOrgId":1}' } });
+  fireEvent.click(screen.getByRole('button', { name: '提交配置' }));
+  await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({
+    sourceType: 'REPORT', reportKeyFields: ['FBillNo'], reportModel: { FOrgId: 1 },
+    selectedFormId: 'SEC_RoleFieldPermissionDataRpt', filterConditions: [], sortConfigs: [], selectedEntryKeys: [],
+  })));
+  const discovery = (global.fetch as jest.Mock).mock.calls.find(([url]) => String(url).endsWith('/api/formSchema'));
+  expect(JSON.parse(JSON.parse(discovery![1].body).params).sourceType).toBe('REPORT');
+});
+
+test('saved report mode and keys are restored when editing synchronization', async () => {
+  savedSelection = { sourceType: 'REPORT', selectedFormId: 'TEST_Report', selectedFormName: '测试报表',
+    reportKeyFields: ['FBillNo'], reportModel: { FOrgId: 2 }, sheetFields: head };
+  render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: '同步数据' }));
+  expect(await screen.findByLabelText(/数据类型/)).toHaveValue('REPORT');
+  fireEvent.click(screen.getByRole('button', { name: '下一步' }));
+  expect(await screen.findByRole('checkbox', { name: /单据编号/ })).toBeChecked();
+  clickNext();
+  expect(await screen.findByLabelText(/报表过滤参数 Model/)).toHaveValue(JSON.stringify({ FOrgId: 2 }, null, 2));
+});
+
 async function openEntries() {
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: '同步数据' }));
   fireEvent.click(await screen.findByRole('button', { name: '下一步' }));
-  await screen.findByText('📋 选择明细表');
+  await screen.findByText('📋 选择同步范围');
 }
 
 // 验证多明细选择、两种表头模式及缺少钉钉宿主时的明确提示。
@@ -89,14 +132,14 @@ test('changing entity removes stale filters, going back retains the selected mod
   fireEvent.click(screen.getByRole('checkbox', { name: /其他明细/ }));
   clickNext();
   expect(screen.getAllByRole('combobox')[0]).toHaveValue('');
-  expect(screen.getByText('已清除不属于当前明细表的筛选和排序条件')).toBeInTheDocument();
+  expect(screen.getByText('已清除不属于当前同步范围的筛选和排序条件')).toBeInTheDocument();
 });
 
 // 无明细表单继续使用纯表头流程。
 test('no entries keeps header-only workflow', async () => {
   options = [];
   await openEntries();
-  expect(screen.getByText('该表单没有可同步的明细表，将仅同步表头。')).toBeInTheDocument();
+  expect(screen.getByText('该表单没有可同步的子表头或明细表，将仅同步主表头。')).toBeInTheDocument();
   expect(screen.queryByRole('radio', { name: /只有第一行/ })).not.toBeInTheDocument();
   clickNext();
   expect(screen.getAllByRole('option', { name: '单据编号' }).length).toBeGreaterThan(0);
@@ -108,8 +151,8 @@ test('metadata failure does not advance', async () => {
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: '同步数据' }));
   fireEvent.click(await screen.findByRole('button', { name: '下一步' }));
-  await screen.findByText('加载表单字段失败');
-  expect(screen.queryByText('📋 选择明细表')).not.toBeInTheDocument();
+  await screen.findByText('元数据失败');
+  expect(screen.queryByText('📋 选择同步范围')).not.toBeInTheDocument();
 });
 
 
@@ -126,7 +169,7 @@ test('saved form, detail mode, grouped filters and sorting survive reopening and
   fireEvent.click(await screen.findByRole('button', { name: '同步数据' }));
   expect(await screen.findByLabelText(/选择表单/)).toHaveValue('费用申请单');
   clickNext();
-  await screen.findByText('📋 选择明细表');
+  await screen.findByText('📋 选择同步范围');
   expect(screen.getByRole('checkbox', { name: /明细信息/ })).toBeChecked();
   expect(screen.getByRole('radio', { name: /所有行都包含/ })).toBeChecked();
   clickNext();
@@ -144,7 +187,7 @@ test('saved custom form survives loading options and returning to form selection
   expect(screen.getByDisplayValue('CUSTOM_FORM')).toBeInTheDocument();
   expect(screen.getByDisplayValue('自定义单据')).toBeInTheDocument();
   clickNext();
-  await screen.findByText('📋 选择明细表');
+  await screen.findByText('📋 选择同步范围');
 });
 
 
@@ -169,7 +212,7 @@ function mockDingTalkHost(getSyncConfig: jest.Mock, save: jest.Mock, modern = tr
 async function advanceRestoredConfig() {
   expect(await screen.findByLabelText(/选择表单/)).toHaveValue('费用申请单');
   clickNext();
-  await screen.findByText('📋 选择明细表');
+  await screen.findByText('📋 选择同步范围');
   expect(screen.getByRole('checkbox', { name: /明细信息/ })).toBeChecked();
   expect(screen.getByRole('radio', { name: /所有行都包含/ })).toBeChecked();
   clickNext();
@@ -258,8 +301,8 @@ test('opening a different sheet reads its own configuration', async () => {
   render(<App />);
   await screen.findByLabelText(/选择表单/);
   clickNext();
-  await screen.findByText('📋 选择明细表');
-  expect(screen.getByRole('checkbox', { name: /不同步明细/ })).toBeChecked();
+  await screen.findByText('📋 选择同步范围');
+  expect(screen.getByRole('checkbox', { name: /仅同步主表头/ })).toBeChecked();
   clickNext();
   expect(screen.queryByDisplayValue('KEEP-ME')).not.toBeInTheDocument();
 });
@@ -272,7 +315,7 @@ test('editing schema failure provides retry without exposing earlier steps', asy
   render(<App />);
   await screen.findByLabelText(/选择表单/);
   clickNext();
-  await screen.findByText('加载表单字段失败');
+  await screen.findByText('元数据失败');
   expect(screen.queryByRole('button', { name: '返回列表' })).not.toBeInTheDocument();
   schemaFails = false;
   await advanceRestoredConfig();
@@ -399,4 +442,51 @@ test('added reference columns reach filtering and are saved with independent out
   expect(save.mock.calls[0][0].fieldConfigs).toEqual([expect.objectContaining({
     fieldId: 'FEntity_FMaterial.FName', outputFieldId: column.value, alias: '物料编号', referencePath: ['FNumber'],
   })]);
+});
+
+
+test('subhead selection keeps main primary key and only details enable fill modes', async () => {
+  options = [{ key: 'FFinanceInfo', name: '财务信息', entityType: 'SubHeadEntity', supported: true,
+    fields: [{ id: 'FFinanceDesc', name: '财务信息·备注', type: 'text', isPrimary: false }] }, ...entries];
+  const save = jest.fn().mockResolvedValue(undefined);
+  (window as any).Dingdocs = { base: { host: { saveConfigAndGoNext: save } } };
+  await openEntries();
+  expect(screen.getByText('子表头 · 1 个字段')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('checkbox', { name: /财务信息/ }));
+  expect(screen.queryByRole('radio', { name: /只有第一行/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('checkbox', { name: /明细信息/ }));
+  expect(screen.getByRole('radio', { name: /只有第一行/ })).toBeInTheDocument();
+  expect(screen.queryByText(/多个明细按金蝶联查/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('checkbox', { name: /明细信息/ }));
+  clickNext();
+  expect(screen.getAllByRole('option', { name: '财务信息·备注' }).length).toBeGreaterThan(0);
+  fireEvent.click(screen.getByRole('button', { name: '提交配置' }));
+  await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({
+    selectedEntryKeys: ['FFinanceInfo'], sheetFields: expect.arrayContaining([
+      expect.objectContaining({ id: 'FID', isPrimary: true }),
+      expect.objectContaining({ id: 'FFinanceDesc', isPrimary: false }),
+    ]),
+  })));
+});
+
+
+test('expired paid plan shows rejection and can be purchased again instead of shown as active', async () => {
+  const original = global.fetch as jest.Mock;
+  const handler = original.getMockImplementation()!;
+  original.mockImplementation(async (url: RequestInfo | URL, init?: RequestInit) => {
+    if (String(url).includes('/product/corp/')) return { ok: true, json: async () => ({ code: 200, data: {
+      id: 2, productName: '专业版', active: false, accessMessage: '套餐已到期，请续费后再同步',
+      endTime: '2026-10-01 00:00:00', syncFormLimit: 10, singleSyncLimit: 1000,
+    } }) } as Response;
+    if (String(url).endsWith('/product/options')) return { ok: true, json: async () => ({ code: 200, data: [
+      { id: 2, productName: '专业版', price: 2499 }, { id: 3, productName: '企业版', price: 5499 },
+    ] }) } as Response;
+    return handler(url, init);
+  });
+  render(<App />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('套餐已到期');
+  fireEvent.click(screen.getByRole('button', { name: '升级套餐' }));
+  expect(await screen.findByRole('button', { name: '开通 ¥2499/年' })).toBeInTheDocument();
+  expect(screen.queryByText('✓ 已开启')).not.toBeInTheDocument();
+  expect((global.fetch as jest.Mock).mock.calls.some(([url]) => String(url).includes('/payment/handleResult'))).toBe(false);
 });

@@ -24,6 +24,8 @@ public class DingProductServiceImpl implements IDingProductService
     /** 处理企业订阅业务的服务组件。 */
     @Autowired
     private IDingSubscriptionService dingSubscriptionService;
+    @Autowired
+    private com.dj.middle.ding.mapper.DingTenantMapper dingTenantMapper;
 
     /** 查询指定主键的产品套餐记录。 */
     @Override
@@ -123,6 +125,14 @@ public class DingProductServiceImpl implements IDingProductService
         vo.setSingleSyncLimit(product.getSingleSyncLimit());
         vo.setMonthSyncLimit(product.getMonthSyncLimit());
         vo.setStatus(product.getStatus());
+        try {
+            com.dj.middle.ding.service.SubscriptionAccessPolicy.requireActive(
+                dingTenantMapper.selectDingTenantByCorpId(dingCorpId), subscription, product, java.time.Instant.now());
+            vo.setActive(true);
+        } catch (com.dj.middle.ding.service.SubscriptionAccessException blocked) {
+            vo.setActive(false);
+            vo.setAccessMessage(blocked.getMessage());
+        }
         
         if (subscription != null && subscription.getEndTime() != null)
         {

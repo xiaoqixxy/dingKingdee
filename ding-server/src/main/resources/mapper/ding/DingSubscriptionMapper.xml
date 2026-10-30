@@ -128,4 +128,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
    		)
    	</insert>
    	
+    <select id="selectDingSubscriptionByCorpIdForUpdate" resultMap="DingSubscriptionResult">
+        SELECT * FROM ding_subscription WHERE ding_corp_id=#{dingCorpId} FOR UPDATE
+    </select>
+    <update id="expireDueSubscriptions">
+        UPDATE ding_subscription SET status=2
+        WHERE status=1 AND end_time &lt;= CURRENT_TIMESTAMP
+    </update>
 </mapper>

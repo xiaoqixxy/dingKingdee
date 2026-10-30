@@ -53,6 +53,7 @@ public class DingOrderController extends BaseController
 
     /** 新增订单并返回保存结果。 */
     @Operation(summary = "新增订单")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:order:add')")
     @PostMapping
     public AjaxResult add(@RequestBody DingOrder dingOrder)
     {
@@ -61,6 +62,7 @@ public class DingOrderController extends BaseController
 
     /** 更新指定订单并返回修改结果。 */
     @Operation(summary = "修改订单")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:order:edit')")
     @PutMapping
     public AjaxResult edit(@RequestBody DingOrder dingOrder)
     {
@@ -69,6 +71,7 @@ public class DingOrderController extends BaseController
 
     /** 按主键删除订单。 */
     @Operation(summary = "删除订单")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:order:remove')")
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {

@@ -53,6 +53,7 @@ public class DingTenantController extends BaseController
 
     /** 新增钉钉企业并返回保存结果。 */
     @Operation(summary = "新增租户企业")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:tenant:add')")
     @PostMapping
     public AjaxResult add(@RequestBody DingTenant dingTenant)
     {
@@ -61,6 +62,7 @@ public class DingTenantController extends BaseController
 
     /** 更新指定钉钉企业并返回修改结果。 */
     @Operation(summary = "修改租户企业")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:tenant:edit')")
     @PutMapping
     public AjaxResult edit(@RequestBody DingTenant dingTenant)
     {
@@ -69,6 +71,7 @@ public class DingTenantController extends BaseController
 
     /** 按主键删除钉钉企业。 */
     @Operation(summary = "删除租户企业")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:tenant:remove')")
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {

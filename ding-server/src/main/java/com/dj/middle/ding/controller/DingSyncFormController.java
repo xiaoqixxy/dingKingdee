@@ -53,6 +53,7 @@ public class DingSyncFormController extends BaseController
 
     /** 新增同步表单绑定并返回保存结果。 */
     @Operation(summary = "新增同步表单配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:syncForm:add')")
     @PostMapping
     public AjaxResult add(@RequestBody DingSyncForm dingSyncForm)
     {
@@ -61,6 +62,7 @@ public class DingSyncFormController extends BaseController
 
     /** 更新指定同步表单绑定并返回修改结果。 */
     @Operation(summary = "修改同步表单配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:syncForm:edit')")
     @PutMapping
     public AjaxResult edit(@RequestBody DingSyncForm dingSyncForm)
     {
@@ -69,6 +71,7 @@ public class DingSyncFormController extends BaseController
 
     /** 按主键删除同步表单绑定。 */
     @Operation(summary = "删除同步表单配置")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:syncForm:remove')")
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {

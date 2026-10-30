@@ -250,6 +250,7 @@ function getList() {
   listProduct(queryParams).then(response => {
     productList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }

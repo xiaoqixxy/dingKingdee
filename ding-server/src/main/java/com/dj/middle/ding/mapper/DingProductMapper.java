@@ -29,4 +29,7 @@ public interface DingProductMapper
 
     /** 读取当前默认产品套餐。 */
     public DingProduct selectDefaultProduct();
+
+    /** 首次访问赠送的上架基础版，与后台默认产品设置无关。 */
+    public DingProduct selectTrialBasicProduct();
 }

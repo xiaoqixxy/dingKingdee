@@ -2,6 +2,8 @@ package com.dj.middle.ding.service.impl;
 
 import java.util.Date;
 import java.util.List;
+import java.time.ZonedDateTime;
+import org.springframework.dao.DuplicateKeyException;
 
 import com.dingtalk.api.response.OapiServiceGetAuthInfoResponse;
 import org.slf4j.Logger;
@@ -96,8 +98,9 @@ public class DingSubscriptionServiceImpl implements IDingSubscriptionService
     public DingProduct getOrRegisterDefaultProduct(String dingCorpId)
     {
 
-        //todo 需要三方企业应用权限调用接口
-//        syncDingTenantInfo(dingCorpId);
+        if (dingCorpId == null || dingCorpId.isBlank() || "jxdj".equals(dingCorpId))
+            throw new IllegalArgumentException("缺少有效的钉钉企业ID，请从钉钉企业内打开插件");
+        syncDingTenantInfo(dingCorpId);
 
         DingSubscription subscription = dingSubscriptionMapper.selectDingSubscriptionByCorpId(dingCorpId);
         if (subscription != null)
@@ -105,60 +108,81 @@ public class DingSubscriptionServiceImpl implements IDingSubscriptionService
             return dingProductMapper.selectDingProductById(subscription.getProductId());
         }
 
-        DingProduct defaultProduct = dingProductMapper.selectDefaultProduct();
+        DingProduct defaultProduct = dingProductMapper.selectTrialBasicProduct();
         if (defaultProduct == null)
         {
-            return null;
+            throw new IllegalStateException("未配置上架的基础版产品，请联系管理员");
         }
         DingSubscription newSubscription = new DingSubscription();
         newSubscription.setDingCorpId(dingCorpId);
         newSubscription.setProductId(defaultProduct.getId());
         newSubscription.setProductType(defaultProduct.getProductType());
-        newSubscription.setStartTime(new Date());
-        newSubscription.setEndTime(new Date(System.currentTimeMillis() + (defaultProduct.getProductType() == 2 ? 365L : 30L) * 24 * 60 * 60 * 1000));
+        ZonedDateTime start = ZonedDateTime.now(java.time.ZoneId.of("Asia/Shanghai"));
+        newSubscription.setStartTime(Date.from(start.toInstant()));
+        newSubscription.setEndTime(Date.from(start.plusMonths(3).toInstant()));
+        newSubscription.setExt1("FIRST_VISIT_BASIC_3_MONTHS");
         newSubscription.setStatus(1);
         newSubscription.setAutoRenew(0);
         newSubscription.setUsedFormCount(0);
         newSubscription.setMonthUsedSync(0);
-        dingSubscriptionMapper.insertDingSubscription(newSubscription);
+        try {
+            dingSubscriptionMapper.insertDingSubscription(newSubscription);
+        } catch (DuplicateKeyException duplicate) {
+            // 企业ID唯一约束解决并发首次访问，绝不重置已存在的订阅。
+            DingSubscription existing = dingSubscriptionMapper.selectDingSubscriptionByCorpId(dingCorpId);
+            if (existing == null) throw duplicate;
+            return dingProductMapper.selectDingProductById(existing.getProductId());
+        }
 
         return defaultProduct;
     }
 
+    @Override
+    public DingProduct requireActiveProduct(String dingCorpId) {
+        DingProduct product = getOrRegisterDefaultProduct(dingCorpId);
+        com.dj.middle.ding.service.SubscriptionAccessPolicy.requireActive(
+            dingTenantMapper.selectDingTenantByCorpId(dingCorpId),
+            dingSubscriptionMapper.selectDingSubscriptionByCorpId(dingCorpId), product, java.time.Instant.now());
+        return product;
+    }
+
+    @Override
+    public int expireDueSubscriptions() { return dingSubscriptionMapper.expireDueSubscriptions(); }
+
     /** 根据订阅关联企业更新钉钉企业信息。 */
     private void syncDingTenantInfo(String dingCorpId)
     {
-        DingTenant existingTenant = dingTenantMapper.selectDingTenantByCorpId(dingCorpId);
-        if (existingTenant != null)
-        {
-            return;
-        }
-
-        try
-        {
-            OapiServiceGetAuthInfoResponse corpInfo = dingTalkApiUtil.getCorpByCorpId(dingCorpId);
-            if (corpInfo == null)
-            {
-                return;
-            }
-            DingTenant tenant = new DingTenant();
+        DingTenant tenant = dingTenantMapper.selectDingTenantByCorpId(dingCorpId);
+        if (tenant == null) {
+            tenant = new DingTenant();
             tenant.setDingCorpId(dingCorpId);
-            tenant.setCorpName(corpInfo.getAuthCorpInfo().getCorpName());
-            tenant.setIndustry(corpInfo.getAuthCorpInfo().getIndustry());
-            tenant.setCorpLogoUrl(corpInfo.getAuthCorpInfo().getCorpLogoUrl());
-            tenant.setLicenseCode(corpInfo.getAuthCorpInfo().getLicenseCode());
-            tenant.setAuthChannel(corpInfo.getAuthCorpInfo().getAuthChannel());
-            tenant.setAuthChannelType(corpInfo.getAuthCorpInfo().getAuthChannelType());
-            tenant.setIsAuthenticated(corpInfo.getAuthCorpInfo().getIsAuthenticated());
-            tenant.setAuthLevel(corpInfo.getAuthCorpInfo().getAuthLevel());
-            tenant.setInviteUrl(corpInfo.getAuthCorpInfo().getInviteUrl());
+            tenant.setCorpName("企业名称待补全（" + dingCorpId + "）");
             tenant.setStatus(1);
             tenant.setCreateTime(DateUtils.getNowDate());
-            dingTenantMapper.insertDingTenant(tenant);
+            try {
+                dingTenantMapper.insertDingTenant(tenant);
+            } catch (DuplicateKeyException duplicate) {
+                tenant = dingTenantMapper.selectDingTenantByCorpId(dingCorpId);
+                if (tenant == null) throw duplicate;
+            }
         }
-        catch (Exception e)
-        {
-            log.error("同步企业信息失败: {}", e.getMessage());
+        String name = tenant.getCorpName();
+        if (name != null && !name.isBlank() && !name.startsWith("企业名称待补全")
+                && !"未登记企业".equals(name)) return;
+        // 未授权时每天最多补全一次，避免每次读取套餐均请求钉钉。
+        if (tenant.getUpdateTime() != null
+                && System.currentTimeMillis() - tenant.getUpdateTime().getTime() < 86400000L) return;
+        try {
+            OapiServiceGetAuthInfoResponse info = dingTalkApiUtil.getCorpByCorpId(dingCorpId);
+            if (info != null && info.isSuccess() && info.getAuthCorpInfo() != null
+                    && info.getAuthCorpInfo().getCorpName() != null
+                    && !info.getAuthCorpInfo().getCorpName().isBlank()) {
+                tenant.setCorpName(info.getAuthCorpInfo().getCorpName());
+            }
+        } catch (Exception e) {
+            log.warn("企业名称暂未获取，已按企业ID登记: {}", dingCorpId);
         }
+        tenant.setUpdateTime(DateUtils.getNowDate());
+        dingTenantMapper.updateDingTenant(tenant);
     }
 }

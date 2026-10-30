@@ -53,6 +53,7 @@ public class DingInvoiceController extends BaseController
 
     /** 新增发票并返回保存结果。 */
     @Operation(summary = "新增发票申请")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:invoice:add')")
     @PostMapping
     public AjaxResult add(@RequestBody DingInvoice dingInvoice)
     {
@@ -61,6 +62,7 @@ public class DingInvoiceController extends BaseController
 
     /** 更新指定发票并返回修改结果。 */
     @Operation(summary = "修改发票申请")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:invoice:edit')")
     @PutMapping
     public AjaxResult edit(@RequestBody DingInvoice dingInvoice)
     {
@@ -69,6 +71,7 @@ public class DingInvoiceController extends BaseController
 
     /** 按主键删除发票。 */
     @Operation(summary = "删除发票申请")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:invoice:remove')")
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {

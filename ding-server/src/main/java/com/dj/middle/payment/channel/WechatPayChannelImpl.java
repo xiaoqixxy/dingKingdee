@@ -87,7 +87,9 @@ public class WechatPayChannelImpl implements PaymentChannel
     @Override
     public boolean verifyCallback(String rawData)
     {
-        return true;
+        // 微信验签必须包含签名、证书序列号、时间戳等请求头；当前接口未传入，禁止默认信任。
+        log.error("微信回调缺少完整验签实现，拒绝开通权益");
+        return false;
     }
 
     /** 加载商户证书与私钥并初始化微信Native支付服务。 */

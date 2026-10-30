@@ -221,6 +221,8 @@ public class SyncExecutionRecorder {
 
     /** 沿异常原因链识别查询拒绝、超时等类型并返回统一错误编码。 */
     static String errorCode(Throwable error) {
+        SubscriptionAccessException access = SubscriptionAccessException.find(error);
+        if (access != null) return access.getErrorCode();
         if (rejection(error) != null) return "KINGDEE_QUERY_REJECTED";
         java.util.Set<Throwable> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (Throwable cause = error; cause != null && seen.add(cause); cause = cause.getCause()) {
@@ -232,6 +234,8 @@ public class SyncExecutionRecorder {
 
     /** 从异常原因链提取可读错误说明。 */
     static String errorMessage(Throwable error) {
+        SubscriptionAccessException access = SubscriptionAccessException.find(error);
+        if (access != null) return access.getMessage();
         com.dj.middle.kingdee.util.KingdeeQueryException rejection = rejection(error);
         if (rejection != null) return rejection.getMessage();
         return switch (errorCode(error)) {

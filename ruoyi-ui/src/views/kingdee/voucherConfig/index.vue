@@ -266,6 +266,7 @@ function getList() {
   listConfig(queryParams.value).then(response => {
     configList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }

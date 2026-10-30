@@ -222,6 +222,7 @@ function getList() {
   listTenant(queryParams).then(response => {
     tenantList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }

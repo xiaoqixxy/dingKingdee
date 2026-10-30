@@ -70,8 +70,11 @@ public class PaymentController extends BaseController
 
         // 金额和产品信息以服务端套餐记录为准，不使用前端传入的价格。
         DingProduct product = dingProductMapper.selectDingProductById(productId);
-        if (product == null) {
-            return AjaxResult.error("产品不存在");
+        if (product == null || !Integer.valueOf(1).equals(product.getStatus())) {
+            return AjaxResult.error("产品不存在或已下架");
+        }
+        if (dingCorpId == null || dingCorpId.isBlank() || product.getPrice() == null || product.getPrice().signum() <= 0) {
+            return AjaxResult.error("企业或产品价格无效，免费基础版由首次访问自动开通");
         }
 
         String orderNo = "ORD" + System.currentTimeMillis();
@@ -197,6 +200,7 @@ public class PaymentController extends BaseController
 
     /** 根据当前接口传入的操作处理订单状态，沿用前端模拟结果的现有行为。 */
     @Operation(summary = "手动处理支付结果（前端模拟回调）")
+    @org.springframework.security.access.prepost.PreAuthorize("@ss.hasPermi('ding:order:edit')")
     @PostMapping("/handleResult")
     public AjaxResult handleResult(@RequestBody Map<String, String> params)
     {

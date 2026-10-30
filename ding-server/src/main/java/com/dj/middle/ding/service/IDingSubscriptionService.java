@@ -23,4 +23,8 @@ public interface IDingSubscriptionService
     public int deleteDingSubscriptionByIds(Long[] ids);
     /** 读取企业当前订阅，缺失时按既有规则登记默认产品权益。 */
     public DingProduct getOrRegisterDefaultProduct(String dingCorpId);
+    /** 同步入口必须使用此方法：实时校验企业、状态及完整有效期。 */
+    public DingProduct requireActiveProduct(String dingCorpId);
+    /** 仅把仍生效且到期时间已过的订阅标记到期。 */
+    public int expireDueSubscriptions();
 }

@@ -402,8 +402,11 @@ public class ContoryUtil {
         JSONArray records = new JSONArray();
         JSONArray dingFields = dingFieldData.getJSONArray("fields");
         
-        // 遍历每一行数据
-        for (List<Object> kingdeeDatum : kingdeeData) {
+        KingdeeQueryResponse.requireSuccess(kingdeeData);
+        int count = Math.min(kingdeeData.size(), Math.min(Math.max(0, maxResult),
+                Math.max(0, singleSyncLimit - nextToken)));
+        // 即使来源错误返回超量记录，也不能超过本页或当前批次额度。
+        for (List<Object> kingdeeDatum : kingdeeData.subList(0, count)) {
             JSONObject record = new JSONObject();
             JSONObject fields = new JSONObject();
             
@@ -426,10 +429,6 @@ public class ContoryUtil {
         if (!records.isEmpty() && records.size() >= maxResult) {
             //数量达到权益上线，截断接口
             if (singleSyncLimit <= nextToken + maxResult) {
-                JSONObject record = new JSONObject();
-                record.put("id", "当前数据已达到同步上限，可升级权益以同步更多数据");
-                record.put("fields", new JSONObject());
-                records.add(record);
                 resultJson.put("nextToken", "");
                 resultJson.put("hasMore", false);
                 resultJson.put("records", records);

@@ -221,6 +221,7 @@ function getList() {
   listInvoice(queryParams).then(response => {
     invoiceList.value = response.rows
     total.value = response.total
+  }).catch(() => {}).finally(() => {
     loading.value = false
   })
 }
